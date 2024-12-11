@@ -340,6 +340,10 @@ public class Reach extends Check implements PacketCheck {
                         bestBlockingEntityHit = hitResult;
                     }
                 } else if (hitResult instanceof BlockHitData) {
+                    // don't false on recently rapidly changed blocks
+                    if (distanceSquared < (minDistance * minDistance) && blocksChangedThisTick.contains(((BlockHitData) hitResult).getPosition())) {
+                        return null;
+                    }
                     // Check if block is closer than any blocking entity found
                     if (bestBlockingEntityHit == null && distanceSquared < bestDistanceSq) {
                         bestDistanceSq = distanceSquared;
