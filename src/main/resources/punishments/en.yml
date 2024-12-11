@@ -66,6 +66,30 @@ Punishments:
       - "5:5 [alert]"
       - "5:5 [webhook]"
       - "5:5 [proxy]"
+  HitboxMiss:
+    remove-violations-after: 300
+    checks:
+      - "HitboxMiss"
+    commands:
+      - "7:5 [alert]"
+      - "7:5 [webhook]"
+      - "7:5 [proxy]"
+  HitboxBlock:
+    remove-violations-after: 300
+    checks:
+      - "HitboxBlock"
+    commands:
+      - "10:5 [alert]"
+      - "10:5 [webhook]"
+      - "10:5 [proxy]"
+  HitboxEntity:
+    remove-violations-after: 300
+    checks:
+      - "HitboxEntity"
+    commands:
+      - "15:10 [alert]"
+      - "15:10 [webhook]"
+      - "15:10 [proxy]"
   Misc:
     remove-violations-after: 300
     checks:
