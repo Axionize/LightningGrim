@@ -577,7 +577,7 @@ public enum HitboxData {
             int flowerAmount = data.getFlowerAmount();
             int horizontalIndex = getHorizontalID(data.getFacing());
 
-            CollisionBox result = NoCollisionBox.INSTANCE;
+            CollisionBox result = flowerAmount < 2 ? NoCollisionBox.INSTANCE : new ComplexCollisionBox(flowerAmount);
 
             // Pre-defined collision boxes for each quadrant
             HexCollisionBox[] boxes = new HexCollisionBox[] {
