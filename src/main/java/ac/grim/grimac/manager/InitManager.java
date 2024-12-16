@@ -37,6 +37,7 @@ public class InitManager {
                 .add(new PacketLimiter())
                 .add(GrimAPI.INSTANCE.getDiscordManager())
                 .add(GrimAPI.INSTANCE.getSpectateManager())
+                .add(GrimAPI.INSTANCE.getViolationDatabaseManager())
                 .add(new JavaVersion())
                 .add(new ViaVersion())
                 .build();

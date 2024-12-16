@@ -50,7 +50,23 @@ help:
   - "/grim spectate (oyuncu) &f- &7Bir oyuncuyu izlemenizi sağlar"
   - "/grim verbose &f- &7Arabelleğe almadan tüm uyarıları görmenizi sağlar"
   - "/grim log (0-255) &f- &7Uyarılar için bir debug logu çıktısı verir"
+  - "/grim history <player> [page] &f- &7Shows previous alerts for the player"
   - "&7======================"
+
+# Valid placeholders:
+# %prefix%
+# %player%
+# %page%
+# %maxPages%
+grim-history-header: "%prefix% &bShowing logs for &f%player% (&f%page%&b/&f%maxPages%&f)"
+# Valid placeholders:
+# %prefix%
+# %check%
+# %vl%
+# %verbose%
+# %timeago%
+# %server%
+grim-history-entry: "%prefix% &8[&f%server%&8] &bFailed &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% ago&7)"
 
 # Translated by Kayera
 # Have a nice day ;)

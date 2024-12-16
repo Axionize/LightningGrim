@@ -64,6 +64,7 @@ dependencies {
     implementation("club.minnced:discord-webhooks:0.8.0") // Newer versions include kotlin-stdlib, which leads to incompatibility with plugins that use Kotlin
     implementation("it.unimi.dsi:fastutil:8.5.15")
     implementation("github.scarsz:configuralize:1.4.0")
+    implementation("com.zaxxer:HikariCP:4.0.3")
 
     //implementation("com.github.grimanticheat:grimapi:1193c4fa41")
     // Used for local testing: implementation("ac.grim.grimac:GRIMAPI:1.0")
@@ -189,5 +190,6 @@ tasks.shadowJar {
         relocate("org.json", "ac.grim.grimac.shaded.json")
         relocate("org.intellij", "ac.grim.grimac.shaded.intellij")
         relocate("org.jetbrains", "ac.grim.grimac.shaded.jetbrains")
+        relocate("com.zaxxer", "ac.grim.rgimac.shaded.zaxxer")
     }
 }

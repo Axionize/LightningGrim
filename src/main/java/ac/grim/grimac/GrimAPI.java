@@ -2,6 +2,7 @@ package ac.grim.grimac;
 
 import ac.grim.grimac.manager.*;
 import ac.grim.grimac.manager.config.BaseConfigManager;
+import ac.grim.grimac.manager.violationdatabase.ViolationDatabaseManager;
 import ac.grim.grimac.utils.anticheat.PlayerDataManager;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,11 +18,13 @@ public enum GrimAPI {
     private final PlayerDataManager playerDataManager = new PlayerDataManager();
     private final TickManager tickManager = new TickManager();
     private final GrimExternalAPI externalAPI = new GrimExternalAPI(this);
+    private ViolationDatabaseManager violationDatabaseManager;
     private InitManager initManager;
     private JavaPlugin plugin;
 
     public void load(final JavaPlugin plugin) {
         this.plugin = plugin;
+        this.violationDatabaseManager = new ViolationDatabaseManager(plugin);
         initManager = new InitManager();
         initManager.load();
     }
