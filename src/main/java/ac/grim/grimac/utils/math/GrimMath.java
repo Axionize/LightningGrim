@@ -111,4 +111,31 @@ public class GrimMath {
         l = l * l * 42317861L + l * 11L;
         return l >> 16;
     }
+
+    public static int getSectionCoord(int coord) {
+        return coord >> 4;
+    }
+
+    public static int getSectionCoord(double coord) {
+        return getSectionCoord(GrimMath.floor(coord));
+    }
+
+    public static long asLong(int x, int y, int z) {
+        long l = 0L;
+        l |= ((long)x & 4194303L) << 42;
+        l |= ((long)y & 1048575L) << 0;
+        return l | ((long)z & 4194303L) << 20;
+    }
+
+    public static int unpackX(long packed) {
+        return (int)(packed << 0 >> 42);
+    }
+
+    public static int unpackY(long packed) {
+        return (int)(packed << 44 >> 44);
+    }
+
+    public static int unpackZ(long packed) {
+        return (int)(packed << 22 >> 42);
+    }
 }
