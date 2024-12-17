@@ -34,8 +34,9 @@ public class CompensatedEntities {
     public static final UUID SPRINTING_MODIFIER_UUID = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
     public static final UUID SNOW_MODIFIER_UUID = UUID.fromString("1eaf83ff-7207-4596-b37a-d7a07b3ec4ce");
 
-    public final Int2ObjectOpenHashMap<PacketEntity> entityMap = new Int2ObjectOpenHashMap<>(40, 0.7f);
-    public final Int2ObjectOpenHashMap<TrackerData> serverPositionsMap = new Int2ObjectOpenHashMap<>(40, 0.7f);
+    public final SectionedEntityMap entityMap = new SectionedEntityMap();
+//    public final Int2ObjectLinkedOpenHashMap<PacketEntity> entityMap = new Int2ObjectLinkedOpenHashMap<>(40, 0.7f); // needs to be linked to replicate vanilla iteration order!
+    public final Int2ObjectOpenHashMap<TrackerData> serverPositionsMap = new Int2ObjectOpenHashMap<>(40, 0.7f); // never iterate over, so iteration order does not matter
     public final Object2ObjectOpenHashMap<UUID, UserProfile> profiles = new Object2ObjectOpenHashMap<>();
     public Integer serverPlayerVehicle = null;
     public boolean hasSprintingAttributeEnabled = false;
@@ -70,13 +71,15 @@ public class CompensatedEntities {
     }
 
     public void removeEntity(int entityID) {
-        PacketEntity entity = entityMap.remove(entityID);
+        PacketEntity entity = entityMap.get(entityID);
         if (entity == null) return;
+
+        entityMap.removeEntity(entityID);
 
         if (entity instanceof PacketEntityEnderDragon) {
             PacketEntityEnderDragon dragon = (PacketEntityEnderDragon) entity;
             for (int i = 1; i < dragon.getParts().size() + 1; i++) {
-                entityMap.remove(entityID + i);
+                entityMap.removeEntity(entityID + i);
             }
         }
 

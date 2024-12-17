@@ -441,10 +441,12 @@ public class PacketEntityReplication extends Check implements PacketCheck {
                     return;
                 }
 
+                player.compensatedEntities.entityMap.updateEntityPosition(player.compensatedEntities.entityMap.get(entityId), new Vector3d(data.getX() + deltaX, data.getY() + deltaY, data.getZ() + deltaZ));
                 data.setX(data.getX() + deltaX);
                 data.setY(data.getY() + deltaY);
                 data.setZ(data.getZ() + deltaZ);
             } else {
+                player.compensatedEntities.entityMap.updateEntityPosition(player.compensatedEntities.entityMap.get(entityId), new Vector3d(deltaX, deltaY, deltaZ));
                 data.setX(deltaX);
                 data.setY(deltaY);
                 data.setZ(deltaZ);
