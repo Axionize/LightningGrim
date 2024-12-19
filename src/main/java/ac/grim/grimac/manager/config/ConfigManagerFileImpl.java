@@ -7,11 +7,13 @@ import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import github.scarsz.configuralize.DynamicConfig;
 import github.scarsz.configuralize.Language;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
 
@@ -319,6 +321,11 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
     }
 
     @Override
+    public @Nullable String getString(String s) {
+        return "";
+    }
+
+    @Override
     public List<String> getStringList(String key) {
         return config.getStringList(key);
     }
@@ -351,6 +358,30 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
     @Override
     public <T> T get(String key) {
         return config.get(key);
+    }
+
+    @Override
+    public <T> @Nullable T getElse(String s, T t) {
+        // TODO implement this
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public @Nullable <K, V> Map<K, V> getMap(String s) {
+        // TODO implement this
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public @Nullable <K, V> Map<K, V> getMapElse(String s, Map<K, V> map) {
+        // TODO implement this
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public boolean hasLoaded() {
+        // TODO implement this
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
 }

@@ -1,5 +1,6 @@
 package ac.grim.grimac.checks.type;
 
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.player.GrimPlayer;
@@ -96,5 +97,10 @@ public class BlockPlaceCheck extends Check implements RotationCheck, PostPredict
         }
 
         return combined;
+    }
+
+    @Override
+    public int getCheckMask() {
+        return CheckType.BLOCK_PLACE.getMask();
     }
 }

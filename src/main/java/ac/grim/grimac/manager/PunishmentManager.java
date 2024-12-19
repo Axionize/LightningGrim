@@ -43,7 +43,8 @@ public class PunishmentManager implements ConfigReloadable {
             groups.clear();
 
             // To support reloading
-            for (AbstractCheck check : player.checkManager.allChecks.values()) {
+            // TODO unloaded checks?
+            for (AbstractCheck check : player.checkManager.loadedChecks.values()) {
                 check.setEnabled(false);
             }
 
@@ -64,7 +65,8 @@ public class PunishmentManager implements ConfigReloadable {
                         exclude = true;
                         command = command.substring(1);
                     }
-                    for (AbstractCheck check : player.checkManager.allChecks.values()) { // o(n) * o(n)?
+                    // TODO unloaded checks?
+                    for (AbstractCheck check : player.checkManager.loadedChecks.values()) { // o(n) * o(n)?
                         if (check.getCheckName() != null &&
                                 (check.getCheckName().toLowerCase(Locale.ROOT).contains(command)
                                         || check.getAlternativeName().toLowerCase(Locale.ROOT).contains(command))) { // Some checks have equivalent names like AntiKB and AntiKnockback
