@@ -2,6 +2,7 @@ package ac.grim.grimac.checks.impl.badpackets;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
+import ac.grim.grimac.checks.type.abstracts.AbstractBlockBreakCheck;
 import ac.grim.grimac.checks.type.interfaces.BlockBreakCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.MessageUtil;
@@ -15,7 +16,7 @@ import com.github.retrooper.packetevents.util.Vector3i;
 import static ac.grim.grimac.utils.nmsutil.BlockBreakSpeed.getBlockDamage;
 
 @CheckData(name = "BadPacketsZ")
-public class BadPacketsZ extends Check implements BlockBreakCheckI {
+public class BadPacketsZ extends AbstractBlockBreakCheck {
     public BadPacketsZ(final GrimPlayer player) {
         super(player);
     }

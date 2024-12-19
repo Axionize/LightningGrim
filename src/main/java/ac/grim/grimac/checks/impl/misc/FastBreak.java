@@ -2,6 +2,7 @@ package ac.grim.grimac.checks.impl.misc;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
+import ac.grim.grimac.checks.type.abstracts.AbstractBlockBreakCheck;
 import ac.grim.grimac.checks.type.interfaces.BlockBreakCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockBreak;
@@ -20,7 +21,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 // Also based loosely off of NoCheatPlus FastBreak
 // Also based off minecraft wiki: https://minecraft.wiki/w/Breaking#Instant_breaking
 @CheckData(name = "FastBreak", description = "Breaking blocks too quickly")
-public class FastBreak extends Check implements BlockBreakCheckI {
+public class FastBreak extends AbstractBlockBreakCheck {
     public FastBreak(GrimPlayer playerData) {
         super(playerData);
     }
