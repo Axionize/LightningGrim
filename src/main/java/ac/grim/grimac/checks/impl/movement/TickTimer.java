@@ -2,14 +2,14 @@ package ac.grim.grimac.checks.impl.movement;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 
 
 @CheckData(name = "TickTimer", setback = 1)
-public class TickTimer extends Check implements PostPredictionCheck {
+public class TickTimer extends Check implements PostPredictionCheckI {
 
     private boolean receivedTickEnd = true;
     private int flyingPackets = 0;

@@ -2,7 +2,7 @@ package ac.grim.grimac.checks.impl.multiactions;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -14,7 +14,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import static ac.grim.grimac.events.packets.patch.ResyncWorldUtil.resyncPosition;
 
 @CheckData(name = "MultiActionsB", description = "Breaking blocks while using an item", experimental = true)
-public class MultiActionsB extends Check implements PacketCheck {
+public class MultiActionsB extends Check implements PacketCheckI {
     public MultiActionsB(GrimPlayer player) {
         super(player);
     }

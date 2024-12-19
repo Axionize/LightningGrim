@@ -2,7 +2,8 @@ package ac.grim.grimac.checks.impl.prediction;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPostPredictionCheck;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
@@ -16,7 +17,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @CheckData(name = "Prediction (Debug)")
-public class DebugHandler extends Check implements PostPredictionCheck {
+public class DebugHandler extends AbstractPostPredictionCheck {
 
     Set<Player> listeners = new CopyOnWriteArraySet<>(new HashSet<>());
     boolean outputToConsole = false;

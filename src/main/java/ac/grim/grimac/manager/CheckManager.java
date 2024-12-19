@@ -21,9 +21,7 @@ import ac.grim.grimac.checks.impl.misc.GhostBlockMitigation;
 import ac.grim.grimac.checks.impl.movement.*;
 import ac.grim.grimac.checks.impl.packetorder.*;
 import ac.grim.grimac.checks.impl.multiactions.*;
-import ac.grim.grimac.checks.impl.packetorder.*;
 import ac.grim.grimac.checks.impl.post.Post;
-import ac.grim.grimac.checks.impl.multiactions.*;
 import ac.grim.grimac.checks.impl.prediction.DebugHandler;
 import ac.grim.grimac.checks.impl.prediction.NoFallB;
 import ac.grim.grimac.checks.impl.prediction.OffsetHandler;
@@ -32,6 +30,7 @@ import ac.grim.grimac.checks.impl.scaffolding.*;
 import ac.grim.grimac.checks.impl.velocity.ExplosionHandler;
 import ac.grim.grimac.checks.impl.velocity.KnockbackHandler;
 import ac.grim.grimac.checks.type.*;
+import ac.grim.grimac.checks.type.interfaces.*;
 import ac.grim.grimac.events.packets.PacketChangeGameState;
 import ac.grim.grimac.events.packets.PacketEntityReplication;
 import ac.grim.grimac.events.packets.PacketPlayerAbilities;
@@ -65,14 +64,14 @@ public class CheckManager {
     private final GrimPlayer player;
 
     // Fast arrays for iteration
-    private PacketCheck[] packetChecks;
-    private PositionCheck[] positionChecks;
-    private RotationCheck[] rotationChecks;
-    private VehicleCheck[] vehicleChecks;
-    private PacketCheck[] prePredictionChecks;
-    private BlockBreakCheck[] blockBreakChecks;
+    private PacketCheckI[] packetChecks;
+    private PositionCheckI[] positionChecks;
+    private RotationCheckI[] rotationChecks;
+    private VehicleCheckI[] vehicleChecks;
+    private PacketCheckI[] prePredictionChecks;
+    private BlockBreakCheckI[] blockBreakChecks;
     private BlockPlaceCheck[] blockPlaceChecks;
-    private PostPredictionCheck[] postPredictionChecks;
+    private PostPredictionCheckI[] postPredictionChecks;
 
     // Lookup map for getting specific checks
     public Map<Class<? extends AbstractCheck>, AbstractCheck> loadedChecks = new HashMap<>();
@@ -81,7 +80,7 @@ public class CheckManager {
     public CheckManager(GrimPlayer player) {
         this.player = player;
         // Packet Checks
-        Map<Class<? extends PacketCheck>, PacketCheck> packetCheckMap = new HashMap<>();
+        Map<Class<? extends PacketCheckI>, PacketCheckI> packetCheckMap = new HashMap<>();
         addCheck(PacketOrderProcessor.class, player.packetOrderProcessor, packetCheckMap);
         addCheck(Reach.class, new Reach(player), packetCheckMap);
         addCheck(HitboxMiss.class, new HitboxMiss(player), packetCheckMap);
@@ -133,32 +132,32 @@ public class CheckManager {
         addCheck(PacketOrderO.class, new PacketOrderO(player), packetCheckMap);
         addCheck(NoSlowB.class, new NoSlowB(player), packetCheckMap);
         addCheck(SetbackBlocker.class, new SetbackBlocker(player), packetCheckMap);
-        packetChecks = packetCheckMap.values().toArray(new PacketCheck[0]);
+        packetChecks = packetCheckMap.values().toArray(new PacketCheckI[0]);
         loadedChecks.putAll(packetCheckMap);
 
         // Position Checks
-        Map<Class<? extends PositionCheck>, PositionCheck> positionCheckMap = new HashMap<>();
+        Map<Class<? extends PositionCheckI>, PositionCheckI> positionCheckMap = new HashMap<>();
         addCheck(PredictionRunner.class, new PredictionRunner(player), positionCheckMap);
         addCheck(CompensatedCooldown.class, new CompensatedCooldown(player), positionCheckMap);
-        positionChecks = positionCheckMap.values().toArray(new PositionCheck[0]);
+        positionChecks = positionCheckMap.values().toArray(new PositionCheckI[0]);
         loadedChecks.putAll(positionCheckMap);
 
         // Rotation Checks
-        Map<Class<? extends RotationCheck>, RotationCheck> rotationCheckMap = new HashMap<>();
+        Map<Class<? extends RotationCheckI>, RotationCheckI> rotationCheckMap = new HashMap<>();
         addCheck(AimProcessor.class, new AimProcessor(player), rotationCheckMap);
         addCheck(AimModulo360.class, new AimModulo360(player), rotationCheckMap);
         addCheck(AimDuplicateLook.class, new AimDuplicateLook(player), rotationCheckMap);
-        rotationChecks = rotationCheckMap.values().toArray(new RotationCheck[0]);
+        rotationChecks = rotationCheckMap.values().toArray(new RotationCheckI[0]);
         loadedChecks.putAll(rotationCheckMap);
 
         // Vehicle Checks
-        Map<Class<? extends VehicleCheck>, VehicleCheck> vehicleCheckMap = new HashMap<>();
+        Map<Class<? extends VehicleCheckI>, VehicleCheckI> vehicleCheckMap = new HashMap<>();
         addCheck(VehiclePredictionRunner.class, new VehiclePredictionRunner(player), vehicleCheckMap);
-        vehicleChecks = vehicleCheckMap.values().toArray(new VehicleCheck[0]);
+        vehicleChecks = vehicleCheckMap.values().toArray(new VehicleCheckI[0]);
         loadedChecks.putAll(vehicleCheckMap);
 
         // Pre Prediction Checks
-        Map<Class<? extends PacketCheck>, PacketCheck> prePredictionCheckMap = new HashMap<>();
+        Map<Class<? extends PacketCheckI>, PacketCheckI> prePredictionCheckMap = new HashMap<>();
         addCheck(TimerCheck.class, new TimerCheck(player), prePredictionCheckMap);
         addCheck(TickTimer.class, new TickTimer(player), prePredictionCheckMap);
         addCheck(CrashA.class, new CrashA(player), prePredictionCheckMap);
@@ -173,15 +172,15 @@ public class CheckManager {
         addCheck(ExploitB.class, new ExploitB(player), prePredictionCheckMap);
         addCheck(ExploitC.class, new ExploitC(player), prePredictionCheckMap);
         addCheck(VehicleTimer.class, new VehicleTimer(player), prePredictionCheckMap);
-        prePredictionChecks = prePredictionCheckMap.values().toArray(new PacketCheck[0]);
+        prePredictionChecks = prePredictionCheckMap.values().toArray(new PacketCheckI[0]);
         loadedChecks.putAll(prePredictionCheckMap);
 
         // Block Break Checks
-        Map<Class<? extends BlockBreakCheck>, BlockBreakCheck> blockBreakCheckMap = new HashMap<>();
+        Map<Class<? extends BlockBreakCheckI>, BlockBreakCheckI> blockBreakCheckMap = new HashMap<>();
         addCheck(BadPacketsX.class, new BadPacketsX(player), blockBreakCheckMap);
         addCheck(BadPacketsZ.class, new BadPacketsZ(player), blockBreakCheckMap);
         addCheck(FastBreak.class, new FastBreak(player), blockBreakCheckMap);
-        blockBreakChecks = blockBreakCheckMap.values().toArray(new BlockBreakCheck[0]);
+        blockBreakChecks = blockBreakCheckMap.values().toArray(new BlockBreakCheckI[0]);
         loadedChecks.putAll(blockBreakCheckMap);
 
         // Block Place Checks
@@ -203,7 +202,7 @@ public class CheckManager {
         loadedChecks.putAll(blockPlaceCheckMap);
 
         // Post Prediction Checks
-        Map<Class<? extends PostPredictionCheck>, PostPredictionCheck> postPredictionCheckMap = new HashMap<>();
+        Map<Class<? extends PostPredictionCheckI>, PostPredictionCheckI> postPredictionCheckMap = new HashMap<>();
         addCheck(NegativeTimerCheck.class, new NegativeTimerCheck(player), postPredictionCheckMap);
         addCheck(ExplosionHandler.class, new ExplosionHandler(player), postPredictionCheckMap);
         addCheck(KnockbackHandler.class, new KnockbackHandler(player), postPredictionCheckMap);
@@ -236,7 +235,7 @@ public class CheckManager {
         addCheck(CompensatedFireworks.class, player.compensatedFireworks, postPredictionCheckMap);
         addCheck(SneakingEstimator.class, new SneakingEstimator(player), postPredictionCheckMap);
         addCheck(LastInstanceManager.class, player.lastInstanceManager, postPredictionCheckMap);
-        postPredictionChecks = postPredictionCheckMap.values().toArray(new PostPredictionCheck[0]);
+        postPredictionChecks = postPredictionCheckMap.values().toArray(new PostPredictionCheckI[0]);
         loadedChecks.putAll(postPredictionCheckMap);
 
         init();
@@ -351,38 +350,38 @@ public class CheckManager {
         List<AbstractCheck> sorted = topologicalSort(loadedChecks.values());
 
         // Use lists first since we don't know final size
-        List<PacketCheck> newPacketChecks = new ArrayList<>();
-        List<PositionCheck> newPositionChecks = new ArrayList<>();
-        List<RotationCheck> newRotationChecks = new ArrayList<>();
-        List<VehicleCheck> newVehicleChecks = new ArrayList<>();
-        List<PacketCheck> newPrePredictionChecks = new ArrayList<>();
-        List<BlockBreakCheck> newBlockBreakChecks = new ArrayList<>();
+        List<PacketCheckI> newPacketChecks = new ArrayList<>();
+        List<PositionCheckI> newPositionChecks = new ArrayList<>();
+        List<RotationCheckI> newRotationChecks = new ArrayList<>();
+        List<VehicleCheckI> newVehicleChecks = new ArrayList<>();
+        List<PacketCheckI> newPrePredictionChecks = new ArrayList<>();
+        List<BlockBreakCheckI> newBlockBreakChecks = new ArrayList<>();
         List<BlockPlaceCheck> newBlockPlaceChecks = new ArrayList<>();
-        List<PostPredictionCheck> newPostPredictionChecks = new ArrayList<>();
+        List<PostPredictionCheckI> newPostPredictionChecks = new ArrayList<>();
 
         // Single pass, add to all applicable lists
         for (AbstractCheck check : sorted) {
             // A check can be multiple types, so no else-if
-            if (check.isCheckType(CheckType.PACKET)) newPacketChecks.add((PacketCheck) check);
-            if (check.isCheckType(CheckType.POSITION)) newPositionChecks.add((PositionCheck) check);
-            if (check.isCheckType(CheckType.ROTATION)) newRotationChecks.add((RotationCheck) check);
-            if (check.isCheckType(CheckType.VEHICLE)) newVehicleChecks.add((VehicleCheck) check);
-            if (check.isCheckType(CheckType.PRE_PREDICTION)) newPrePredictionChecks.add((PacketCheck) check);
-            if (check.isCheckType(CheckType.BLOCK_BREAK)) newBlockBreakChecks.add((BlockBreakCheck) check);
+            if (check.isCheckType(CheckType.PACKET)) newPacketChecks.add((PacketCheckI) check);
+            if (check.isCheckType(CheckType.POSITION)) newPositionChecks.add((PositionCheckI) check);
+            if (check.isCheckType(CheckType.ROTATION)) newRotationChecks.add((RotationCheckI) check);
+            if (check.isCheckType(CheckType.VEHICLE)) newVehicleChecks.add((VehicleCheckI) check);
+            if (check.isCheckType(CheckType.PRE_PREDICTION)) newPrePredictionChecks.add((PacketCheckI) check);
+            if (check.isCheckType(CheckType.BLOCK_BREAK)) newBlockBreakChecks.add((BlockBreakCheckI) check);
             if (check.isCheckType(CheckType.BLOCK_PLACE)) newBlockPlaceChecks.add((BlockPlaceCheck) check);
-            if (check.isCheckType(CheckType.POST_PREDICTION)) newPostPredictionChecks.add((PostPredictionCheck) check);
+            if (check.isCheckType(CheckType.POST_PREDICTION)) newPostPredictionChecks.add((PostPredictionCheckI) check);
 
         }
 
         // Convert lists to arrays atomically
-        this.packetChecks = newPacketChecks.toArray(new PacketCheck[0]);
-        this.positionChecks = newPositionChecks.toArray(new PositionCheck[0]);
-        this.rotationChecks = newRotationChecks.toArray(new RotationCheck[0]);
-        this.vehicleChecks = newVehicleChecks.toArray(new VehicleCheck[0]);
-        this.prePredictionChecks = newPrePredictionChecks.toArray(new PacketCheck[0]);
-        this.blockBreakChecks = newBlockBreakChecks.toArray(new BlockBreakCheck[0]);
+        this.packetChecks = newPacketChecks.toArray(new PacketCheckI[0]);
+        this.positionChecks = newPositionChecks.toArray(new PositionCheckI[0]);
+        this.rotationChecks = newRotationChecks.toArray(new RotationCheckI[0]);
+        this.vehicleChecks = newVehicleChecks.toArray(new VehicleCheckI[0]);
+        this.prePredictionChecks = newPrePredictionChecks.toArray(new PacketCheckI[0]);
+        this.blockBreakChecks = newBlockBreakChecks.toArray(new BlockBreakCheckI[0]);
         this.blockPlaceChecks = newBlockPlaceChecks.toArray(new BlockPlaceCheck[0]);
-        this.postPredictionChecks = newPostPredictionChecks.toArray(new PostPredictionCheck[0]);
+        this.postPredictionChecks = newPostPredictionChecks.toArray(new PostPredictionCheckI[0]);
     }
 
     /**
@@ -457,70 +456,70 @@ public class CheckManager {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends PositionCheck> T getPositionCheck(Class<T> check) {
+    public <T extends PositionCheckI> T getPositionCheck(Class<T> check) {
 //        return (T) positionCheck.get(check);
         return (T) loadedChecks.get(check);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends RotationCheck> T getRotationCheck(Class<T> check) {
+    public <T extends RotationCheckI> T getRotationCheck(Class<T> check) {
 //        return (T) rotationCheck.get(check);
         return (T) loadedChecks.get(check);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends VehicleCheck> T getVehicleCheck(Class<T> check) {
+    public <T extends VehicleCheckI> T getVehicleCheck(Class<T> check) {
 //        return (T) vehicleCheck.get(check);
         return (T) loadedChecks.get(check);
     }
 
     public void onPrePredictionReceivePacket(final PacketReceiveEvent packet) {
-        for (PacketCheck check : prePredictionChecks) {
+        for (PacketCheckI check : prePredictionChecks) {
             check.onPacketReceive(packet);
         }
     }
 
     public void onPacketReceive(final PacketReceiveEvent packet) {
-        for (PacketCheck check : packetChecks) {
+        for (PacketCheckI check : packetChecks) {
             check.onPacketReceive(packet);
         }
-        for (PostPredictionCheck check : postPredictionChecks) {
+        for (PostPredictionCheckI check : postPredictionChecks) {
             check.onPacketReceive(packet);
         }
         for (BlockPlaceCheck check : blockPlaceChecks) {
             check.onPacketReceive(packet);
         }
-        for (BlockBreakCheck check : blockBreakChecks) {
+        for (BlockBreakCheckI check : blockBreakChecks) {
             check.onPacketReceive(packet);
         }
     }
 
     public void onPacketSend(final PacketSendEvent packet) {
-        for (PacketCheck check : prePredictionChecks) {
+        for (PacketCheckI check : prePredictionChecks) {
             check.onPacketSend(packet);
         }
-        for (PacketCheck check : packetChecks) {
+        for (PacketCheckI check : packetChecks) {
             check.onPacketSend(packet);
         }
-        for (PostPredictionCheck check : postPredictionChecks) {
+        for (PostPredictionCheckI check : postPredictionChecks) {
             check.onPacketSend(packet);
         }
         for (BlockPlaceCheck check : blockPlaceChecks) {
             check.onPacketSend(packet);
         }
-        for (BlockBreakCheck check : blockBreakChecks) {
+        for (BlockBreakCheckI check : blockBreakChecks) {
             check.onPacketSend(packet);
         }
     }
 
     public void onPositionUpdate(final PositionUpdate position) {
-        for (PositionCheck check : positionChecks) {
+        for (PositionCheckI check : positionChecks) {
             check.onPositionUpdate(position);
         }
     }
 
     public void onRotationUpdate(final RotationUpdate rotation) {
-        for (RotationCheck check : rotationChecks) {
+        for (RotationCheckI check : rotationChecks) {
             check.process(rotation);
         }
         for (BlockPlaceCheck check : blockPlaceChecks) {
@@ -529,19 +528,19 @@ public class CheckManager {
     }
 
     public void onVehiclePositionUpdate(final VehiclePositionUpdate update) {
-        for (VehicleCheck check : vehicleChecks) {
+        for (VehicleCheckI check : vehicleChecks) {
             check.process(update);
         }
     }
 
     public void onPredictionFinish(final PredictionComplete complete) {
-        for (PostPredictionCheck check : postPredictionChecks) {
+        for (PostPredictionCheckI check : postPredictionChecks) {
             check.onPredictionComplete(complete);
         }
         for (BlockPlaceCheck check : blockPlaceChecks) {
             check.onPredictionComplete(complete);
         }
-        for (BlockBreakCheck check : blockBreakChecks) {
+        for (BlockBreakCheckI check : blockBreakChecks) {
             check.onPredictionComplete(complete);
         }
     }
@@ -559,7 +558,7 @@ public class CheckManager {
     }
 
     public void onBlockBreak(final BlockBreak blockBreak) {
-        for (BlockBreakCheck check : blockBreakChecks) {
+        for (BlockBreakCheckI check : blockBreakChecks) {
             check.onBlockBreak(blockBreak);
         }
     }
@@ -569,7 +568,7 @@ public class CheckManager {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends PacketCheck> T getPacketCheck(Class<T> check) {
+    public <T extends PacketCheckI> T getPacketCheck(Class<T> check) {
         return getCheck(check);
     }
 
@@ -579,12 +578,12 @@ public class CheckManager {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends PacketCheck> T getPrePredictionCheck(Class<T> check) {
+    public <T extends PacketCheckI> T getPrePredictionCheck(Class<T> check) {
         return getCheck(check);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends PacketCheck> T getPostPredictionCheck(Class<T> check) {
+    public <T extends PacketCheckI> T getPostPredictionCheck(Class<T> check) {
         return getCheck(check);
     }
 

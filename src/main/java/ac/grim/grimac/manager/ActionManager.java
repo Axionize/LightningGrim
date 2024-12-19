@@ -1,7 +1,7 @@
 package ac.grim.grimac.manager;
 
 import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -9,7 +9,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientIn
 import lombok.Getter;
 
 @Getter
-public class ActionManager extends Check implements PacketCheck {
+public class ActionManager extends Check implements PacketCheckI {
     private boolean attacking = false;
     private long lastAttack = 0;
 

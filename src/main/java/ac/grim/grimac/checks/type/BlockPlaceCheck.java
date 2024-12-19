@@ -3,6 +3,9 @@ package ac.grim.grimac.checks.type;
 import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
+import ac.grim.grimac.checks.type.interfaces.BlockPlaceCheckI;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
+import ac.grim.grimac.checks.type.interfaces.RotationCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockPlace;
 import ac.grim.grimac.utils.collisions.HitboxData;
@@ -17,7 +20,7 @@ import com.github.retrooper.packetevents.util.Vector3i;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BlockPlaceCheck extends Check implements RotationCheck, PostPredictionCheck {
+public class BlockPlaceCheck extends Check implements RotationCheckI, PostPredictionCheckI, BlockPlaceCheckI {
     private static final List<StateType> weirdBoxes = new ArrayList<>();
     private static final List<StateType> buggyBoxes = new ArrayList<>();
     private final SimpleCollisionBox[] boxes = new SimpleCollisionBox[ComplexCollisionBox.DEFAULT_MAX_COLLISION_BOX_SIZE];
@@ -29,12 +32,10 @@ public class BlockPlaceCheck extends Check implements RotationCheck, PostPredict
     }
 
     // Method called immediately after a block is placed, before forwarding block place to server
-    public void onBlockPlace(final BlockPlace place) {
-    }
+    public void onBlockPlace(final BlockPlace place) {}
 
     // Method called the flying packet after the block place
-    public void onPostFlyingBlockPlace(BlockPlace place) {
-    }
+    public void onPostFlyingBlockPlace(BlockPlace place) {}
 
     @Override
     public void onReload(ConfigManager config) {

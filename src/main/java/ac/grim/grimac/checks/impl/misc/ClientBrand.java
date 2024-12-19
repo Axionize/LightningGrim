@@ -3,7 +3,7 @@ package ac.grim.grimac.checks.impl.misc;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.impl.exploit.ExploitA;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -12,7 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-public class ClientBrand extends Check implements PacketCheck {
+public class ClientBrand extends Check implements PacketCheckI {
     String brand = "vanilla";
     boolean hasBrand = false;
 

@@ -1,7 +1,7 @@
 package ac.grim.grimac.checks.impl.packetorder;
 
 import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -12,7 +12,7 @@ import lombok.Getter;
 import org.jetbrains.annotations.Contract;
 
 @Getter
-public final class PacketOrderProcessor extends Check implements PacketCheck {
+public final class PacketOrderProcessor extends Check implements PacketCheckI {
     public PacketOrderProcessor(final GrimPlayer player) {
         super(player);
     }

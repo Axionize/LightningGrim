@@ -1,10 +1,12 @@
 package ac.grim.grimac.checks.impl.velocity;
 
 import ac.grim.grimac.GrimAPI;
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPostPredictionCheck;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import ac.grim.grimac.utils.data.Pair;
@@ -23,7 +25,7 @@ import java.util.LinkedList;
 
 // We are making a velocity sandwich between two pieces of transaction packets (bread)
 @CheckData(name = "AntiKB", alternativeName = "AntiKnockback", configName = "Knockback", setback = 10, decay = 0.025)
-public class KnockbackHandler extends Check implements PostPredictionCheck {
+public class KnockbackHandler extends AbstractPostPredictionCheck {
     Deque<VelocityData> firstBreadMap = new LinkedList<>();
 
     Deque<VelocityData> lastKnockbackKnownTaken = new LinkedList<>();
@@ -251,5 +253,4 @@ public class KnockbackHandler extends Check implements PostPredictionCheck {
         if (maxAdv < 0) maxAdv = Double.MAX_VALUE;
         if (immediate < 0) immediate = Double.MAX_VALUE;
     }
-
 }

@@ -2,14 +2,15 @@ package ac.grim.grimac.checks.impl.packetorder;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPostPredictionCheck;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 
 @CheckData(name = "PacketOrderJ", experimental = true)
-public class PacketOrderJ extends Check implements PostPredictionCheck {
+public class PacketOrderJ extends AbstractPostPredictionCheck {
     public PacketOrderJ(final GrimPlayer player) {
         super(player);
     }

@@ -2,14 +2,14 @@ package ac.grim.grimac.checks.impl.crash;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.world.Location;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
 @CheckData(name = "CrashC", description = "Sent non-finite position or rotation")
-public class CrashC extends Check implements PacketCheck {
+public class CrashC extends Check implements PacketCheckI {
     public CrashC(GrimPlayer playerData) {
         super(playerData);
     }

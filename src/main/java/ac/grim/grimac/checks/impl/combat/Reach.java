@@ -18,7 +18,7 @@ package ac.grim.grimac.checks.impl.combat;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.BlockHitData;
@@ -55,7 +55,7 @@ import java.util.Set;
 
 // You may not copy the check unless you are licensed under GPL
 @CheckData(name = "Reach", configName = "Reach", setback = 10)
-public class Reach extends Check implements PacketCheck {
+public class Reach extends Check implements PacketCheckI {
     // Only one flag per reach attack, per entity, per tick.
     // We store position because lastX isn't reliable on teleports.
     private final Int2ObjectMap<Vector3d> playerAttackQueue = new Int2ObjectOpenHashMap<>();
@@ -171,9 +171,9 @@ public class Reach extends Check implements PacketCheck {
         for (Int2ObjectMap.Entry<Vector3d> attack : playerAttackQueue.int2ObjectEntrySet()) {
             PacketEntity reachEntity = player.compensatedEntities.entityMap.get(attack.getIntKey());
             if (reachEntity != null) {
-                Pair<Class<? extends PacketCheck>, String> result = checkReach(reachEntity, attack.getValue(), false);
+                Pair<Class<? extends PacketCheckI>, String> result = checkReach(reachEntity, attack.getValue(), false);
                 if (result != null) {
-                    PacketCheck check = player.checkManager.getPacketCheck(result.first());
+                    PacketCheckI check = player.checkManager.getPacketCheck(result.first());
                     if (reachEntity.getType() == EntityTypes.PLAYER) {
                         ((Check)check).flagAndAlert(result.second());
                     } else {
@@ -188,7 +188,7 @@ public class Reach extends Check implements PacketCheck {
         if (isFlying) blocksChangedThisTick.clear();
     }
 
-    private Pair<Class<? extends PacketCheck>, String> checkReach(PacketEntity reachEntity, Vector3d from, boolean isPrediction) {
+    private Pair<Class<? extends PacketCheckI>, String> checkReach(PacketEntity reachEntity, Vector3d from, boolean isPrediction) {
         SimpleCollisionBox targetBox = reachEntity.getPossibleCollisionBoxes();
 
         if (reachEntity.getType() == EntityTypes.END_CRYSTAL) { // Hardcode end crystal box

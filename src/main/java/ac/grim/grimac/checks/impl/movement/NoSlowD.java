@@ -2,7 +2,8 @@ package ac.grim.grimac.checks.impl.movement;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPostPredictionCheck;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
@@ -11,7 +12,7 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
 
 @CheckData(name = "NoSlowD", description = "Sprinting while using an item", setback = 5, experimental = true)
-public class NoSlowD extends Check implements PostPredictionCheck {
+public class NoSlowD extends AbstractPostPredictionCheck {
     public NoSlowD(GrimPlayer player) {
         super(player);
     }
