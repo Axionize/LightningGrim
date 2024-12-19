@@ -1,6 +1,7 @@
 package ac.grim.grimac.utils.latency;
 
 import ac.grim.grimac.checks.Check;
+import ac.grim.grimac.checks.type.abstracts.AbstractPositionCheck;
 import ac.grim.grimac.checks.type.interfaces.PositionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PositionUpdate;
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 // although the client will end the cooldown automatically. Can be applied to any item,
 // note that interactions still get sent to the server with the item but the client does not play the animation
 // nor attempt to predict results (i.e block placing).
-public class CompensatedCooldown extends Check implements PositionCheckI {
+public class CompensatedCooldown extends AbstractPositionCheck {
     private final ConcurrentHashMap<ItemType, CooldownData> itemCooldownMap = new ConcurrentHashMap<>();
 
     public CompensatedCooldown(GrimPlayer playerData) {

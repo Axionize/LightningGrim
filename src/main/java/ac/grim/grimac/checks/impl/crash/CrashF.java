@@ -2,6 +2,7 @@ package ac.grim.grimac.checks.impl.crash;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
+import ac.grim.grimac.checks.type.abstracts.AbstractPrePredictionCheck;
 import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
@@ -9,7 +10,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClickWindow;
 
 @CheckData(name = "CrashF")
-public class CrashF extends Check implements PacketCheckI {
+public class CrashF extends AbstractPrePredictionCheck {
 
     public CrashF(GrimPlayer playerData) {
         super(playerData);

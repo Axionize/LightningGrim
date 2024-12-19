@@ -79,6 +79,7 @@ public class CheckManager {
 
     public CheckManager(GrimPlayer player) {
         this.player = player;
+        // TODO "maskify" packet checks
         // Packet Checks
         Map<Class<? extends PacketCheckI>, PacketCheckI> packetCheckMap = new HashMap<>();
         addCheck(PacketOrderProcessor.class, player.packetOrderProcessor, packetCheckMap);

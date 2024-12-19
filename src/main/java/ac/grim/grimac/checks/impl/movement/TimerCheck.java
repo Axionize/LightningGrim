@@ -1,5 +1,6 @@
 package ac.grim.grimac.checks.impl.movement;
 
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
@@ -113,5 +114,10 @@ public class TimerCheck extends Check implements PacketCheckI {
     public void onReload(ConfigManager config) {
         clockDrift = (long) (config.getDoubleElse(getConfigName() + ".drift", 120.0) * 1e6);
         limitAbuseOverPing = (long) (config.getDoubleElse(getConfigName() + ".ping-abuse-limit-threshold", 1000) * 1e6);
+    }
+
+    @Override
+    public int getCheckMask() {
+        return CheckType.PRE_PREDICTION.getMask();
     }
 }
