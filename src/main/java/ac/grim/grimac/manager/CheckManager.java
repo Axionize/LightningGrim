@@ -76,6 +76,7 @@ public class CheckManager {
     // Lookup map for getting specific checks
     public Map<Class<? extends AbstractCheck>, AbstractCheck> loadedChecks = new HashMap<>();
     public Map<Class<? extends AbstractCheck>, AbstractCheck> unloadedProxies = new HashMap<>();
+    public Map<Class<? extends AbstractCheck>, UnloadedBehavior> unloadedBehaviors = new HashMap<>();
 
     public CheckManager(GrimPlayer player) {
         this.player = player;
@@ -277,6 +278,9 @@ public class CheckManager {
             } else {
                 checkMap.put(checkClass, checkInstance);
             }
+            // Do re really need to put unloaded behaviours for in a map for *all* checks?
+            // What about core ones or even ones that we know will have default behaviour?
+            unloadedBehaviors.put(checkClass, checkInstance.getUnloadedBehavior());
         }
     }
 
@@ -657,7 +661,7 @@ public class CheckManager {
      */
     private <T extends AbstractCheck> T createUnloadedProxy(Class<T> checkClass) {
         // Get the unloaded behavior from a cached instance or use default
-        UnloadedBehavior behavior = DefaultUnloadedBehavior.INSTANCE;
+        UnloadedBehavior behavior = unloadedBehaviors.getOrDefault(checkClass, DefaultUnloadedBehavior.INSTANCE);
 
         return (T) Proxy.newProxyInstance(
                 checkClass.getClassLoader(),
