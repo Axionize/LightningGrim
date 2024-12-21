@@ -7,7 +7,7 @@ public interface BlockBreakCheckI extends PostPredictionCheckI {
     default void onBlockBreak(final BlockBreak blockBreak) {}
 
     @Override
-    default int getCheckMask() {
+    default int getMask() {
         return CheckType.BLOCK_BREAK.getMask();
     }
 }

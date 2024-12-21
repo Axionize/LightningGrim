@@ -1,7 +1,6 @@
 package ac.grim.grimac.utils.latency;
 
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockPlace;
 import ac.grim.grimac.utils.inventory.EquipmentType;
@@ -34,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 
 // Updated to support modern 1.17 protocol
-public class CompensatedInventory extends Check implements PacketCheckI {
+public class CompensatedInventory extends AbstractPacketCheck {
     // "Temporarily" public for debugging
     public Inventory inventory;
     // "Temporarily" public for debugging

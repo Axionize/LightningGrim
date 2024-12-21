@@ -1,15 +1,14 @@
 package ac.grim.grimac.checks.impl.badpackets;
 
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 
 @CheckData(name = "BadPacketsK", description = "Sent spectate packets while not in spectator mode")
-public class BadPacketsK extends Check implements PacketCheckI {
+public class BadPacketsK extends AbstractPacketCheck {
     public BadPacketsK(GrimPlayer player) {
         super(player);
     }

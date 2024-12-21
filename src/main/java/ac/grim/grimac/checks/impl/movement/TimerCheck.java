@@ -2,16 +2,15 @@ package ac.grim.grimac.checks.impl.movement;
 
 import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.api.config.ConfigManager;
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
+import ac.grim.grimac.checks.type.abstracts.AbstractPrePredictionCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 
 @CheckData(name = "Timer", configName = "TimerA", setback = 10)
-public class TimerCheck extends Check implements PacketCheckI {
+public class TimerCheck extends AbstractPrePredictionCheck {
     long timerBalanceRealTime = 0;
 
     // Default value is real time minus max keep-alive time
@@ -117,7 +116,7 @@ public class TimerCheck extends Check implements PacketCheckI {
     }
 
     @Override
-    public int getCheckMask() {
+    public int getMask() {
         return CheckType.PRE_PREDICTION.getMask();
     }
 }

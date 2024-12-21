@@ -363,14 +363,14 @@ public class CheckManager {
         // Single pass, add to all applicable lists
         for (AbstractCheck check : sorted) {
             // A check can be multiple types, so no else-if
-            if (check.isCheckType(CheckType.PACKET)) newPacketChecks.add((PacketCheckI) check);
-            if (check.isCheckType(CheckType.POSITION)) newPositionChecks.add((PositionCheckI) check);
-            if (check.isCheckType(CheckType.ROTATION)) newRotationChecks.add((RotationCheckI) check);
-            if (check.isCheckType(CheckType.VEHICLE)) newVehicleChecks.add((VehicleCheckI) check);
-            if (check.isCheckType(CheckType.PRE_PREDICTION)) newPrePredictionChecks.add((PacketCheckI) check);
-            if (check.isCheckType(CheckType.BLOCK_BREAK)) newBlockBreakChecks.add((BlockBreakCheckI) check);
-            if (check.isCheckType(CheckType.BLOCK_PLACE)) newBlockPlaceChecks.add((BlockPlaceCheck) check);
-            if (check.isCheckType(CheckType.POST_PREDICTION)) newPostPredictionChecks.add((PostPredictionCheckI) check);
+            if (check.is(CheckType.PACKET)) newPacketChecks.add((PacketCheckI) check);
+            if (check.is(CheckType.POSITION)) newPositionChecks.add((PositionCheckI) check);
+            if (check.is(CheckType.ROTATION)) newRotationChecks.add((RotationCheckI) check);
+            if (check.is(CheckType.VEHICLE)) newVehicleChecks.add((VehicleCheckI) check);
+            if (check.is(CheckType.PRE_PREDICTION)) newPrePredictionChecks.add((PacketCheckI) check);
+            if (check.is(CheckType.BLOCK_BREAK)) newBlockBreakChecks.add((BlockBreakCheckI) check);
+            if (check.is(CheckType.BLOCK_PLACE)) newBlockPlaceChecks.add((BlockPlaceCheck) check);
+            if (check.is(CheckType.POST_PREDICTION)) newPostPredictionChecks.add((PostPredictionCheckI) check);
 
         }
 

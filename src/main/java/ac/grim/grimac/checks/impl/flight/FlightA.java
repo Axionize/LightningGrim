@@ -1,13 +1,12 @@
 package ac.grim.grimac.checks.impl.flight;
 
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
 // This check catches 100% of cheaters.
-public class FlightA extends Check implements PacketCheckI {
+public class FlightA extends AbstractPacketCheck {
     public FlightA(GrimPlayer player) {
         super(player);
     }

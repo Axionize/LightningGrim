@@ -9,7 +9,7 @@ public interface RotationCheckI extends AbstractCheck {
     default void process(final RotationUpdate rotationUpdate) {
     }
     @Override
-    default int getCheckMask() {
+    default int getMask() {
         return CheckType.ROTATION.getMask();
     }
 }

@@ -53,7 +53,7 @@ public class NoSlowC extends Check implements PostPredictionCheckI, PacketCheckI
     }
 
     @Override
-    public int getCheckMask() {
+    public int getMask() {
         return CheckType.POST_PREDICTION.getMask();
     }
 }

@@ -9,7 +9,7 @@ public interface PostPredictionCheckI extends PacketCheckI {
     }
 
     @Override
-    default int getCheckMask() {
+    default int getMask() {
         return CheckType.POST_PREDICTION.getMask();
     }
 }

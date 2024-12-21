@@ -9,7 +9,7 @@ public interface PacketCheckI extends AbstractCheck {
     default void onPacketReceive(final PacketReceiveEvent event) {}
     default void onPacketSend(final PacketSendEvent event) {}
     @Override
-    default int getCheckMask() {
+    default int getMask() {
         return CheckType.PACKET.getMask();
     }
 }

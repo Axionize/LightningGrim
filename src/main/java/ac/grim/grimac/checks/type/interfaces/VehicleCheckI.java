@@ -9,7 +9,7 @@ public interface VehicleCheckI extends AbstractCheck {
     void process(final VehiclePositionUpdate vehicleUpdate);
 
     @Override
-    default int getCheckMask() {
+    default int getMask() {
         return CheckType.VEHICLE.getMask();
     }
 }

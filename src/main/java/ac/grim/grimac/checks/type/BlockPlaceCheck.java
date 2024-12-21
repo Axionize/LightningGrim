@@ -101,7 +101,7 @@ public class BlockPlaceCheck extends Check implements RotationCheckI, PostPredic
     }
 
     @Override
-    public int getCheckMask() {
+    public int getMask() {
         return CheckType.BLOCK_PLACE.getMask();
     }
 }

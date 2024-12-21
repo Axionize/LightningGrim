@@ -7,7 +7,6 @@ plugins {
     id("io.freefair.lombok") version "8.6"
     id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
     id("com.diffplug.spotless") version "6.25.0"
-    kotlin("jvm")
 }
 
 spotless {
@@ -29,6 +28,8 @@ spotless {
 group = "ac.grim.grimac"
 version = "2.3.69"
 description = "Libre simulation anticheat designed for 1.21 with 1.8-1.21 support, powered by PacketEvents 2.0."
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.targetCompatibility = JavaVersion.VERSION_1_8
 
 // Set to false for debug builds
 // You cannot live reload classes if the jar relocates dependencies
@@ -76,7 +77,6 @@ dependencies {
     compileOnly("com.viaversion:viaversion-api:5.1.1-SNAPSHOT")
     //
     compileOnly("io.netty:netty-all:4.1.85.Final")
-    implementation(kotlin("stdlib-jdk8"))
 }
 
 bukkit {
@@ -193,7 +193,4 @@ tasks.shadowJar {
         relocate("org.jetbrains", "ac.grim.grimac.shaded.jetbrains")
         relocate("com.zaxxer", "ac.grim.rgimac.shaded.zaxxer")
     }
-}
-kotlin {
-    jvmToolchain(8)
 }

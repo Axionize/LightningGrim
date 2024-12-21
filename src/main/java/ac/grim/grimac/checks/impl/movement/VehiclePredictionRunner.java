@@ -20,7 +20,7 @@ public class VehiclePredictionRunner extends Check implements VehicleCheckI {
     }
 
     @Override
-    public int getCheckMask() {
+    public int getMask() {
         return CheckType.VEHICLE.getMask();
     }
 }

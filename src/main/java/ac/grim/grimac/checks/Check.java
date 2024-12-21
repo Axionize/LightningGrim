@@ -50,7 +50,7 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
     }
 
     @Override
-    public int getCheckMask() {
+    public int getMask() {
         throw new UnsupportedOperationException("Override this method to show which check types your check is!");
     }
 

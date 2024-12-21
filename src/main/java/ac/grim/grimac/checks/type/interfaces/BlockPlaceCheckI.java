@@ -9,7 +9,7 @@ public interface BlockPlaceCheckI extends PostPredictionCheckI {
     void onPostFlyingBlockPlace(BlockPlace place);
 
     @Override
-    default int getCheckMask() {
+    default int getMask() {
         return CheckType.BLOCK_PLACE.getMask();
     }
 }

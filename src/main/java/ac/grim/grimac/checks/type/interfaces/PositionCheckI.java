@@ -9,7 +9,7 @@ public interface PositionCheckI extends AbstractCheck {
     default void onPositionUpdate(final PositionUpdate positionUpdate) {
     }
     @Override
-    default int getCheckMask() {
+    default int getMask() {
         return CheckType.POSITION.getMask();
     }
 }

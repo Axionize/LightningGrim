@@ -1,7 +1,6 @@
 package ac.grim.grimac.utils.team;
 
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
@@ -13,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public class TeamHandler extends Check implements PacketCheckI {
+public class TeamHandler extends AbstractPacketCheck {
 
     private final Map<String, EntityTeam> entityTeams = new Object2ObjectOpenHashMap<>();
     private final Map<String, EntityTeam> entityToTeam = new Object2ObjectOpenHashMap<>();

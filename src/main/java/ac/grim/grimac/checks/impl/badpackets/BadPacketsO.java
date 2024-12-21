@@ -1,8 +1,7 @@
 package ac.grim.grimac.checks.impl.badpackets;
 
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.data.Pair;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
@@ -15,7 +14,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 @CheckData(name = "BadPacketsO")
-public class BadPacketsO extends Check implements PacketCheckI {
+public class BadPacketsO extends AbstractPacketCheck {
     Queue<Pair<Long, Long>> keepaliveMap = new LinkedList<>();
 
     public BadPacketsO(GrimPlayer player) {

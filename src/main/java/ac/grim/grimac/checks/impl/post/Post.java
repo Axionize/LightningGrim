@@ -106,7 +106,7 @@ public class Post extends Check implements PacketCheckI, PostPredictionCheckI {
     }
 
     @Override
-    public int getCheckMask() {
+    public int getMask() {
         return CheckType.POST_PREDICTION.getMask();
     }
 }

@@ -84,7 +84,7 @@ public class InventoryD extends InventoryCheck {
     }
 
     @Override
-    public int getCheckMask() {
+    public int getMask() {
         return CheckType.POST_PREDICTION.getMask();
     }
 }
