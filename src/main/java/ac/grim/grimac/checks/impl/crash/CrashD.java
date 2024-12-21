@@ -1,9 +1,7 @@
 package ac.grim.grimac.checks.impl.crash;
 
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.abstracts.AbstractPrePredictionCheck;
-import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.inventory.inventory.MenuType;
 import com.github.retrooper.packetevents.PacketEvents;

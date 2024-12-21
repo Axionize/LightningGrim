@@ -1,10 +1,8 @@
 package ac.grim.grimac.checks.impl.badpackets;
 
 import ac.grim.grimac.GrimAPI;
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.abstracts.AbstractBlockBreakCheck;
-import ac.grim.grimac.checks.type.interfaces.BlockBreakCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockBreak;
 import ac.grim.grimac.utils.change.BlockModification;

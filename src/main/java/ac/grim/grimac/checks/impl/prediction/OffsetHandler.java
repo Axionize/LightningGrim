@@ -2,10 +2,8 @@ package ac.grim.grimac.checks.impl.prediction;
 
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.api.events.CompletePredictionEvent;
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.abstracts.AbstractPostPredictionCheck;
-import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import org.bukkit.Bukkit;

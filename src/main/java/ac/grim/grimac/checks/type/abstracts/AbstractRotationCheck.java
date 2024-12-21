@@ -1,6 +1,5 @@
 package ac.grim.grimac.checks.type.abstracts;
 
-import ac.grim.grimac.api.AbstractCheck;
 import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.type.interfaces.RotationCheckI;
