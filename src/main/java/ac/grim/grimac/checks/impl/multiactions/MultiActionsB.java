@@ -1,9 +1,12 @@
 package ac.grim.grimac.checks.impl.multiactions;
 
+import ac.grim.grimac.api.GrimUser;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
+import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
@@ -36,5 +39,12 @@ public class MultiActionsB extends AbstractPacketCheck {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean supportsPlayer(GrimUser player) {
+        // TODO make this a part of GrimUser interface
+        // TODO server version check when we bypass via for listening for packets
+        return ((GrimPlayer) player).getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_8);
     }
 }

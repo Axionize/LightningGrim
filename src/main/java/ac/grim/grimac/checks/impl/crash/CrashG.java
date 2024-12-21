@@ -1,5 +1,6 @@
 package ac.grim.grimac.checks.impl.crash;
 
+import ac.grim.grimac.api.GrimUser;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.abstracts.AbstractPrePredictionCheck;
 import ac.grim.grimac.player.GrimPlayer;
@@ -21,8 +22,6 @@ public class CrashG extends AbstractPrePredictionCheck {
 
     @Override
     public void onPacketReceive(final PacketReceiveEvent event) {
-        if (!isSupportedVersion()) return;
-
         if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
             WrapperPlayClientPlayerBlockPlacement place = new WrapperPlayClientPlayerBlockPlacement(event);
             if (place.getSequence() < 0) {
@@ -52,8 +51,10 @@ public class CrashG extends AbstractPrePredictionCheck {
 
     }
 
-    private boolean isSupportedVersion() {
-        return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19);
+    @Override
+    public boolean supportsPlayer(GrimUser player) {
+        // TODO make this a part of GrimUser interface
+        // TODO server version check when we bypass via for listening for packets
+        return ((GrimPlayer) player).getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19);
     }
-
 }

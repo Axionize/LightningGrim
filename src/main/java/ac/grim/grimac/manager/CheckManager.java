@@ -80,7 +80,6 @@ public class CheckManager {
 
     public CheckManager(GrimPlayer player) {
         this.player = player;
-        // TODO "maskify" packet checks
         // Packet Checks
         Map<Class<? extends PacketCheckI>, PacketCheckI> packetCheckMap = new HashMap<>();
         addCheck(PacketOrderProcessor.class, player.packetOrderProcessor, packetCheckMap);
@@ -272,10 +271,11 @@ public class CheckManager {
                 // Currently only checks for permission, in the future we will not add to map if:
                 // 1. Permission exempts player
                 // 2. Client version exempts player
-                if (!isExempt(checkClass)) {
+                if (!isExempt(checkInstance)) {
                     checkMap.put(checkClass, checkInstance);
                 }
             } else {
+                // Adds checks without name (currently these are core checks) to map, we really need to change this behavior
                 checkMap.put(checkClass, checkInstance);
             }
             // Do re really need to put unloaded behaviours for in a map for *all* checks?
@@ -287,7 +287,7 @@ public class CheckManager {
     /**
      * Performs a topological sort of checks based on their dependencies
      */
-    private List<AbstractCheck> topologicalSort(Collection<AbstractCheck> checks) {
+    private List<AbstractCheck> topologicalSort(Collection<AbstractCheck> checks) throws IllegalStateException {
         Map<Class<? extends AbstractCheck>, Set<Class<? extends AbstractCheck>>> graph = new HashMap<>();
         Map<Class<? extends AbstractCheck>, Integer> inDegree = new HashMap<>();
 
@@ -352,6 +352,7 @@ public class CheckManager {
      * Rebuilds all check arrays maintaining dependency order
      */
     private void rebuildCheckArrays() {
+        // TODO catch illegal state exception, and DO NOT change check arrays, instead throw error and tell player
         List<AbstractCheck> sorted = topologicalSort(loadedChecks.values());
 
         // Use lists first since we don't know final size
@@ -447,17 +448,12 @@ public class CheckManager {
     /**
      * Check if a player is exempt from a specific check type.
      */
-    private boolean isExempt(Class<? extends AbstractCheck> checkClass) {
+    private boolean isExempt(AbstractCheck checkInstance) {
         // Example logic for exemptions
-        String permission = "grim.exempt." + checkClass.getSimpleName().toLowerCase();
+        String permission = "grim.exempt." + checkInstance.getClass().getSimpleName().toLowerCase();
         return
 //                this.player.bukkitPlayer.hasPermission(permission) ||
-                !checkClassAppliesToPlayerVersion(checkClass);
-    }
-
-    private boolean checkClassAppliesToPlayerVersion(Class<? extends AbstractCheck> checkClass) {
-        // Example: Logic to determine if a check is compatible with the player's version
-        return true; // Replace with actual version check logic
+                !checkInstance.supportsPlayer(this.player);
     }
 
     @SuppressWarnings("unchecked")
