@@ -114,6 +114,12 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, I
         return configManager;
     }
 
+    @Override
+    public boolean hasStarted() {
+        // TODO implement this
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
     private ConfigManager configManager = null;
     private final ConfigManagerFileImpl configManagerFile = new ConfigManagerFileImpl();
     private boolean started = false;

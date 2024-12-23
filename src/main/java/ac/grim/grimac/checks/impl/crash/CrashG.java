@@ -1,8 +1,8 @@
 package ac.grim.grimac.checks.impl.crash;
 
-import ac.grim.grimac.checks.Check;
+import ac.grim.grimac.api.GrimUser;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPrePredictionCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
@@ -14,7 +14,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientUseItem;
 
 @CheckData(name = "CrashG", description = "Sent negative sequence id")
-public class CrashG extends Check implements PacketCheck {
+public class CrashG extends AbstractPrePredictionCheck {
 
     public CrashG(GrimPlayer player) {
         super(player);
@@ -22,8 +22,6 @@ public class CrashG extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(final PacketReceiveEvent event) {
-        if (!isSupportedVersion()) return;
-
         if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
             WrapperPlayClientPlayerBlockPlacement place = new WrapperPlayClientPlayerBlockPlacement(event);
             if (place.getSequence() < 0) {
@@ -53,8 +51,10 @@ public class CrashG extends Check implements PacketCheck {
 
     }
 
-    private boolean isSupportedVersion() {
-        return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19);
+    @Override
+    public boolean supportsPlayer(GrimUser player) {
+        // TODO make this a part of GrimUser interface
+        // TODO server version check when we bypass via for listening for packets
+        return ((GrimPlayer) player).getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19);
     }
-
 }

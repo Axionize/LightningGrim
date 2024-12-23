@@ -1,14 +1,13 @@
 package ac.grim.grimac.checks.impl.movement;
 
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
-public class SetbackBlocker extends Check implements PacketCheck {
+public class SetbackBlocker extends AbstractPacketCheck {
     public SetbackBlocker(GrimPlayer playerData) {
         super(playerData);
     }

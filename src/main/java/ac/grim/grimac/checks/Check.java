@@ -3,6 +3,8 @@ package ac.grim.grimac.checks;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.AbstractCheck;
 import ac.grim.grimac.api.config.ConfigManager;
+import ac.grim.grimac.api.dynamic.DefaultUnloadedBehavior;
+import ac.grim.grimac.api.dynamic.UnloadedBehavior;
 import ac.grim.grimac.api.events.FlagEvent;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.common.ConfigReloadObserver;
@@ -14,6 +16,8 @@ import io.github.retrooper.packetevents.util.folia.FoliaScheduler;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
+
+import java.lang.reflect.Method;
 
 // Class from https://github.com/Tecnio/AntiCheatBase/blob/master/src/main/java/me/tecnio/anticheat/check/Check.java
 @Getter
@@ -38,6 +42,16 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
     @Override
     public boolean isExperimental() {
         return experimental;
+    }
+
+    @Override
+    public UnloadedBehavior getUnloadedBehavior() {
+        return DefaultUnloadedBehavior.INSTANCE;
+    }
+
+    @Override
+    public int getMask() {
+        throw new UnsupportedOperationException("Override this method to show which check types your check is!");
     }
 
     public Check(final GrimPlayer player) {
@@ -112,7 +126,6 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
         violations = Math.max(0, violations - decay);
     }
 
-    @Override
     public void reload(ConfigManager configuration) {
         decay = configuration.getDoubleElse(configName + ".decay", decay);
         setbackVL = configuration.getDoubleElse(configName + ".setbackvl", setbackVL);
@@ -183,6 +196,28 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
         }
 
         return isFlying(packetType);
+    }
+
+    public interface UnloadedCheckHandler<T extends Check> {
+        // Return what the check's methods should return when unloaded
+        Object handleUnloadedCall(Method method, Object[] args);
+    }
+
+    // Default behavior - do nothing and return false/0/null
+    public static final UnloadedCheckHandler<?> DEFAULT_HANDLER = (method, args) -> {
+        // Return appropriate "no-op" value based on return type
+        Class<?> returnType = method.getReturnType();
+        if (returnType == boolean.class) return false;
+        if (returnType == int.class) return 0;
+        if (returnType == void.class) return null;
+        // etc...
+        return null;
+    };
+
+    private UnloadedCheckHandler<?> unloadedHandler = DEFAULT_HANDLER;
+
+    public void setUnloadedHandler(UnloadedCheckHandler<?> handler) {
+        this.unloadedHandler = handler;
     }
 
     @Override

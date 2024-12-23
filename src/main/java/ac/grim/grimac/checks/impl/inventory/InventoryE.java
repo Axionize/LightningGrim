@@ -1,5 +1,6 @@
 package ac.grim.grimac.checks.impl.inventory;
 
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.InventoryCheck;
 import ac.grim.grimac.player.GrimPlayer;
@@ -44,5 +45,10 @@ public class InventoryE extends InventoryCheck {
         if (event.getPacketType() == PacketType.Play.Server.HELD_ITEM_CHANGE) {
             this.lastTransaction = player.lastTransactionSent.get();
         }
+    }
+
+    @Override
+    public int getMask() {
+        return CheckType.PACKET.getMask();
     }
 }

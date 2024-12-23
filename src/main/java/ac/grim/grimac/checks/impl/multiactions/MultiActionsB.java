@@ -1,10 +1,12 @@
 package ac.grim.grimac.checks.impl.multiactions;
 
-import ac.grim.grimac.checks.Check;
+import ac.grim.grimac.api.GrimUser;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
+import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
@@ -14,7 +16,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import static ac.grim.grimac.events.packets.patch.ResyncWorldUtil.resyncPosition;
 
 @CheckData(name = "MultiActionsB", description = "Breaking blocks while using an item", experimental = true)
-public class MultiActionsB extends Check implements PacketCheck {
+public class MultiActionsB extends AbstractPacketCheck {
     public MultiActionsB(GrimPlayer player) {
         super(player);
     }
@@ -37,5 +39,12 @@ public class MultiActionsB extends Check implements PacketCheck {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean supportsPlayer(GrimUser player) {
+        // TODO make this a part of GrimUser interface
+        // TODO server version check when we bypass via for listening for packets
+        return ((GrimPlayer) player).getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_8);
     }
 }

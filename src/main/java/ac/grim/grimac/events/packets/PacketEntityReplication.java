@@ -1,8 +1,7 @@
 package ac.grim.grimac.events.packets;
 
 import ac.grim.grimac.api.config.ConfigManager;
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import ac.grim.grimac.utils.data.TrackerData;
@@ -29,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class PacketEntityReplication extends Check implements PacketCheck {
+public class PacketEntityReplication extends AbstractPacketCheck {
 
     private boolean hasSentPreWavePacket = true;
 

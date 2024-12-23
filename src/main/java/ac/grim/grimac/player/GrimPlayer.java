@@ -537,7 +537,8 @@ public class GrimPlayer implements GrimUser {
         this.noModifyPacketPermission = bukkitPlayer.hasPermission("grim.nomodifypacket");
         this.noSetbackPermission = bukkitPlayer.hasPermission("grim.nosetback");
         FoliaScheduler.getAsyncScheduler().runNow(GrimAPI.INSTANCE.getPlugin(), t -> {
-            for (AbstractCheck check : checkManager.allChecks.values()) {
+            // todo, do we care about updating perms on unloaded checks?
+            for (AbstractCheck check : checkManager.loadedChecks.values()) {
                 if (check instanceof Check) {
                     ((Check) check).updateExempted();
                 }
@@ -764,9 +765,10 @@ public class GrimPlayer implements GrimUser {
         return trigHandler.isVanillaMath();
     }
 
+    // TODO rename to getLoadedChecks() ?
     @Override
     public Collection<? extends AbstractCheck> getChecks() {
-        return checkManager.allChecks.values();
+        return checkManager.loadedChecks.values();
     }
 
     public void runNettyTaskInMs(Runnable runnable, int ms) {
@@ -789,7 +791,8 @@ public class GrimPlayer implements GrimUser {
         cancelDuplicatePacket = config.getBooleanElse("cancel-duplicate-packet", true);
         exemptElytra = config.getBooleanElse("exempt-elytra", false);
         // reload all checks
-        for (AbstractCheck value : checkManager.allChecks.values()) value.reload(config);
+        // TODO, reload unloaded checks?
+        for (AbstractCheck check : checkManager.loadedChecks.values()) check.reload();
         // reload punishment manager
         punishmentManager.reload(config);
     }

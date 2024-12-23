@@ -4,7 +4,7 @@ import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.impl.movement.EntityControl;
 import ac.grim.grimac.checks.impl.prediction.Phase;
-import ac.grim.grimac.checks.type.PositionCheck;
+import ac.grim.grimac.checks.type.interfaces.PositionCheckI;
 import ac.grim.grimac.manager.SetbackTeleportUtil;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.movementtick.MovementTickerHorse;
@@ -40,7 +40,7 @@ import com.github.retrooper.packetevents.protocol.world.states.defaulttags.Block
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 import org.bukkit.util.Vector;
 
-public class MovementCheckRunner extends Check implements PositionCheck {
+public class MovementCheckRunner extends Check implements PositionCheckI {
     // Averaged over 500 predictions (Defaults set slightly above my 3600x results)
     public static double predictionNanos = 0.3 * 1e6;
     // Averaged over 20000 predictions

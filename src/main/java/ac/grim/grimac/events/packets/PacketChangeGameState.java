@@ -1,15 +1,14 @@
 package ac.grim.grimac.events.packets;
 
 import ac.grim.grimac.GrimAPI;
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerChangeGameState;
 
-public class PacketChangeGameState extends Check implements PacketCheck {
+public class PacketChangeGameState extends AbstractPacketCheck {
     public PacketChangeGameState(GrimPlayer playerData) {
         super(playerData);
     }

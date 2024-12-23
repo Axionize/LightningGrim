@@ -1,15 +1,14 @@
 package ac.grim.grimac.checks.impl.badpackets;
 
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientHeldItemChange;
 
 @CheckData(name = "BadPacketsY", description = "Sent out of bounds slot id")
-public class BadPacketsY extends Check implements PacketCheck {
+public class BadPacketsY extends AbstractPacketCheck {
     public BadPacketsY(GrimPlayer player) {
         super(player);
     }

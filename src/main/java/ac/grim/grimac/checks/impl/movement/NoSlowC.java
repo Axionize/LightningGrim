@@ -1,9 +1,10 @@
 package ac.grim.grimac.checks.impl.movement;
 
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.interfaces.PacketCheckI;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
@@ -13,7 +14,7 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
 
 @CheckData(name = "NoSlowC", description = "Sprinting while sneaking", setback = 5, experimental = true)
-public class NoSlowC extends Check implements PostPredictionCheck, PacketCheck {
+public class NoSlowC extends Check implements PostPredictionCheckI, PacketCheckI {
     public NoSlowC(GrimPlayer player) {
         super(player);
     }
@@ -49,5 +50,10 @@ public class NoSlowC extends Check implements PostPredictionCheck, PacketCheck {
                 if (flagWithSetback()) alert("");
             } else reward();
         }
+    }
+
+    @Override
+    public int getMask() {
+        return CheckType.POST_PREDICTION.getMask();
     }
 }

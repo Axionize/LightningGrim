@@ -1,9 +1,8 @@
 package ac.grim.grimac.checks.impl.badpackets;
 
 import ac.grim.grimac.GrimAPI;
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.BlockBreakCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractBlockBreakCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockBreak;
 import ac.grim.grimac.utils.change.BlockModification;
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @CheckData(name = "BadPacketsX")
-public class BadPacketsX extends Check implements BlockBreakCheck {
+public class BadPacketsX extends AbstractBlockBreakCheck {
     public BadPacketsX(GrimPlayer player) {
         super(player);
     }

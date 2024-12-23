@@ -1,8 +1,7 @@
 package ac.grim.grimac.checks.impl.badpackets;
 
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -14,7 +13,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
 import java.util.Locale;
 
 @CheckData(name = "BadPacketsL", description = "Sent impossible dig packet")
-public class BadPacketsL extends Check implements PacketCheck {
+public class BadPacketsL extends AbstractPacketCheck {
 
     public BadPacketsL(GrimPlayer player) {
         super(player);

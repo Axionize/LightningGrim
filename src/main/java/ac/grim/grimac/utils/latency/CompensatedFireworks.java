@@ -1,14 +1,13 @@
 package ac.grim.grimac.utils.latency;
 
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPostPredictionCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class CompensatedFireworks extends Check implements PostPredictionCheck {
+public class CompensatedFireworks extends AbstractPostPredictionCheck {
 
     // As this is sync to one player, this does not have to be concurrent
     private final Set<Integer> activeFireworks = new HashSet<>();

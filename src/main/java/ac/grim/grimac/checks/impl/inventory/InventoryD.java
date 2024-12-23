@@ -1,5 +1,6 @@
 package ac.grim.grimac.checks.impl.inventory;
 
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.InventoryCheck;
 import ac.grim.grimac.player.GrimPlayer;
@@ -80,5 +81,10 @@ public class InventoryD extends InventoryCheck {
         }
 
         return null;
+    }
+
+    @Override
+    public int getMask() {
+        return CheckType.POST_PREDICTION.getMask();
     }
 }

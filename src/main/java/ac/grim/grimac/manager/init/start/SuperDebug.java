@@ -1,8 +1,7 @@
 package ac.grim.grimac.manager.init.start;
 
 import ac.grim.grimac.GrimAPI;
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPostPredictionCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.UncertaintyHandler;
 import ac.grim.grimac.predictionengine.predictions.PredictionEngine;
@@ -19,7 +18,7 @@ import org.bukkit.util.Vector;
 
 import java.util.*;
 
-public final class SuperDebug extends Check implements PostPredictionCheck {
+public final class SuperDebug extends AbstractPostPredictionCheck {
     private static final StringBuilder[] flags = new StringBuilder[256]; //  17 MB of logs in memory
 
     Object2IntMap<StringBuilder> continuedDebug = new Object2IntOpenHashMap<>();

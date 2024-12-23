@@ -1,15 +1,14 @@
 package ac.grim.grimac.checks.impl.multiactions;
 
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 
 @CheckData(name = "MultiActionsC", description = "Clicked in inventory while performing other actions", experimental = true)
-public class MultiActionsC extends Check implements PacketCheck {
+public class MultiActionsC extends AbstractPacketCheck {
     public MultiActionsC(GrimPlayer player) {
         super(player);
     }

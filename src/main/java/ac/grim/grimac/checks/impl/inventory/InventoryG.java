@@ -1,5 +1,6 @@
 package ac.grim.grimac.checks.impl.inventory;
 
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.InventoryCheck;
 import ac.grim.grimac.player.GrimPlayer;
@@ -36,5 +37,10 @@ public class InventoryG extends InventoryCheck {
                 reward();
             }
         }
+    }
+
+    @Override
+    public int getMask() {
+        return CheckType.PACKET.getMask();
     }
 }

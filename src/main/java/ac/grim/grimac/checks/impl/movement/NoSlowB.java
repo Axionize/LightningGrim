@@ -1,14 +1,13 @@
 package ac.grim.grimac.checks.impl.movement;
 
-import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.abstracts.AbstractPacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
 @CheckData(name = "NoSlowB", description = "Sprinting with too low hunger", setback = 5)
-public class NoSlowB extends Check implements PacketCheck {
+public class NoSlowB extends AbstractPacketCheck {
 
     public NoSlowB(GrimPlayer player) {
         super(player);

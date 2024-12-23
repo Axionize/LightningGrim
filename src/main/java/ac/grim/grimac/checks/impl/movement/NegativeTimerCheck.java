@@ -1,14 +1,15 @@
 package ac.grim.grimac.checks.impl.movement;
 
+import ac.grim.grimac.api.CheckType;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.interfaces.PostPredictionCheckI;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 
 @CheckData(name = "NegativeTimer", configName = "NegativeTimer", setback = -1, experimental = true)
-public class NegativeTimerCheck extends TimerCheck implements PostPredictionCheck {
+public class NegativeTimerCheck extends TimerCheck implements PostPredictionCheckI {
 
     public NegativeTimerCheck(GrimPlayer player) {
         super(player);
@@ -38,5 +39,10 @@ public class NegativeTimerCheck extends TimerCheck implements PostPredictionChec
     @Override
     public void onReload(ConfigManager config) {
         clockDrift = (long) (config.getDoubleElse(getConfigName() + ".drift", 1200.0) * 1e6);
+    }
+
+    @Override
+    public int getMask() {
+        return CheckType.POST_PREDICTION.getMask();
     }
 }
