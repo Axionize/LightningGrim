@@ -18,14 +18,18 @@ package ac.grim.grimac.checks.impl.combat;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
+import ac.grim.grimac.checks.debug.HitboxDebugHandler;
 import ac.grim.grimac.checks.type.PacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
+import ac.grim.grimac.utils.collisions.datatypes.NoCollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.BlockHitData;
 import ac.grim.grimac.utils.data.EntityHitData;
 import ac.grim.grimac.utils.data.HitData;
 import ac.grim.grimac.utils.data.Pair;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
+import ac.grim.grimac.utils.data.packetentity.TypedPacketEntity;
 import ac.grim.grimac.utils.nmsutil.BlockRayTrace;
 import ac.grim.grimac.utils.data.packetentity.dragon.PacketEntityEnderDragonPart;
 import ac.grim.grimac.utils.nmsutil.ReachUtils;
@@ -36,6 +40,7 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
+import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.util.Vector3i;
@@ -46,12 +51,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 // You may not copy the check unless you are licensed under GPL
 @CheckData(name = "Reach", setback = 10)
@@ -235,8 +236,7 @@ public class Reach extends Check implements PacketCheck {
         // +3 would be 3 + 3 = 6, which is the pre-1.20.5 behaviour, preventing "Missed Hitbox"
         final double distance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE) + 3;
         double[] possibleEyeHeights = player.getPossibleEyeHeights();
-//        possibleEyeHeights = new double[]{possibleEyeHeights[0]};
-//        double realMinDistance = 0;
+
         for (Vector lookVec : possibleLookDirs) {
             for (double eye : possibleEyeHeights) {
                 Vector eyePos = new Vector(from.getX(), from.getY() + eye, from.getZ());
@@ -251,12 +251,76 @@ public class Reach extends Check implements PacketCheck {
 
                 if (intercept != null) {
                     minDistance = Math.min(eyePos.distance(intercept), minDistance);
-//                    if (eye == possibleEyeHeights[0]) {
-//                        realMinDistance = minDistance;
-//                    }
                 }
             }
         }
+
+        List<Pair<Vector, Double>> lookVecsAndEyeHeights = new ArrayList<>();
+        for (Vector lookVec : possibleLookDirs) {
+            for (double eyeHeight : player.getPossibleEyeHeights()) {
+                lookVecsAndEyeHeights.add(new Pair<>(lookVec, eyeHeight));
+            }
+        }
+
+        Map<Integer, CollisionBox> hitboxes = new HashMap<>();
+        for (Int2ObjectMap.Entry<PacketEntity> entry : player.compensatedEntities.entityMap.int2ObjectEntrySet()) {
+            PacketEntity entity = entry.getValue();
+            if (!entity.canHit()) continue;
+
+            CollisionBox box;
+
+            if (entity.equals(reachEntity)) {
+                // Target entity gets expanded hitbox
+                box = entity.getPossibleCollisionBoxes();
+                SimpleCollisionBox sBox = (SimpleCollisionBox) box;
+                sBox.expand(player.checkManager.getPacketCheck(Reach.class).reachThreshold);
+
+                // Add movement threshold uncertainty for 1.9+ or non-position updates
+                if (!player.packetStateData.didLastLastMovementIncludePosition
+                        || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
+                    sBox.expand(player.getMovementThreshold());
+                }
+            } else {
+                // Non-target entities
+                box = entity.getMinimumPossibleCollisionBoxes();
+                if (box instanceof NoCollisionBox) {
+                    hitboxes.put(entry.getIntKey(), NoCollisionBox.INSTANCE);
+                    continue;
+                } else if (box instanceof SimpleCollisionBox) {
+                    SimpleCollisionBox sBox = (SimpleCollisionBox) box;
+                    // Shrink non-target entities by movement threshold when applicable
+                    if (!player.packetStateData.didLastLastMovementIncludePosition
+                            || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
+                        sBox.expand(-player.getMovementThreshold());
+                    }
+                }
+            }
+
+            // Add 1.8 and below extra hitbox size
+            if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)
+                    && box instanceof SimpleCollisionBox) {
+                ((SimpleCollisionBox) box).expand(0.1f);
+            }
+
+            hitboxes.put(entry.getIntKey(), box);
+
+
+//            Pair<Vector, BlockFace> intercept = ReachUtils.calculateIntercept(box, trace.getOrigin(), trace.getPointAtDistance(Math.sqrt(closestDistanceSquared)));
+//
+//            if (intercept.first() != null) {
+//                double distSquared = intercept.first().distanceSquared(startingVec);
+//                if (distSquared < closestDistanceSquared) {
+//                    closestDistanceSquared = distSquared;
+//                    closestHitVec = intercept.first();
+//                    closestEntity = entity;
+//                }
+//            }
+        }
+
+        player.checkManager.getCheck(HitboxDebugHandler.class).sendHitboxData(hitboxes,
+                Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
+                lookVecsAndEyeHeights,
+                new Vector(from.getX(), from.getY(), from.getZ()));
 
         HitData foundHitData = null;
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)

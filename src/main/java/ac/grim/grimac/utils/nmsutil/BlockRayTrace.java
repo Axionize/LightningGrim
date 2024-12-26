@@ -314,8 +314,8 @@ public class BlockRayTrace {
     @Nullable
     public static HitData getNearestHitResult(GrimPlayer player, PacketEntity targetEntity, Vector eyePos, Vector lookVec, double currentDistance, boolean skipBlockCheck, boolean skipReachCheck) {
 
-        double maxAttackDistance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_BLOCK_INTERACTION_RANGE);
-        double maxBlockDistance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_ENTITY_INTERACTION_RANGE);
+        double maxAttackDistance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
+        double maxBlockDistance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
 
         Vector3d startingPos = new Vector3d(eyePos.getX(), eyePos.getY(), eyePos.getZ());
         Vector startingVec = new Vector(startingPos.getX(), startingPos.getY(), startingPos.getZ());
@@ -363,7 +363,8 @@ public class BlockRayTrace {
                     if (!player.packetStateData.didLastLastMovementIncludePosition || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9))
                         box.expand(-player.getMovementThreshold());
                     if (ReachUtils.isVecInside(box, eyePos)) {
-                        continue;
+//                        continue;
+                        return new EntityHitData(targetEntity, eyePos);
                     }
                 }
                 if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)) {

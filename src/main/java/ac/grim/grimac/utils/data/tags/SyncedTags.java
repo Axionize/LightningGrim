@@ -54,7 +54,7 @@ public final class SyncedTags {
     }
 
     @SafeVarargs
-    private <T> void trackTags(ResourceLocation location, Function<Integer, T> remapper, SyncedTag.Builder<T>... syncedTags) {
+    private final <T> void trackTags(ResourceLocation location, Function<Integer, T> remapper, SyncedTag.Builder<T>... syncedTags) {
         final Map<ResourceLocation, SyncedTag<?>> tags = new HashMap<>(syncedTags.length);
         for (SyncedTag.Builder<T> syncedTag : syncedTags) {
             syncedTag.remapper(remapper);
