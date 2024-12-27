@@ -387,7 +387,7 @@ public enum HitboxData {
         } else { // ViaVersion just replaces this with... nothing
             return NoCollisionBox.INSTANCE;
         }
-    }, StateTypes.GLOW_LICHEN, StateTypes.SCULK_CATALYST),
+    }, StateTypes.GLOW_LICHEN, StateTypes.SCULK_VEIN),
 
     SPORE_BLOSSOM((player, item, version, data, x, y, z) -> {
         if (version.isNewerThan(ClientVersion.V_1_16_4)) {
