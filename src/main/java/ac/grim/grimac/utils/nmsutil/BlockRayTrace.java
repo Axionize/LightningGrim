@@ -363,7 +363,7 @@ public class BlockRayTrace {
                     if (!player.packetStateData.didLastLastMovementIncludePosition || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9))
                         box.expand(-player.getMovementThreshold());
                     if (ReachUtils.isVecInside(box, eyePos)) {
-//                        continue;
+                        // exempt if in hitbox of any entity; will fix by replicating mojang iteration order later
                         return new EntityHitData(targetEntity, eyePos);
                     }
                 }
