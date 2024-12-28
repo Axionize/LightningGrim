@@ -19,14 +19,32 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+/**
+ * Handles debug visualization of hitboxes and reach calculations for GrimAC.
+ * Sends debug data to clients through plugin messages that can be visualized by compatible clients.
+ */
 public class HitboxDebugHandler extends AbstractDebugHandler {
+
+    /**
+     * Set of players currently listening to hitbox debug data
+     */
     private final Set<Player> listeners = new CopyOnWriteArraySet<>(new HashSet<>());
 
+    /**
+     * Creates a new HitboxDebugHandler for the specified player
+     *
+     * @param grimPlayer The GrimAC player instance to debug
+     */
     public HitboxDebugHandler(GrimPlayer grimPlayer) {
         super(grimPlayer);
     }
 
-
+    /**
+     * Toggles whether a player receives hitbox debug visualization data.
+     * If the player is already listening, they will be removed. If not, they will be added.
+     *
+     * @param player The player to toggle debug visualization for
+     */
     @Override
     public void toggleListener(Player player) {
         if (!listeners.remove(player)) listeners.add(player);
@@ -37,22 +55,58 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
         throw new UnsupportedOperationException();
     }
 
-
     /**
-     * Sends debug visualization data for reach calculations
+     * Sends debug visualization data for reach calculations to all listening players.
+     * The data includes hitboxes, target entities, look vectors, and eye heights used in reach calculations.
+     *
      * @param hitboxes Map of entity IDs to their collision boxes
-     * @param targetEntities Set of target entity IDs
-     * @param lookVecsAndEyeHeights List of pairs containing look vector and its corresponding eye height
-     * @param basePos Base position before eye heights
-//     * @param maxDistance Maximum trace distance
+     * @param targetEntities Set of entity IDs that are considered targets
+     * @param lookVecsAndEyeHeights List of pairs containing look vectors and their corresponding eye heights
+     * @param basePos Base position before eye height adjustments
+     * @param isPrediction Whether these hitboxes are from a prediction calculation
+     *
+     * Packet Format (Version 0):
+     * - Byte: Version (0)
+     * - Byte: Global flags
+     *   - Bit 0: isPrediction
+     *   - Bits 1-7: Reserved
+     * - Vector3d: Base position (3 doubles)
+     * - VarInt: Number of ray traces
+     * - For each ray trace:
+     *   - Double: Eye height delta
+     *   - Vector3d: Look vector (3 doubles)
+     * - VarInt: Number of hitboxes
+     * - For each hitbox:
+     *   - VarInt: Entity ID
+     *   - Byte: Flags
+     *     - Bit 0: Is target entity
+     *     - Bit 1: Is no collision
+     *     - Bits 2-7: Reserved
+     *   - If not NoCollisionBox:
+     *     - Double: minX
+     *     - Double: minY
+     *     - Double: minZ
+     *     - Double: maxX
+     *     - Double: maxY
+     *     - Double: maxZ
      */
     public void sendHitboxData(Map<Integer, CollisionBox> hitboxes, Set<Integer> targetEntities,
-                               List<Pair<Vector, Double>> lookVecsAndEyeHeights, Vector basePos
-                               ) {
+                               List<Pair<Vector, Double>> lookVecsAndEyeHeights, Vector basePos,
+                               boolean isPrediction) {
         if (listeners.isEmpty()) return;
 
         ByteBuf buffer = Unpooled.buffer();
         try {
+            // Version Header
+            buffer.writeByte(0);
+
+            // Global Flags Header
+            // Pack boolean flags into a single byte
+            byte global_flags = 0;
+            global_flags |= (isPrediction ? 1 : 0);     // Bit 0: are the hitboxes from a prediction?
+            // Bits 2-7 reserved for future use
+            buffer.writeByte(global_flags);
+
             // Write base position
             writeVector(buffer, basePos);
 
@@ -131,29 +185,4 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
         buffer.writeDouble(vector.getY());
         buffer.writeDouble(vector.getZ());
     }
-
-/**
- * Packet Format:
- *
- * Vector3d: Base position (3 doubles)
- * VarInt: Number of ray traces
- * For each ray trace:
- *   Double: Eye height delta
- *   Vector3d: Look vector (3 doubles)
- *
- * VarInt: Number of hitboxes
- * For each hitbox:
- *   VarInt: Entity ID
- *   Byte: Flags
- *     - Bit 0: Is target entity
- *     - Bit 1: Is no collision
- *     - Bits 2-7: Reserved
- *   If not NoCollisionBox:
- *     - Double: minX
- *     - Double: minY
- *     - Double: minZ
- *     - Double: maxX
- *     - Double: maxY
- *     - Double: maxZ
- */
 }

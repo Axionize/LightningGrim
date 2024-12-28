@@ -317,7 +317,8 @@ public class Reach extends Check implements PacketCheck {
         player.checkManager.getCheck(HitboxDebugHandler.class).sendHitboxData(hitboxes,
                 Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
                 lookVecsAndEyeHeights,
-                new Vector(from.getX(), from.getY(), from.getZ()));
+                new Vector(from.getX(), from.getY(), from.getZ()),
+                isPrediction);
 
         HitData foundHitData = null;
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)
