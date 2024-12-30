@@ -65,11 +65,12 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
      * @param basePos Base position before eye height adjustments
      * @param isPrediction Whether these hitboxes are from a prediction calculation
      *
-     * Packet Format (Version 0):
+     * Packet Format (Version 1):
      * - Byte: Version (0)
      * - Byte: Global flags
      *   - Bit 0: isPrediction
      *   - Bits 1-7: Reserved
+     * - Double: Player reach/interact distance
      * - Vector3d: Base position (3 doubles)
      * - VarInt: Number of ray traces
      * - For each ray trace:
@@ -92,13 +93,13 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
      */
     public void sendHitboxData(Map<Integer, CollisionBox> hitboxes, Set<Integer> targetEntities,
                                List<Pair<Vector, Double>> lookVecsAndEyeHeights, Vector basePos,
-                               boolean isPrediction) {
+                               boolean isPrediction, double reachDistance) {
         if (listeners.isEmpty()) return;
 
         ByteBuf buffer = Unpooled.buffer();
         try {
             // Version Header
-            buffer.writeByte(0);
+            buffer.writeByte(1);
 
             // Global Flags Header
             // Pack boolean flags into a single byte
@@ -106,6 +107,9 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
             global_flags |= (isPrediction ? 1 : 0);     // Bit 0: are the hitboxes from a prediction?
             // Bits 2-7 reserved for future use
             buffer.writeByte(global_flags);
+
+            // Write reach distance
+            buffer.writeDouble(reachDistance);
 
             // Write base position
             writeVector(buffer, basePos);

@@ -323,7 +323,7 @@ public class Reach extends Check implements PacketCheck {
                 Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
                 lookVecsAndEyeHeights,
                 new Vector(from.getX(), from.getY(), from.getZ()),
-                isPrediction);
+                isPrediction, player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
 
         HitData foundHitData = null;
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)
