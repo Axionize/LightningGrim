@@ -156,15 +156,15 @@ public class Reach extends Check implements PacketCheck {
         if (player.compensatedEntities.getSelf().inVehicle()) return false;
 
         // Filter out what we assume to be cheats
-        if (cancelBuffer != 0) {
-            return checkReach(reachEntity, new Vector3d(player.x, player.y, player.z), true) != null; // If they flagged
-        } else {
+//        if (cancelBuffer != 0) {
+//            return checkReach(reachEntity, new Vector3d(player.x, player.y, player.z), true) != null; // If they flagged
+//        } else {
             SimpleCollisionBox targetBox = reachEntity.getPossibleCollisionBoxes();
             if (reachEntity.getType() == EntityTypes.END_CRYSTAL) {
                 targetBox = new SimpleCollisionBox(reachEntity.trackedServerPosition.getPos().subtract(1, 0, 1), reachEntity.trackedServerPosition.getPos().add(1, 2, 1));
             }
             return ReachUtils.getMinReachToBox(player, targetBox) > player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
-        }
+//        }
     }
 
     private void tickBetterReachCheckWithAngle(boolean isFlying) {
@@ -337,7 +337,9 @@ public class Reach extends Check implements PacketCheck {
                 // - This filters out when the ray trace hits the target entity without having to do an expensive .equals()
                 // - You may have to adjust the epsilon if you increase the reach threshold, especially by a lot
                 // ...but there is literally no reason you would ever want to increase it, only decrease, so that doesn't matter.
-                if (hitResult != null && (minDistance * minDistance) - hitResult.first() > ENTITY_HITBOX_REACH_EPSILON) { // returned double is distanceSq
+                if (hitResult != null
+//                        && (minDistance * minDistance) - hitResult.first() > ENTITY_HITBOX_REACH_EPSILON
+                ) { // returned double is distanceSq
                     minDistance = Double.MIN_VALUE;
                     foundHitData = hitResult.second();
                 }
@@ -351,7 +353,13 @@ public class Reach extends Check implements PacketCheck {
                 if (foundHitData instanceof BlockHitData) {
                     return new Pair<>(HitboxBlock.class, "Hit block=" + ((BlockHitData) foundHitData).getState().getType().getName() + " ");
                 } else { // entity hit data
-                    return new Pair<>(HitboxEntity.class, "Hit entity=" + ((EntityHitData) foundHitData).getEntity().getType().getName() + " ");
+                    EntityHitData entityHitData = (EntityHitData) foundHitData;
+                    // hit target entity
+                    if (player.compensatedEntities.getPacketEntityID(entityHitData.getEntity()) == player.compensatedEntities.getPacketEntityID(reachEntity)) {
+                       return null;
+                    } else { // hit non-target entity
+                        return new Pair<>(HitboxEntity.class, "Hit entity=" + ((EntityHitData) foundHitData).getEntity().getType().getName() + " ");
+                    }
                 }
             } else if (minDistance == Double.MAX_VALUE) {
                 cancelBuffer = 1;
