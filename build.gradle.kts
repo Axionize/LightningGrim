@@ -6,23 +6,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.freefair.lombok") version "8.6"
     id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
-    id("com.diffplug.spotless") version "6.25.0"
-}
-
-spotless {
-    java {
-        endWithNewline()
-        indentWithSpaces(4)
-        removeUnusedImports()
-        trimTrailingWhitespace()
-        targetExclude("build/generated/**/*")
-    }
-
-    kotlinGradle {
-        endWithNewline()
-        indentWithSpaces(4)
-        trimTrailingWhitespace()
-    }
 }
 
 group = "ac.grim.grimac"
@@ -163,7 +146,6 @@ bukkit {
 
 tasks.build {
     dependsOn(tasks.shadowJar)
-    dependsOn(tasks.spotlessApply)
 }
 
 tasks.withType<JavaCompile> {
