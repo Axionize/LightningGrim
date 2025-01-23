@@ -21,6 +21,9 @@ upload-log: "%prefix% &fDebug caricato su: %url%"
 upload-log-start: "%prefix% &fCaricamento del registro... attendere prego"
 upload-log-not-found: "%prefix% &cImpossibile trovare quel registro"
 upload-log-upload-failure: "%prefix% &cQualcosa è andato storto durante il caricamento di questo registro, vedi la console per ulteriori informazioni"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 alerts-format: "%prefix% &f%player% &bfallito &f%check_name% &f(x&c%vl%&f) &7%verbose%"
 alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bfallito &f%check_name% &f(x&c%vl%&f) &7%verbose%"

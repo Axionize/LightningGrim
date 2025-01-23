@@ -311,9 +311,15 @@ public class CheckManagerListener extends PacketListenerAbstract {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getConnectionState() != ConnectionState.PLAY) return;
         GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
         if (player == null) return;
+
+        if (event.getConnectionState() != ConnectionState.PLAY) {
+            // Allow checks to listen to configuration packets
+            if (event.getConnectionState() != ConnectionState.CONFIGURATION) return;
+            player.checkManager.onPacketReceive(event);
+            return;
+        }
 
         // Determine if teleport BEFORE we call the pre-prediction vehicle
         if (event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE) {
@@ -334,7 +340,6 @@ public class CheckManagerListener extends PacketListenerAbstract {
             // Teleports can't be stupidity packets
             player.packetStateData.lastPacketWasOnePointSeventeenDuplicate = !player.packetStateData.lastPacketWasTeleport && isMojangStupid(player, flying);
         }
-
 
         if (player.compensatedEntities.getSelf().inVehicle() ? event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE : WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
             // Update knockback and explosions immediately, before anything can setback

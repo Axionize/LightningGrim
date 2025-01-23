@@ -233,7 +233,7 @@ public class GrimPlayer implements GrimUser {
     public void onPacketCancel() {
         if (spamThreshold != -1 && cancelledPackets.incrementAndGet() > spamThreshold) {
             LogUtil.info("Disconnecting " + getName() + " for spamming invalid packets, packets cancelled within a second " + cancelledPackets);
-            disconnect(Component.translatable("disconnect.closed"));
+            disconnect(GrimAPI.INSTANCE.getConfigManager().getDisconnectClosed());
             cancelledPackets.set(0);
         }
     }
@@ -469,7 +469,7 @@ public class GrimPlayer implements GrimUser {
     }
 
     public void timedOut() {
-        disconnect(Component.translatable("disconnect.timeout"));
+        disconnect(GrimAPI.INSTANCE.getConfigManager().getDisconnectTimeout());
     }
 
     public void disconnect(Component reason) {

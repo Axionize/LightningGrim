@@ -20,6 +20,9 @@ upload-log: "%prefix% &fDebug wurde hochgeladen zu: %url%"
 upload-log-start: "%prefix% &fHochladen des Logs... Bitte warten"
 upload-log-not-found: "%prefix% &cLog konnte nicht gefunden werden"
 upload-log-upload-failure: "%prefix% &cFehler beim Hochladen des Logs, siehe Konsole für weitere Informationen"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Gültige Platzhalter:
 # %prefix%

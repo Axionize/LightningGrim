@@ -21,6 +21,9 @@ upload-log: "%prefix% &fОтладка была загружена на: %url%"
 upload-log-start: "%prefix% &fЗагрузка журнала... пожалуйста, подождите"
 upload-log-not-found: "%prefix% &cНевозможно найти этот журнал"
 upload-log-upload-failure: "%prefix% &cЧто-то пошло не так при загрузке этого журнала, смотрите консоль для получения дополнительной информации"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Допустимые заполнители:
 # %prefix%

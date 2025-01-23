@@ -18,6 +18,9 @@ upload-log: "%prefix% &fデバッグをアップロードしました: %url%"
 upload-log-start: "%prefix% &fログをアップロード中... しばらくお待ちください"
 upload-log-not-found: "%prefix% &cそのログが見つかりません"
 upload-log-upload-failure: "%prefix% &cログのアップロード中に問題が発生しました。詳細はコンソールを確認してください"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # 使用可能なプレースホルダー:
 # %prefix%

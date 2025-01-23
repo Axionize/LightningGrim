@@ -21,6 +21,9 @@ upload-log: "%prefix% &fLe fichier de débogage a été téléversé vers : %url
 upload-log-start: "%prefix% &fTéléversement du journal... Veuillez patienter"
 upload-log-not-found: "%prefix% &cUImpossible de trouver le journal de débogage"
 upload-log-upload-failure: "%prefix% &cUne erreur est survenue lors du téléversement de ce journal, regardez la console pour plus d'information"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Placeholders valides :
 # %prefix%

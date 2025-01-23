@@ -21,6 +21,9 @@ upload-log: "%prefix% &fDebug şu adrese yüklendi: %url%"
 upload-log-start: "%prefix% &fLog yükleniyor... lütfen bekleyin."
 upload-log-not-found: "%prefix% &cLog bulunamadı."
 upload-log-upload-failure: "%prefix% &cLog yüklenirken bir problem oluştu, lütfen konsolu kontrol edin."
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Geçerli placeholderlar:
 # %prefix%

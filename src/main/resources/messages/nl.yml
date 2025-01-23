@@ -21,6 +21,9 @@ upload-log: "%prefix% &fDebug geüpload naar: %url%"
 upload-log-start: "%prefix% &fLog wordt geüpload... even geduld"
 upload-log-not-found: "%prefix% &cKan dat log niet vinden"
 upload-log-upload-failure: "%prefix% &cEr is iets misgegaan tijdens het uploaden van dit log, zie console voor meer informatie"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Geldige plaatsaanduidingen:
 # %prefix%

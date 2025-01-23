@@ -21,6 +21,9 @@ upload-log: "%prefix% &fUploaded debug to: %url%"
 upload-log-start: "%prefix% &fUploading log... please wait"
 upload-log-not-found: "%prefix% &cUnable to find that log"
 upload-log-upload-failure: "%prefix% &cSomething went wrong while uploading this log, see console for more info"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Valid placeholders:
 # %prefix%

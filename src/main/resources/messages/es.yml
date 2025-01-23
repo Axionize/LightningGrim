@@ -21,6 +21,9 @@ upload-log: "%prefix% &fSubido el registro de depuración a: %url%"
 upload-log-start: "%prefix% &fSubiendo registros... por favor espera"
 upload-log-not-found: "%prefix% &cNo se pudo encontrar ese registro"
 upload-log-upload-failure: "%prefix% &cAlgo salio mal mientras subíamos ese registro, mira la consola para mas información"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Placeholders validos:
 # %prefix%

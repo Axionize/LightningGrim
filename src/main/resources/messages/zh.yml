@@ -21,6 +21,9 @@ upload-log: "%prefix% &f已经将日志文件上传至: %url%"
 upload-log-start: "%prefix% &f上传中...请等待"
 upload-log-not-found: "%prefix% &c找不到该日志."
 upload-log-upload-failure: "%prefix% &c上载此日志时出错, 有关详细信息, 请参阅控制台"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # 变量:
 # %prefix% - 前缀

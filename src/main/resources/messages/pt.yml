@@ -21,6 +21,9 @@ upload-log: "%prefix% &fRegistro enviado para: %url%"
 upload-log-start: "%prefix% &fEnviando o registro. Aguarde."
 upload-log-not-found: "%prefix% &cNúmero do registro não encontrado."
 upload-log-upload-failure: "%prefix% &cAlgo deu errado ao enviar o registro, veja o terminal para mais informações."
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Placeholders válidos:
 # %prefix%
