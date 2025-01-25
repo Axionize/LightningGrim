@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@CheckData(name = "LineOfSightPlace")
+@CheckData(name = "LineOfSightPlace", experimental = true)
 public class LineOfSightPlace extends BlockPlaceCheck {
 
     private double flagBuffer = 0; // If the player flags once, force them to play legit, or we will cancel the tick before.
