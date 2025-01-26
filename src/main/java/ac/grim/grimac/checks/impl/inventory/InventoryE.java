@@ -31,7 +31,9 @@ public class InventoryE extends InventoryCheck {
                         player.onPacketCancel();
                         player.getInventory().needResend = true;
                     }
-                    closeInventory();
+                    if (shouldSetback()) {
+                        closeInventory();
+                    }
                 }
             } else {
                 reward();

@@ -29,7 +29,7 @@ public class InventoryG extends InventoryCheck {
             }
 
             if (player.hasInventoryOpen) {
-                if (flagAndAlert()) {
+                if (flagAndAlert() && shouldSetback()) {
                     closeInventory();
                 }
             } else {

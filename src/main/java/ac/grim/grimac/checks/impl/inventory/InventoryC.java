@@ -19,7 +19,9 @@ public class InventoryC extends InventoryCheck {
                 if (shouldModifyPackets()) {
                     place.resync();
                 }
-                closeInventory();
+                if (shouldSetback()) {
+                    closeInventory();
+                }
             }
         } else {
             reward();

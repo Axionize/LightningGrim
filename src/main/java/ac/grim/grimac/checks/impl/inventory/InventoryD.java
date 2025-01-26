@@ -52,7 +52,8 @@ public class InventoryD extends InventoryCheck {
             }
 
             if (flag()) {
-                closeInventory();
+                if (isNoSetbackPermission())
+                    closeInventory();
 
                 StringJoiner joiner = new StringJoiner(" ");
 
