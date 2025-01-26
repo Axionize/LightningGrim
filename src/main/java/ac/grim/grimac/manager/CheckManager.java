@@ -192,7 +192,7 @@ public class CheckManager {
                 .put(ElytraH.class, new ElytraH(player))
                 .put(ElytraI.class, new ElytraI(player))
                 .put(SetbackTeleportUtil.class, new SetbackTeleportUtil(player)) // Avoid teleporting to new position, update safe pos last
-                .put(CompensatedFireworks.class, player.compensatedFireworks)
+                .put(CompensatedFireworks.class, player.fireworks)
                 .put(SneakingEstimator.class, new SneakingEstimator(player))
                 .put(LastInstanceManager.class, player.lastInstanceManager)
                 .build();

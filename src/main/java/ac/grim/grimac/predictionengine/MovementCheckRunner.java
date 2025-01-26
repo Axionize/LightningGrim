@@ -59,7 +59,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         // Keep re-teleporting until they load the chunk!
         if (player.getSetbackTeleportUtil().insideUnloadedChunk()) {
             // The player doesn't control this vehicle, we don't care
-            final boolean invalidVehicle = player.compensatedEntities.getSelf().inVehicle() &&
+            final boolean invalidVehicle = player.inVehicle() &&
                     (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9) ||
                             player.getClientVersion().isOlderThan(ClientVersion.V_1_9));
 
@@ -86,7 +86,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         // Reset velocities
         // Teleporting a vehicle does not reset its velocity
-        if (!player.compensatedEntities.getSelf().inVehicle()) {
+        if (!player.inVehicle()) {
             if (update.getTeleportData() == null || !update.getTeleportData().isRelativeX()) {
                 player.clientVelocity.setX(0);
             }
@@ -178,7 +178,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             player.clientVelocity.multiply(0.98); // This is vanilla, do not touch
         }
 
-        final PacketEntity riding = player.compensatedEntities.getSelf().getRiding();
+        final PacketEntity riding = player.compensatedEntities.self.getRiding();
         if (player.vehicleData.wasVehicleSwitch || player.vehicleData.lastDummy) {
             update.setTeleport(true);
 
@@ -237,8 +237,8 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         // Don't check sleeping players
         if (player.isInBed) return;
 
-        if (!player.compensatedEntities.getSelf().inVehicle()) {
-            player.speed = player.compensatedEntities.getSelf().getAttributeValue(Attributes.MOVEMENT_SPEED);
+        if (!player.inVehicle()) {
+            player.speed = player.compensatedEntities.self.getAttributeValue(Attributes.MOVEMENT_SPEED);
             if (player.hasGravity != player.playerEntityHasGravity) {
                 player.pointThreeEstimator.updatePlayerGravity();
             }
@@ -253,7 +253,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         // Again, the server knows to ignore this
         //
         // Therefore, we just assume that the client and server are modded or whatever.
-        if (player.compensatedEntities.getSelf().inVehicle()) {
+        if (player.inVehicle()) {
             // Players are unable to take explosions in vehicles
             player.checkManager.getExplosionHandler().forceExempt();
 
@@ -315,7 +315,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         // Stop stuff like clients using elytra in a vehicle...
         // Interesting, on a pig or strider, a player can climb a ladder
-        if (player.compensatedEntities.getSelf().inVehicle()) {
+        if (player.inVehicle()) {
             // Reset fall distance when riding
             //player.fallDistance = 0;
             player.isFlying = false;
@@ -334,7 +334,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         //
         // Sprinting status itself does not desync, only the attribute as mojang forgot that the server
         // can change the attribute
-        if (!player.compensatedEntities.getSelf().inVehicle()) {
+        if (!player.inVehicle()) {
             player.speed += player.compensatedEntities.hasSprintingAttributeEnabled ? player.speed * 0.3f : 0;
         }
 
@@ -406,7 +406,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         if (player.isFlying != player.wasFlying) player.uncertaintyHandler.lastFlyingStatusChange.reset();
 
-        if (!player.compensatedEntities.getSelf().inVehicle() && (Math.abs(player.x) == 2.9999999E7D || Math.abs(player.z) == 2.9999999E7D)) {
+        if (!player.inVehicle() && (Math.abs(player.x) == 2.9999999E7D || Math.abs(player.z) == 2.9999999E7D)) {
             player.uncertaintyHandler.lastThirtyMillionHardBorder.reset();
         }
 
@@ -416,7 +416,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         boolean couldBeStuckSpeed = Collisions.checkStuckSpeed(player, player.getMovementThreshold());
         boolean couldLeaveStuckSpeed = player.isPointThree() && Collisions.checkStuckSpeed(player, -player.getMovementThreshold());
-        player.uncertaintyHandler.claimingLeftStuckSpeed = !player.compensatedEntities.getSelf().inVehicle() && player.stuckSpeedMultiplier.getX() < 1 && !couldLeaveStuckSpeed;
+        player.uncertaintyHandler.claimingLeftStuckSpeed = !player.inVehicle() && player.stuckSpeedMultiplier.getX() < 1 && !couldLeaveStuckSpeed;
 
         if (couldBeStuckSpeed) {
             player.uncertaintyHandler.lastStuckSpeedMultiplier.reset();
@@ -427,7 +427,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         boolean wasChecked = false;
 
         // Exempt if the player is dead or is riding a dead entity
-        if (player.compensatedEntities.getSelf().isDead || (riding != null && riding.isDead)) {
+        if (player.compensatedEntities.self.isDead || (riding != null && riding.isDead)) {
             // Dead players can't cheat, if you find a way how they could, open an issue
             player.predictedVelocity = new VectorData(new Vector(), VectorData.VectorType.Dead);
             player.clientVelocity = new Vector();
@@ -444,15 +444,15 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         } else if (riding == null) {
             wasChecked = true;
 
-            player.depthStriderLevel = (float) player.compensatedEntities.getSelf().getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY);
-            player.sneakingSpeedMultiplier = (float) player.compensatedEntities.getSelf().getAttributeValue(Attributes.SNEAKING_SPEED);
+            player.depthStriderLevel = (float) player.compensatedEntities.self.getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY);
+            player.sneakingSpeedMultiplier = (float) player.compensatedEntities.self.getAttributeValue(Attributes.SNEAKING_SPEED);
 
             // This is wrong and the engine was not designed around stuff like this
             player.verticalCollision = false;
 
             // Riptiding while on the ground moves the hitbox upwards before any movement code runs
             // It's a pain to support and this is my best attempt
-            if (player.lastOnGround && player.packetStateData.tryingToRiptide && !player.compensatedEntities.getSelf().inVehicle()) {
+            if (player.lastOnGround && player.packetStateData.tryingToRiptide && !player.inVehicle()) {
                 Vector pushingMovement = Collisions.collide(player, 0, 1.1999999F, 0);
                 player.verticalCollision = pushingMovement.getY() != 1.1999999F;
                 double currentY = player.clientVelocity.getY();
@@ -568,7 +568,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         player.packetStateData.tryingToRiptide = false;
 
         // Don't overwrite packet values
-        if (player.compensatedEntities.getSelf().inVehicle()) {
+        if (player.inVehicle()) {
             player.isFlying = oldFlying;
             player.isGliding = oldGliding;
             player.isSprinting = oldSprinting;
@@ -579,15 +579,15 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         if (player.predictedVelocity.isTrident())
             player.riptideSpinAttackTicks = 20;
 
-        player.uncertaintyHandler.lastMovementWasZeroPointZeroThree = !player.compensatedEntities.getSelf().inVehicle() && player.skippedTickInActualMovement;
-        player.uncertaintyHandler.lastMovementWasUnknown003VectorReset = !player.compensatedEntities.getSelf().inVehicle() && player.couldSkipTick && player.predictedVelocity.isKnockback();
+        player.uncertaintyHandler.lastMovementWasZeroPointZeroThree = !player.inVehicle() && player.skippedTickInActualMovement;
+        player.uncertaintyHandler.lastMovementWasUnknown003VectorReset = !player.inVehicle() && player.couldSkipTick && player.predictedVelocity.isKnockback();
         player.couldSkipTick = false;
 
         // Logic is if the player was directly 0.03 and the player could control vertical movement in 0.03
         // Or some state of the player changed, so we can no longer predict this vertical movement
         // Or gravity made the player enter 0.03 movement
         // TODO: This needs to be secured better.  isWasAlwaysCertain() seems like a bit of a hack.
-        player.uncertaintyHandler.wasZeroPointThreeVertically = !player.compensatedEntities.getSelf().inVehicle() &&
+        player.uncertaintyHandler.wasZeroPointThreeVertically = !player.inVehicle() &&
                 ((player.uncertaintyHandler.lastMovementWasZeroPointZeroThree && player.pointThreeEstimator.controlsVerticalMovement())
                         || !player.pointThreeEstimator.canPredictNextVerticalMovement() || !player.pointThreeEstimator.isWasAlwaysCertain());
 
@@ -603,8 +603,8 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         player.vehicleData.camelDashCooldown = Math.max(0, player.vehicleData.camelDashCooldown - 1);
 
-        player.minPlayerAttackSlow = 0;
-        player.maxPlayerAttackSlow = 0;
+        player.minAttackSlow = 0;
+        player.maxAttackSlow = 0;
 
         player.likelyKB = null;
         player.firstBreadKB = null;

@@ -212,7 +212,7 @@ public class PredictionEngine {
     }
 
     private Pair<Vector, Vector> doSeekingWallCollisions(GrimPlayer player, Vector primaryPushMovement, Vector originalClientVel, VectorData clientVelAfterInput) {
-        boolean vehicleKB = player.compensatedEntities.getSelf().inVehicle() && clientVelAfterInput.isKnockback() && clientVelAfterInput.vector.getY() == 0;
+        boolean vehicleKB = player.inVehicle() && clientVelAfterInput.isKnockback() && clientVelAfterInput.vector.getY() == 0;
         // Extra collision epsilon required for vehicles to be accurate
         double xAdditional = Math.signum(primaryPushMovement.getX()) * SimpleCollisionBox.COLLISION_EPSILON;
         // The server likes sending y=0 kb "lifting" the player off the ground.
@@ -354,7 +354,7 @@ public class PredictionEngine {
     }
 
     private void addNonEffectiveAI(GrimPlayer player, Set<VectorData> data) {
-        if (!player.compensatedEntities.getSelf().inVehicle()) return;
+        if (!player.inVehicle()) return;
 
         for (VectorData vectorData : data) {
             vectorData.vector = vectorData.vector.clone().multiply(0.98);
@@ -362,9 +362,19 @@ public class PredictionEngine {
     }
 
     private void addAttackSlowToPossibilities(GrimPlayer player, Set<VectorData> velocities) {
-        for (int x = 1; x <= Math.min(player.maxPlayerAttackSlow, 5); x++) {
+        for (int x = 1; x <= Math.min(player.maxAttackSlow, 5); x++) {
             for (VectorData data : new HashSet<>(velocities)) {
-                velocities.add(data.returnNewModified(data.vector.clone().multiply(new Vector(0.6, 1, 0.6)), VectorData.VectorType.AttackSlow));
+                if (player.minAttackSlow > 0) {
+                    data.vector.setX(data.vector.getX() * 0.6);
+                    data.vector.setZ(data.vector.getZ() * 0.6);
+                    data.addVectorType(VectorData.VectorType.AttackSlow);
+                } else {
+                    velocities.add(data.returnNewModified(data.vector.clone().multiply(new Vector(0.6, 1, 0.6)), VectorData.VectorType.AttackSlow));
+                }
+            }
+
+            if (player.minAttackSlow > 0) {
+                player.minAttackSlow--;
             }
         }
     }
@@ -466,10 +476,10 @@ public class PredictionEngine {
             bScore -= 1;
 
         // If the player is on the ground but the vector leads the player off the ground
-        if ((player.compensatedEntities.getSelf().inVehicle() ? player.clientControlledVerticalCollision : player.onGround) && a.vector.getY() >= 0)
+        if ((player.inVehicle() ? player.clientControlledVerticalCollision : player.onGround) && a.vector.getY() >= 0)
             aScore += 4;
 
-        if ((player.compensatedEntities.getSelf().inVehicle() ? player.clientControlledVerticalCollision : player.onGround) && b.vector.getY() >= 0)
+        if ((player.inVehicle() ? player.clientControlledVerticalCollision : player.onGround) && b.vector.getY() >= 0)
             bScore += 4;
 
         if (aScore != bScore)
@@ -562,7 +572,7 @@ public class PredictionEngine {
         // We can't simulate the player's Y velocity, unknown number of ticks with a gravity change
         // Feel free to simulate all 104857600000000000000000000 possibilities!
         if (!player.pointThreeEstimator.canPredictNextVerticalMovement()) {
-            minVector.setY(minVector.getY() - player.compensatedEntities.getSelf().getAttributeValue(Attributes.GRAVITY));
+            minVector.setY(minVector.getY() - player.compensatedEntities.self.getAttributeValue(Attributes.GRAVITY));
         }
 
         // Hidden slime block bounces by missing idle tick and 0.03
@@ -781,7 +791,7 @@ public class PredictionEngine {
 
     public boolean canSwimHop(GrimPlayer player) {
         // Boats cannot swim hop, all other living entities should be able to.
-        if (player.compensatedEntities.getSelf().getRiding() != null && player.compensatedEntities.getSelf().getRiding().isBoat())
+        if (player.inVehicle() && player.compensatedEntities.self.getRiding().isBoat())
             return false;
 
         // Vanilla system ->
@@ -806,7 +816,7 @@ public class PredictionEngine {
         // Don't play with poses issues. just assume full bounding box
         // Except on vehicles which don't have poses, thankfully.
         //
-        SimpleCollisionBox oldBox = player.compensatedEntities.getSelf().inVehicle() ? GetBoundingBox.getCollisionBoxForPlayer(player, player.lastX, player.lastY, player.lastZ) :
+        SimpleCollisionBox oldBox = player.inVehicle() ? GetBoundingBox.getCollisionBoxForPlayer(player, player.lastX, player.lastY, player.lastZ) :
                 GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.lastX, player.lastY, player.lastZ, 0.6f, 1.8f);
 
         if (!player.compensatedWorld.containsLiquid(oldBox.expand(0.1, 0.1, 0.1))) return false;
@@ -818,7 +828,7 @@ public class PredictionEngine {
         double pointThreeToGround = Collisions.collide(player, 0, -0.03, 0).getY() + SimpleCollisionBox.COLLISION_EPSILON;
         player.boundingBox = oldBB;
 
-        SimpleCollisionBox newBox = player.compensatedEntities.getSelf().inVehicle() ? GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z) :
+        SimpleCollisionBox newBox = player.inVehicle() ? GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z) :
                 GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.x, player.y, player.z, 0.6f, 1.8f);
 
         return player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3) || !Collisions.isEmpty(player, newBox.expand(player.clientVelocity.getX(), -1 * pointThreeToGround, player.clientVelocity.getZ()).expand(0.5, 0.03, 0.5));

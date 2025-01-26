@@ -17,7 +17,7 @@ public class PositionBreakA extends Check implements BlockBreakCheck {
 
     @Override
     public void onBlockBreak(BlockBreak blockBreak) {
-        if (player.compensatedEntities.getSelf().inVehicle()
+        if (player.inVehicle()
                 || blockBreak.action == DiggingAction.CANCELLED_DIGGING
                 || blockBreak.block.getType() == StateTypes.REDSTONE_WIRE
         ) return;

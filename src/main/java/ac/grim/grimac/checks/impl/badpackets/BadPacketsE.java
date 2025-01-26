@@ -28,7 +28,7 @@ public class BadPacketsE extends Check implements PacketCheck {
         } else if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
             noReminderTicks++;
         } else if (event.getPacketType() == PacketType.Play.Client.STEER_VEHICLE
-                || (isViaPleaseStopUsingProtocolHacksOnYourServer && player.compensatedEntities.getSelf().inVehicle())) {
+                || (isViaPleaseStopUsingProtocolHacksOnYourServer && player.inVehicle())) {
             noReminderTicks = 0; // Exempt vehicles
         }
 

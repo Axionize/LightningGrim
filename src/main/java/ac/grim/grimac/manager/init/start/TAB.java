@@ -18,6 +18,6 @@ public class TAB implements Initable {
 
         LogUtil.warn("GrimAC has detected that you have installed TAB with ViaVersion.");
         LogUtil.warn("Please note that currently, TAB is incompatible as it sends illegal packets to players using versions newer than your server version.");
-        LogUtil.warn("You may be able to remedy this by setting `scoreboard` to false in the TAB config.");
+        LogUtil.warn("You may be able to remedy this by setting `compensate-for-packetevents-bug` to true in the TAB config.");
     }
 }

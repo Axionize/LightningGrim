@@ -19,6 +19,7 @@ import ac.grim.grimac.predictionengine.MovementCheckRunner;
 import ac.grim.grimac.predictionengine.PointThreeEstimator;
 import ac.grim.grimac.predictionengine.UncertaintyHandler;
 import ac.grim.grimac.utils.anticheat.LogUtil;
+import ac.grim.grimac.utils.anticheat.MessageUtil;
 import ac.grim.grimac.utils.change.PlayerBlockHistory;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.*;
@@ -91,7 +92,7 @@ import java.util.function.Predicate;
 public class GrimPlayer implements GrimUser {
     private static final @Nullable Consumer<@NotNull Player> resetActiveBukkitItem;
     private static final @Nullable Predicate<@NotNull Player> isUsingBukkitItem;
-    public UUID playerUUID;
+    public UUID uuid;
     public final User user;
     public int entityID;
     @Nullable
@@ -202,9 +203,9 @@ public class GrimPlayer implements GrimUser {
     public boolean skippedTickInActualMovement = false;
     // You cannot initialize everything here for some reason
     public LastInstanceManager lastInstanceManager;
-    public CompensatedFireworks compensatedFireworks;
-    public CompensatedWorld compensatedWorld;
-    public CompensatedEntities compensatedEntities;
+    public final CompensatedFireworks fireworks;
+    public final CompensatedWorld compensatedWorld;
+    public final CompensatedEntities compensatedEntities;
     public LatencyUtils latencyUtils;
     public PointThreeEstimator pointThreeEstimator;
     public TrigHandler trigHandler;
@@ -219,8 +220,8 @@ public class GrimPlayer implements GrimUser {
     public VelocityData likelyKB = null;
     public VelocityData firstBreadExplosion = null;
     public VelocityData likelyExplosions = null;
-    public int minPlayerAttackSlow = 0;
-    public int maxPlayerAttackSlow = 0;
+    public int minAttackSlow = 0;
+    public int maxAttackSlow = 0;
     public GameMode gamemode;
     public DimensionType dimensionType;
     public Vector3d bedPosition;
@@ -233,7 +234,7 @@ public class GrimPlayer implements GrimUser {
     public void onPacketCancel() {
         if (spamThreshold != -1 && cancelledPackets.incrementAndGet() > spamThreshold) {
             LogUtil.info("Disconnecting " + getName() + " for spamming invalid packets, packets cancelled within a second " + cancelledPackets);
-            disconnect(GrimAPI.INSTANCE.getConfigManager().getDisconnectClosed());
+            disconnect(MessageUtil.miniMessage(MessageUtil.replacePlaceholders(this, GrimAPI.INSTANCE.getConfigManager().getDisconnectClosed())));
             cancelledPackets.set(0);
         }
     }
@@ -250,11 +251,11 @@ public class GrimPlayer implements GrimUser {
 
     public GrimPlayer(User user) {
         this.user = user;
-        this.playerUUID = user.getUUID();
+        this.uuid = user.getUUID();
 
         boundingBox = GetBoundingBox.getBoundingBoxFromPosAndSizeRaw(x, y, z, 0.6f, 1.8f);
 
-        compensatedFireworks = new CompensatedFireworks(this); // Must be before checkmanager
+        fireworks = new CompensatedFireworks(this); // Must be before checkmanager
 
         lastInstanceManager = new LastInstanceManager(this);
         actionManager = new ActionManager(this);
@@ -276,11 +277,10 @@ public class GrimPlayer implements GrimUser {
         uncertaintyHandler.collidingEntities.add(0);
 
         if (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14)) {
-            final float scale = (float) compensatedEntities.getSelf().getAttributeValue(Attributes.SCALE);
+            final float scale = (float) compensatedEntities.self.getAttributeValue(Attributes.SCALE);
             possibleEyeHeights[2] = new double[]{0.4 * scale, 1.62 * scale, 1.27 * scale}; // Elytra, standing, sneaking (1.14)
             possibleEyeHeights[1] = new double[]{1.27 * scale, 1.62 * scale, 0.4 * scale}; // sneaking (1.14), standing, Elytra
             possibleEyeHeights[0] = new double[]{1.62 * scale, 1.27 * scale, 0.4 * scale}; // standing, sneaking (1.14), Elytra
-
         } else if (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) { // standing, sneaking Elytra
             possibleEyeHeights[2] = new double[]{0.4, 1.62, 1.54}; // Elytra, standing, sneaking (1.13)
             possibleEyeHeights[1] = new double[]{1.54, 1.62, 0.4}; // sneaking (1.9-1.13), standing, Elytra
@@ -404,7 +404,7 @@ public class GrimPlayer implements GrimUser {
     }
 
     public float getMaxUpStep() {
-        final PacketEntitySelf self = compensatedEntities.getSelf();
+        final PacketEntitySelf self = compensatedEntities.self;
         final PacketEntity riding = self.getRiding();
         if (riding == null) return (float) self.getAttributeValue(Attributes.STEP_HEIGHT);
 
@@ -469,7 +469,7 @@ public class GrimPlayer implements GrimUser {
     }
 
     public void timedOut() {
-        disconnect(GrimAPI.INSTANCE.getConfigManager().getDisconnectTimeout());
+        disconnect(MessageUtil.miniMessage(MessageUtil.replacePlaceholders(this, GrimAPI.INSTANCE.getConfigManager().getDisconnectTimeout())));
     }
 
     public void disconnect(Component reason) {
@@ -511,13 +511,13 @@ public class GrimPlayer implements GrimUser {
             GrimAPI.INSTANCE.getPlayerDataManager().remove(user);
         }
 
-        if (packetTracker == null && ViaVersionUtil.isAvailable() && playerUUID != null) {
-            UserConnection connection = Via.getManager().getConnectionManager().getConnectedClient(playerUUID);
+        if (packetTracker == null && ViaVersionUtil.isAvailable() && uuid != null) {
+            UserConnection connection = Via.getManager().getConnectionManager().getConnectedClient(uuid);
             packetTracker = connection != null ? connection.getPacketTracker() : null;
         }
 
-        if (playerUUID != null && this.bukkitPlayer == null) {
-            this.bukkitPlayer = Bukkit.getPlayer(playerUUID);
+        if (uuid != null && this.bukkitPlayer == null) {
+            this.bukkitPlayer = Bukkit.getPlayer(uuid);
             updatePermissions();
         }
     }
@@ -602,7 +602,7 @@ public class GrimPlayer implements GrimUser {
     }
 
     public boolean inVehicle() {
-        return compensatedEntities.getSelf().inVehicle();
+        return compensatedEntities.self.inVehicle();
     }
 
     public CompensatedInventory getInventory() {
@@ -659,10 +659,10 @@ public class GrimPlayer implements GrimUser {
     }
 
     public boolean exemptOnGround() {
-        return compensatedEntities.getSelf().inVehicle()
+        return inVehicle()
                 || Collections.max(uncertaintyHandler.pistonX) != 0 || Collections.max(uncertaintyHandler.pistonY) != 0
                 || Collections.max(uncertaintyHandler.pistonZ) != 0 || uncertaintyHandler.isStepMovement
-                || isFlying || compensatedEntities.getSelf().isDead || isInBed || lastInBed || uncertaintyHandler.lastFlyingStatusChange.hasOccurredSince(30)
+                || isFlying || compensatedEntities.self.isDead || isInBed || lastInBed || uncertaintyHandler.lastFlyingStatusChange.hasOccurredSince(30)
                 || uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3) || uncertaintyHandler.isOrWasNearGlitchyBlock;
     }
 
@@ -689,7 +689,7 @@ public class GrimPlayer implements GrimUser {
     }
 
     public int getRidingVehicleId() {
-        return compensatedEntities.getPacketEntityID(compensatedEntities.getSelf().getRiding());
+        return compensatedEntities.getPacketEntityID(compensatedEntities.self.getRiding());
     }
 
     public void handleDismountVehicle(PacketSendEvent event) {
@@ -698,7 +698,7 @@ public class GrimPlayer implements GrimUser {
 
         compensatedEntities.serverPlayerVehicle = null;
         event.getTasksAfterSend().add(() -> {
-            if (compensatedEntities.getSelf().getRiding() != null) {
+            if (inVehicle()) {
                 int ridingId = getRidingVehicleId();
                 TrackerData data = compensatedEntities.serverPositionsMap.get(ridingId);
                 if (data != null) {
@@ -748,7 +748,7 @@ public class GrimPlayer implements GrimUser {
     public boolean canUseGameMasterBlocks() {
         // This check was added in 1.11
         // 1.11+ players must be in creative and have a permission level at or above 2
-        return getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_10) || (gamemode == GameMode.CREATIVE && compensatedEntities.getSelf().getOpLevel() >= 2);
+        return getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_10) || (gamemode == GameMode.CREATIVE && compensatedEntities.self.getOpLevel() >= 2);
     }
 
     @Contract(pure = true)
@@ -843,6 +843,7 @@ public class GrimPlayer implements GrimUser {
     @Getter private boolean cancelDuplicatePacket = true;
     @Getter @Setter private boolean exemptElytra = false;
     @Getter private boolean mitigateAutoblock;
+    @Getter private boolean mitigateDesyncNoSlow;
 
     @Override
     public void reload(ConfigManager config) {
@@ -851,7 +852,8 @@ public class GrimPlayer implements GrimUser {
         maxTransactionTime = GrimMath.clamp(config.getIntElse("max-transaction-time", 60), 1, 180);
         ignoreDuplicatePacketRotation = config.getBooleanElse("ignore-duplicate-packet-rotation", false);
         cancelDuplicatePacket = config.getBooleanElse("cancel-duplicate-packet", true);
-        mitigateAutoblock = config.getBooleanElse("mitigate-autoblock", false);
+        mitigateAutoblock = config.getBooleanElse("mitigate-autoblock", true);
+        mitigateDesyncNoSlow = config.getBooleanElse("mitigate-desync-noslow", true);
         // reload all checks
         for (AbstractCheck value : checkManager.allChecks.values()) value.reload();
         // reload punishment manager

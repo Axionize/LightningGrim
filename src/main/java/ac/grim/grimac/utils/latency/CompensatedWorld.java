@@ -49,6 +49,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.util.Vector;
 
@@ -64,7 +65,9 @@ public class CompensatedWorld {
     public Set<PistonData> activePistons = new HashSet<>();
     public Set<ShulkerData> openShulkerBoxes = new HashSet<>();
     // 1.17 with datapacks, and 1.18, have negative world offset values
+    @Getter
     private int minHeight = 0;
+    @Getter
     private int maxHeight = 256;
 
     // When the player changes the blocks, they track what the server thinks the blocks are
@@ -139,10 +142,10 @@ public class CompensatedWorld {
 
     private void handleAck(Vector3i vector3i, int originalBlockId, Vector3d playerPosition) {
         // If we need to change the world block state
-        if (getWrappedBlockStateAt(vector3i).getGlobalId() != originalBlockId) {
+        if (getBlock(vector3i).getGlobalId() != originalBlockId) {
             player.blockHistory.add(
                     new BlockModification(
-                            player.compensatedWorld.getWrappedBlockStateAt(vector3i),
+                            getBlock(vector3i),
                             WrappedBlockState.getByGlobalId(originalBlockId),
                             vector3i,
                             GrimAPI.INSTANCE.getTickManager().currentTick,
@@ -212,7 +215,7 @@ public class CompensatedWorld {
 
     public boolean isNearHardEntity(SimpleCollisionBox playerBox) {
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-            if ((entity.isBoat() || entity.getType() == EntityTypes.SHULKER) && player.compensatedEntities.getSelf().getRiding() != entity) {
+            if ((entity.isBoat() || entity.getType() == EntityTypes.SHULKER) && player.compensatedEntities.self.getRiding() != entity) {
                 SimpleCollisionBox box = entity.getPossibleCollisionBoxes();
                 if (box.isIntersected(playerBox)) {
                     return true;
@@ -259,7 +262,7 @@ public class CompensatedWorld {
 
         if (isCurrentlyPredicting) {
             if (prediction == null) {
-                originalServerBlocks.put(asVector.getSerializedPosition(), new BlockPrediction(currentlyChangedBlocks, asVector, getWrappedBlockStateAt(asVector).getGlobalId(), new Vector3d(player.x, player.y, player.z))); // Remember server controlled block type
+                originalServerBlocks.put(asVector.getSerializedPosition(), new BlockPrediction(currentlyChangedBlocks, asVector, getBlock(asVector).getGlobalId(), new Vector3d(player.x, player.y, player.z))); // Remember server controlled block type
             } else {
                 prediction.setForBlockUpdate(currentlyChangedBlocks); // Block existing there was placed by client, mark block to have a new prediction
             }
@@ -303,28 +306,28 @@ public class CompensatedWorld {
     }
 
     public void tickOpenable(int blockX, int blockY, int blockZ) {
-        final WrappedBlockState data = player.compensatedWorld.getWrappedBlockStateAt(blockX, blockY, blockZ);
+        final WrappedBlockState data = getBlock(blockX, blockY, blockZ);
         final StateType type = data.getType();
         if (BlockTags.WOODEN_DOORS.contains(type) || (player.getClientVersion().isOlderThan(ClientVersion.V_1_8) && type == StateTypes.IRON_DOOR)) {
-            WrappedBlockState otherDoor = player.compensatedWorld.getWrappedBlockStateAt(blockX,
+            WrappedBlockState otherDoor = getBlock(blockX,
                     blockY + (data.getHalf() == Half.LOWER ? 1 : -1), blockZ);
 
             if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) {
                 if (BlockTags.DOORS.contains(otherDoor.getType())) {
                     otherDoor.setOpen(!otherDoor.isOpen());
-                    player.compensatedWorld.updateBlock(blockX, blockY + (data.getHalf() == Half.LOWER ? 1 : -1), blockZ, otherDoor.getGlobalId());
+                    updateBlock(blockX, blockY + (data.getHalf() == Half.LOWER ? 1 : -1), blockZ, otherDoor.getGlobalId());
                 }
                 data.setOpen(!data.isOpen());
-                player.compensatedWorld.updateBlock(blockX, blockY, blockZ, data.getGlobalId());
+                updateBlock(blockX, blockY, blockZ, data.getGlobalId());
             } else {
                 // 1.12 attempts to change the bottom half of the door first
                 if (data.getHalf() == Half.LOWER) {
                     data.setOpen(!data.isOpen());
-                    player.compensatedWorld.updateBlock(blockX, blockY, blockZ, data.getGlobalId());
+                    updateBlock(blockX, blockY, blockZ, data.getGlobalId());
                 } else if (BlockTags.DOORS.contains(otherDoor.getType()) && otherDoor.getHalf() == Half.LOWER) {
                     // Then tries setting the first bit of whatever is below it, disregarding it's type
                     otherDoor.setOpen(!otherDoor.isOpen());
-                    player.compensatedWorld.updateBlock(blockX, blockY - 1, blockZ, otherDoor.getGlobalId());
+                    updateBlock(blockX, blockY - 1, blockZ, otherDoor.getGlobalId());
                 }
             }
         } else if ((player.getClientVersion().isOlderThan(ClientVersion.V_1_8) || type != StateTypes.IRON_TRAPDOOR) // 1.7 can open iron trapdoors.
@@ -332,7 +335,7 @@ public class CompensatedWorld {
                     || BlockTags.FENCE_GATES.contains(type)) {
             // Take 12 most significant bytes -> the material ID.  Combine them with the new block magic data.
             data.setOpen(!data.isOpen());
-            player.compensatedWorld.updateBlock(blockX, blockY, blockZ, data.getGlobalId());
+            updateBlock(blockX, blockY, blockZ, data.getGlobalId());
         } else if (BlockTags.BUTTONS.contains(type)) {
             data.setPowered(true);
         }
@@ -375,7 +378,7 @@ public class CompensatedWorld {
 
             BlockFace direction;
             if (data.entity == null) {
-                WrappedBlockState state = player.compensatedWorld.getWrappedBlockStateAt(data.blockPos.getX(), data.blockPos.getY(), data.blockPos.getZ());
+                WrappedBlockState state = getBlock(data.blockPos.getX(), data.blockPos.getY(), data.blockPos.getZ());
                 direction = state.getFacing();
             } else {
                 direction = ((PacketEntityShulker) data.entity).facing.getOppositeFace();
@@ -423,18 +426,18 @@ public class CompensatedWorld {
         // Remove if a shulker is not in this block position anymore
         openShulkerBoxes.removeIf(box -> {
             if (box.blockPos != null) { // Block is no longer valid
-                return !Materials.isShulker(player.compensatedWorld.getWrappedBlockStateAt(box.blockPos).getType());
+                return !Materials.isShulker(getBlock(box.blockPos).getType());
             } else { // Entity is no longer valid
                 return !player.compensatedEntities.entityMap.containsValue(box.entity);
             }
         });
     }
 
-    public WrappedBlockState getWrappedBlockStateAt(Vector3i vector3i) {
-        return getWrappedBlockStateAt(vector3i.getX(), vector3i.getY(), vector3i.getZ());
+    public WrappedBlockState getBlock(Vector3i position) {
+        return getBlock(position.x, position.y, position.z);
     }
 
-    public WrappedBlockState getWrappedBlockStateAt(int x, int y, int z) {
+    public WrappedBlockState getBlock(int x, int y, int z) {
         if (noNegativeBlocks && y < 0) return airData;
 
         try {
@@ -457,15 +460,15 @@ public class CompensatedWorld {
     // Trapped chests give power but there's no packet to the client to actually apply this... ignore trapped chests
     // just like mojang did!
     public int getRawPowerAtState(BlockFace face, int x, int y, int z) {
-        WrappedBlockState state = getWrappedBlockStateAt(x, y, z);
+        WrappedBlockState block = getBlock(x, y, z);
 
-        if (state.getType() == StateTypes.REDSTONE_BLOCK) {
+        if (block.getType() == StateTypes.REDSTONE_BLOCK) {
             return 15;
-        } else if (state.getType() == StateTypes.DETECTOR_RAIL) { // Rails have directional requirement
-            return state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.REDSTONE_TORCH) {
-            return face != BlockFace.UP && state.isLit() ? 15 : 0;
-        } else if (state.getType() == StateTypes.REDSTONE_WIRE) {
+        } else if (block.getType() == StateTypes.DETECTOR_RAIL) { // Rails have directional requirement
+            return block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.REDSTONE_TORCH) {
+            return face != BlockFace.UP && block.isLit() ? 15 : 0;
+        } else if (block.getType() == StateTypes.REDSTONE_WIRE) {
             BlockFace needed = face.getOppositeFace();
 
             BlockFace badOne = needed.getCW();
@@ -478,25 +481,25 @@ public class CompensatedWorld {
                         isPowered = true;
                         break;
                     case NORTH:
-                        isPowered = state.getNorth() == North.TRUE;
+                        isPowered = block.getNorth() == North.TRUE;
                         if (isPowered && (badOne == BlockFace.NORTH || badTwo == BlockFace.NORTH)) {
                             return 0;
                         }
                         break;
                     case SOUTH:
-                        isPowered = state.getSouth() == South.TRUE;
+                        isPowered = block.getSouth() == South.TRUE;
                         if (isPowered && (badOne == BlockFace.SOUTH || badTwo == BlockFace.SOUTH)) {
                             return 0;
                         }
                         break;
                     case WEST:
-                        isPowered = state.getWest() == West.TRUE;
+                        isPowered = block.getWest() == West.TRUE;
                         if (isPowered && (badOne == BlockFace.WEST || badTwo == BlockFace.WEST)) {
                             return 0;
                         }
                         break;
                     case EAST:
-                        isPowered = state.getEast() == East.TRUE;
+                        isPowered = block.getEast() == East.TRUE;
                         if (isPowered && (badOne == BlockFace.EAST || badTwo == BlockFace.EAST)) {
                             return 0;
                         }
@@ -506,19 +509,19 @@ public class CompensatedWorld {
                 isPowered = true; // whatever, just go off the block's power to see if it connects
             }
 
-            return isPowered ? state.getPower() : 0;
-        } else if (state.getType() == StateTypes.REDSTONE_WALL_TORCH) {
-            return state.getFacing() != face && state.isLit() ? 15 : 0;
-        } else if (state.getType() == StateTypes.DAYLIGHT_DETECTOR) {
-            return state.getPower();
-        } else if (state.getType() == StateTypes.OBSERVER) {
-            return state.getFacing() == face && state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.REPEATER) {
-            return state.getFacing() == face && state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.LECTERN) {
-            return state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.TARGET) {
-            return state.getPower();
+            return isPowered ? block.getPower() : 0;
+        } else if (block.getType() == StateTypes.REDSTONE_WALL_TORCH) {
+            return block.getFacing() != face && block.isLit() ? 15 : 0;
+        } else if (block.getType() == StateTypes.DAYLIGHT_DETECTOR) {
+            return block.getPower();
+        } else if (block.getType() == StateTypes.OBSERVER) {
+            return block.getFacing() == face && block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.REPEATER) {
+            return block.getFacing() == face && block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.LECTERN) {
+            return block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.TARGET) {
+            return block.getPower();
         }
 
         return 0;
@@ -526,24 +529,24 @@ public class CompensatedWorld {
 
     // Redstone can power blocks indirectly by directly powering a block next to the block to power
     public int getDirectSignalAtState(BlockFace face, int x, int y, int z) {
-        WrappedBlockState state = getWrappedBlockStateAt(x, y, z);
+        WrappedBlockState block = getBlock(x, y, z);
 
-        if (state.getType() == StateTypes.DETECTOR_RAIL) { // Rails hard power block below itself
-            boolean isPowered = (boolean) state.getInternalData().getOrDefault(StateValue.POWERED, false);
+        if (block.getType() == StateTypes.DETECTOR_RAIL) { // Rails hard power block below itself
+            boolean isPowered = (boolean) block.getInternalData().getOrDefault(StateValue.POWERED, false);
             return face == BlockFace.UP && isPowered ? 15 : 0;
-        } else if (state.getType() == StateTypes.REDSTONE_TORCH) {
-            return face != BlockFace.UP && state.isLit() ? 15 : 0;
-        } else if (state.getType() == StateTypes.LEVER || BlockTags.BUTTONS.contains(state.getType())) {
-            return state.getFacing().getOppositeFace() == face && state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.REDSTONE_WALL_TORCH) {
-            return face == BlockFace.DOWN && state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.LECTERN) {
-            return face == BlockFace.UP && state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.OBSERVER) {
-            return state.getFacing() == face && state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.REPEATER) {
-            return state.getFacing() == face && state.isPowered() ? 15 : 0;
-        } else if (state.getType() == StateTypes.REDSTONE_WIRE) {
+        } else if (block.getType() == StateTypes.REDSTONE_TORCH) {
+            return face != BlockFace.UP && block.isLit() ? 15 : 0;
+        } else if (block.getType() == StateTypes.LEVER || BlockTags.BUTTONS.contains(block.getType())) {
+            return block.getFacing().getOppositeFace() == face && block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.REDSTONE_WALL_TORCH) {
+            return face == BlockFace.DOWN && block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.LECTERN) {
+            return face == BlockFace.UP && block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.OBSERVER) {
+            return block.getFacing() == face && block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.REPEATER) {
+            return block.getFacing() == face && block.isPowered() ? 15 : 0;
+        } else if (block.getType() == StateTypes.REDSTONE_WIRE) {
             BlockFace needed = face.getOppositeFace();
 
             BlockFace badOne = needed.getCW();
@@ -555,32 +558,32 @@ public class CompensatedWorld {
                 case UP:
                     break;
                 case NORTH:
-                    isPowered = state.getNorth() == North.TRUE;
+                    isPowered = block.getNorth() == North.TRUE;
                     if (isPowered && (badOne == BlockFace.NORTH || badTwo == BlockFace.NORTH)) {
                         return 0;
                     }
                     break;
                 case SOUTH:
-                    isPowered = state.getSouth() == South.TRUE;
+                    isPowered = block.getSouth() == South.TRUE;
                     if (isPowered && (badOne == BlockFace.SOUTH || badTwo == BlockFace.SOUTH)) {
                         return 0;
                     }
                     break;
                 case WEST:
-                    isPowered = state.getWest() == West.TRUE;
+                    isPowered = block.getWest() == West.TRUE;
                     if (isPowered && (badOne == BlockFace.WEST || badTwo == BlockFace.WEST)) {
                         return 0;
                     }
                     break;
                 case EAST:
-                    isPowered = state.getEast() == East.TRUE;
+                    isPowered = block.getEast() == East.TRUE;
                     if (isPowered && (badOne == BlockFace.EAST || badTwo == BlockFace.EAST)) {
                         return 0;
                     }
                     break;
             }
 
-            return isPowered ? state.getPower() : 0;
+            return isPowered ? block.getPower() : 0;
         }
 
         return 0;
@@ -601,12 +604,12 @@ public class CompensatedWorld {
         player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> chunks.put(chunkPosition, chunk));
     }
 
-    public StateType getStateTypeAt(double x, double y, double z) {
-        return getWrappedBlockStateAt((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z)).getType();
+    public StateType getBlockType(double x, double y, double z) {
+        return getBlock((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z)).getType();
     }
 
-    public WrappedBlockState getWrappedBlockStateAt(double x, double y, double z) {
-        return getWrappedBlockStateAt((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+    public WrappedBlockState getBlock(double x, double y, double z) {
+        return getBlock((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
     }
 
     public double getFluidLevelAt(int x, int y, int z) {
@@ -614,7 +617,7 @@ public class CompensatedWorld {
     }
 
     public boolean isWaterSourceBlock(int x, int y, int z) {
-        WrappedBlockState bukkitBlock = getWrappedBlockStateAt(x, y, z);
+        WrappedBlockState bukkitBlock = getBlock(x, y, z);
         return Materials.isWaterSource(player.getClientVersion(), bukkitBlock);
     }
 
@@ -623,8 +626,8 @@ public class CompensatedWorld {
     }
 
     public double getLavaFluidLevelAt(int x, int y, int z) {
-        WrappedBlockState magicBlockState = getWrappedBlockStateAt(x, y, z);
-        WrappedBlockState magicBlockStateAbove = getWrappedBlockStateAt(x, y + 1, z);
+        WrappedBlockState magicBlockState = getBlock(x, y, z);
+        WrappedBlockState magicBlockStateAbove = getBlock(x, y + 1, z);
 
         if (magicBlockState.getType() != StateTypes.LAVA) return 0;
         if (magicBlockStateAbove.getType() == StateTypes.LAVA) return 1;
@@ -649,13 +652,13 @@ public class CompensatedWorld {
     }
 
     public double getWaterFluidLevelAt(int x, int y, int z) {
-        WrappedBlockState wrappedBlock = getWrappedBlockStateAt(x, y, z);
+        WrappedBlockState wrappedBlock = getBlock(x, y, z);
         boolean isWater = Materials.isWater(player.getClientVersion(), wrappedBlock);
 
         if (!isWater) return 0;
 
         // If water has water above it, it's block height is 1, even if it's waterlogged
-        if (Materials.isWater(player.getClientVersion(), getWrappedBlockStateAt(x, y + 1, z))) {
+        if (Materials.isWater(player.getClientVersion(), getBlock(x, y + 1, z))) {
             return 1;
         }
 
@@ -676,11 +679,7 @@ public class CompensatedWorld {
 
     public void removeChunkLater(int chunkX, int chunkZ) {
         long chunkPosition = chunkPositionToLong(chunkX, chunkZ);
-        player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.compensatedWorld.chunks.remove(chunkPosition));
-    }
-
-    public int getMinHeight() {
-        return minHeight;
+        player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> chunks.remove(chunkPosition));
     }
 
     public void setDimension(DimensionType dimension, User user) {
@@ -691,11 +690,7 @@ public class CompensatedWorld {
         maxHeight = minHeight + dimension.getHeight();
     }
 
-    public int getMaxHeight() {
-        return maxHeight;
-    }
-
-    public WrappedBlockState getWrappedBlockStateAt(Vector aboveCCWPos) {
-        return getWrappedBlockStateAt(aboveCCWPos.getX(), aboveCCWPos.getY(), aboveCCWPos.getZ());
+    public WrappedBlockState getBlock(Vector aboveCCWPos) {
+        return getBlock(aboveCCWPos.getX(), aboveCCWPos.getY(), aboveCCWPos.getZ());
     }
 }

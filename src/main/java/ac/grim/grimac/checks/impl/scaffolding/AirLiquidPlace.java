@@ -59,7 +59,7 @@ public class AirLiquidPlace extends BlockPlaceCheck {
         if (player.gamemode == GameMode.CREATIVE) return;
 
         Vector3i blockPos = place.getPlacedAgainstBlockLocation();
-        StateType placeAgainst = player.compensatedWorld.getStateTypeAt(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+        StateType placeAgainst = player.compensatedWorld.getBlockType(blockPos.getX(), blockPos.getY(), blockPos.getZ());
 
         int currentTick = GrimAPI.INSTANCE.getTickManager().currentTick;
         // this is actual more lenient then we need to be, We can check up to 1 ticks for all changes at location sand up to 0 ticks for first change

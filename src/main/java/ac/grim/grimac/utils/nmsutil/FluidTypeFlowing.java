@@ -28,7 +28,7 @@ public class FluidTypeFlowing {
                 float f = (float) Math.min(player.compensatedWorld.getFluidLevelAt(modifiedX, originalY, modifiedZ), 8 / 9D);
                 float f1 = 0.0F;
                 if (f == 0.0F) {
-                    StateType mat = player.compensatedWorld.getStateTypeAt(modifiedX, originalY, modifiedZ);
+                    StateType mat = player.compensatedWorld.getBlockType(modifiedX, originalY, modifiedZ);
 
                     // Grim's definition of solid is whether the block has a hitbox
                     // Minecraft is... it's whatever Mojang was feeling like, but it's very consistent
@@ -57,7 +57,7 @@ public class FluidTypeFlowing {
 
         // Fluid level 1-7 is for regular fluid heights
         // Fluid level 8-15 is for falling fluids
-        WrappedBlockState state = player.compensatedWorld.getWrappedBlockStateAt(originalX, originalY, originalZ);
+        WrappedBlockState state = player.compensatedWorld.getBlock(originalX, originalY, originalZ);
         if ((state.getType() == StateTypes.WATER || state.getType() == StateTypes.LAVA) && state.getLevel() >= 8) {
             for (BlockFace enumdirection : new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST}) {
                 if (isSolidFace(player, originalX, originalY, originalZ, enumdirection) || isSolidFace(player, originalX, originalY + 1, originalZ, enumdirection)) {
@@ -77,7 +77,7 @@ public class FluidTypeFlowing {
         int x = originalX + direction.getModX();
         int z = originalZ + direction.getModZ();
 
-        WrappedBlockState data = player.compensatedWorld.getWrappedBlockStateAt(x, y, z);
+        WrappedBlockState data = player.compensatedWorld.getBlock(x, y, z);
         StateType type = data.getType();
 
         if (isSame(player, x, y, z, originalX, y, originalZ)) return false;

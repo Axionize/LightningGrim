@@ -66,7 +66,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
 
         boolean isTickingReliably = player.isTickingReliablyFor(3);
 
-        PacketEntity playerVehicle = player.compensatedEntities.getSelf().getRiding();
+        PacketEntity playerVehicle = player.compensatedEntities.self.getRiding();
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
             if (entity == playerVehicle && !player.vehicleData.lastDummy) {
                 // The player has this as their vehicle, so they aren't interpolating it.
@@ -247,7 +247,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             }
 
             if (status.getStatus() >= 24 && status.getStatus() <= 28 && status.getEntityId() == player.entityID) {
-                player.compensatedEntities.getSelf().setOpLevel(status.getStatus() - 24);
+                player.compensatedEntities.self.setOpLevel(status.getStatus() - 24);
             }
         }
 
@@ -258,12 +258,18 @@ public class PacketEntityReplication extends Check implements PacketCheck {
                 player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                     if (slot.getSlot() - 36 == player.packetStateData.lastSlotSelected) {
                         player.packetStateData.setSlowedByUsingItem(false);
+                        if (player.isMitigateDesyncNoSlow()) {
+                            player.resetBukkitItemUsage();
+                        }
                     }
                 });
 
                 player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> {
                     if (slot.getSlot() - 36 == player.packetStateData.lastSlotSelected) {
                         player.packetStateData.setSlowedByUsingItem(false);
+                        if (player.isMitigateDesyncNoSlow()) {
+                            player.resetBukkitItemUsage();
+                        }
                     }
                 });
             }
@@ -345,7 +351,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             player.latencyUtils.addRealTimeTask(destroyTransaction, () -> {
                 for (int integer : destroyEntityIds) {
                     player.compensatedEntities.removeEntity(integer);
-                    player.compensatedFireworks.removeFirework(integer);
+                    player.fireworks.removeFirework(integer);
                 }
             });
 
@@ -356,7 +362,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
                     if (player.lastTransactionReceived.get() >= destroyTransaction) return;
                     for (int entityID : destroyEntityIds) {
                         // If the player has a firework boosting them, setback
-                        if (player.compensatedFireworks.hasFirework(entityID)) {
+                        if (player.fireworks.hasFirework(entityID)) {
                             player.getSetbackTeleportUtil().executeViolationSetback();
                             break;
                         }

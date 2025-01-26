@@ -50,7 +50,7 @@ public class LineOfSightPlace extends BlockPlaceCheck {
         if (flagBuffer > 0 && !didRayTraceHit(place)) {
             ignorePost = true;
             // If the player hit and has flagged this check recently
-            if (flagAndAlert("pre-flying: " + player.compensatedWorld.getWrappedBlockStateAt(place.getPlacedAgainstBlockLocation()).getType()) && shouldModifyPackets() && shouldCancel()) {
+            if (flagAndAlert("pre-flying: " + player.compensatedWorld.getBlock(place.getPlacedAgainstBlockLocation()).getType()) && shouldModifyPackets() && shouldCancel()) {
                 place.resync();  // Deny the block placement.
             }
         }
@@ -72,14 +72,14 @@ public class LineOfSightPlace extends BlockPlaceCheck {
         // This can false with rapidly moving yaw in 1.8+ clients
         if (!hit) {
             flagBuffer = 1;
-            flagAndAlert("post-flying: " + player.compensatedWorld.getWrappedBlockStateAt(place.getPlacedAgainstBlockLocation()).getType());
+            flagAndAlert("post-flying: " + player.compensatedWorld.getBlock(place.getPlacedAgainstBlockLocation()).getType());
         } else {
             flagBuffer = Math.max(0, flagBuffer - 0.1);
         }
     }
 
     private boolean checkIfShouldSkip(BlockPlace place) {
-        StateType targetBlockStateType = player.compensatedWorld.getWrappedBlockStateAt(place.getPlacedAgainstBlockLocation()).getType();
+        StateType targetBlockStateType = player.compensatedWorld.getBlock(place.getPlacedAgainstBlockLocation()).getType();
         if (player.gamemode == GameMode.SPECTATOR) return true; // A waste to check creative mode players
         if (targetBlockStateType == StateTypes.REDSTONE_WIRE) return true; // Redstone too buggy
         if (player.compensatedWorld.isNearHardEntity(player.boundingBox.copy().expand(4))) return true; // Shulkers and Pistons are too buggy
@@ -135,7 +135,7 @@ public class LineOfSightPlace extends BlockPlaceCheck {
 
         // We do not need to add 0.03/0.0002 to maxDistance to ensure our raytrace hits blocks
         // Since we expand the hitboxes of the expectedTargetBlock by 0.03/0.002 already later
-        double maxDistance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_BLOCK_INTERACTION_RANGE);
+        double maxDistance = player.compensatedEntities.self.getAttributeValue(Attributes.PLAYER_BLOCK_INTERACTION_RANGE);
 
         // Define possible offsets
         // TODO, vectorize this with SIMD or AVX for performance

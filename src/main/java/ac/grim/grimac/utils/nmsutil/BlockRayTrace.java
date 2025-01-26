@@ -53,7 +53,7 @@ public class BlockRayTrace {
 
         if (start[0] == end[0] && start[1] == end[1] && start[2] == end[2]) return null;
 
-        WrappedBlockState state = player.compensatedWorld.getWrappedBlockStateAt(floorStart[0], floorStart[1], floorStart[2]);
+        WrappedBlockState state = player.compensatedWorld.getBlock(floorStart[0], floorStart[1], floorStart[2]);
         Pair<int[], BlockFace> apply = predicate.apply(state, floorStart);
 
         if (apply != null) {
@@ -96,7 +96,7 @@ public class BlockRayTrace {
                 tMaxZ += posZInverse;
             }
 
-            state = player.compensatedWorld.getWrappedBlockStateAt(floorStart[0], floorStart[1], floorStart[2]);
+            state = player.compensatedWorld.getBlock(floorStart[0], floorStart[1], floorStart[2]);
             apply = predicate.apply(state, floorStart);
 
             if (apply != null) {
@@ -123,7 +123,7 @@ public class BlockRayTrace {
 
         if (start.equals(end)) return null;
 
-        WrappedBlockState state = player.compensatedWorld.getWrappedBlockStateAt(floorStartX, floorStartY, floorStartZ);
+        WrappedBlockState state = player.compensatedWorld.getBlock(floorStartX, floorStartY, floorStartZ);
         HitData apply = predicate.apply(state, new Vector3i(floorStartX, floorStartY, floorStartZ));
 
         if (apply != null) {
@@ -166,7 +166,7 @@ public class BlockRayTrace {
                 tMaxZ += posZInverse;
             }
 
-            state = player.compensatedWorld.getWrappedBlockStateAt(floorStartX, floorStartY, floorStartZ);
+            state = player.compensatedWorld.getBlock(floorStartX, floorStartY, floorStartZ);
             apply = predicate.apply(state, new Vector3i(floorStartX, floorStartY, floorStartZ));
 
             if (apply != null) {
@@ -295,7 +295,7 @@ public class BlockRayTrace {
         Vector3d startingPos = new Vector3d(player.x, player.y + player.getEyeHeight(), player.z);
         Vector startingVec = new Vector(startingPos.getX(), startingPos.getY(), startingPos.getZ());
         Ray trace = new Ray(player, startingPos.getX(), startingPos.getY(), startingPos.getZ(), player.xRot, player.yRot);
-        final double distance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_BLOCK_INTERACTION_RANGE);
+        final double distance = player.compensatedEntities.self.getAttributeValue(Attributes.PLAYER_BLOCK_INTERACTION_RANGE);
         Vector endVec = trace.getPointAtDistance(distance);
         Vector3d endPos = new Vector3d(endVec.getX(), endVec.getY(), endVec.getZ());
         return getTraverseResult(player, heldItem, startingPos, startingVec, trace, endPos, sourcesHaveHitbox, false, distance + 3, false);
@@ -304,8 +304,8 @@ public class BlockRayTrace {
     @Nullable
     public static HitData getNearestHitResult(GrimPlayer player, PacketEntity targetEntity, Vector eyePos, Vector lookVec, double currentDistance, boolean skipBlockCheck, boolean skipReachCheck) {
 
-        double maxAttackDistance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_BLOCK_INTERACTION_RANGE);
-        double maxBlockDistance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_ENTITY_INTERACTION_RANGE);
+        double maxAttackDistance = player.compensatedEntities.self.getAttributeValue(Attributes.PLAYER_BLOCK_INTERACTION_RANGE);
+        double maxBlockDistance = player.compensatedEntities.self.getAttributeValue(Attributes.PLAYER_ENTITY_INTERACTION_RANGE);
 
         Vector3d startingPos = new Vector3d(eyePos.getX(), eyePos.getY(), eyePos.getZ());
         Vector startingVec = new Vector(startingPos.getX(), startingPos.getY(), startingPos.getZ());

@@ -11,12 +11,12 @@ public class ResultSlot extends Slot {
     }
 
     @Override
-    public boolean mayPlace(ItemStack p_40178_) {
+    public boolean mayPlace(ItemStack itemStack) {
         return false;
     }
 
     @Override
-    public void onTake(GrimPlayer player, ItemStack p_150639_) {
+    public void onTake(GrimPlayer player, ItemStack itemStack) {
         // Resync the player's inventory
     }
 }

@@ -27,8 +27,8 @@ public enum EquipmentType {
         }
     }
 
-    public static EquipmentType getEquipmentSlotForItem(ItemStack p_147234_) {
-        ItemType item = p_147234_.getType();
+    public static EquipmentType getEquipmentSlotForItem(ItemStack itemStack) {
+        ItemType item = itemStack.getType();
         if (item == ItemTypes.CARVED_PUMPKIN || (item.getName().getKey().contains("SKULL") ||
                 (item.getName().getKey().contains("HEAD") && !item.getName().getKey().contains("PISTON")))) {
             return HEAD;

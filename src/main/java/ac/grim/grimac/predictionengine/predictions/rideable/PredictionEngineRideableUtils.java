@@ -22,9 +22,9 @@ import java.util.Set;
 public final class PredictionEngineRideableUtils {
 
     public static Set<VectorData> handleJumps(GrimPlayer player, Set<VectorData> possibleVectors) {
-        if (!(player.compensatedEntities.getSelf().getRiding() instanceof PacketEntityHorse)) return possibleVectors;
+        if (!(player.compensatedEntities.self.getRiding() instanceof PacketEntityHorse)) return possibleVectors;
 
-        PacketEntityHorse horse = (PacketEntityHorse) player.compensatedEntities.getSelf().getRiding();
+        PacketEntityHorse horse = (PacketEntityHorse) player.compensatedEntities.self.getRiding();
 
         if (horse instanceof PacketEntityCamel) {
             PacketEntityCamel camel = (PacketEntityCamel) horse;

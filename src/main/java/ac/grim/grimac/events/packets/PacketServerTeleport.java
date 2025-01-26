@@ -84,7 +84,7 @@ public class PacketServerTeleport extends PacketListenerAbstract {
 
             if (teleport.isDismountVehicle()) {
                 // Remove player from vehicle
-                event.getTasksAfterSend().add(() -> player.compensatedEntities.getSelf().eject());
+                event.getTasksAfterSend().add(() -> player.compensatedEntities.self.eject());
             }
 
             // For some reason teleports on 1.7 servers are offset by 1.62?

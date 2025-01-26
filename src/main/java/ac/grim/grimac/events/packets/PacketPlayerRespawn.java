@@ -90,9 +90,9 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
             }
 
             if (health.getHealth() <= 0) {
-                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.compensatedEntities.getSelf().isDead = true);
+                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.compensatedEntities.self.isDead = true);
             } else {
-                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.compensatedEntities.getSelf().isDead = false);
+                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.compensatedEntities.self.isDead = false);
             }
 
             event.getTasksAfterSend().add(player::sendTransaction);
@@ -149,7 +149,7 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
 
                 if (!keepTrackedData) {
                     player.powderSnowFrozenTicks = 0;
-                    player.compensatedEntities.getSelf().hasGravity = true;
+                    player.compensatedEntities.self.hasGravity = true;
                     player.playerEntityHasGravity = true;
                 }
 
@@ -180,7 +180,7 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
                 player.dimensionType = respawn.getDimensionType();
 
                 player.compensatedEntities.serverPlayerVehicle = null; // All entities get removed on respawn
-                player.compensatedEntities.playerEntity = new PacketEntitySelf(player, player.compensatedEntities.playerEntity);
+                player.compensatedEntities.self = new PacketEntitySelf(player, player.compensatedEntities.self);
                 player.compensatedEntities.selfTrackedEntity = new TrackerData(0, 0, 0, 0, 0, EntityTypes.PLAYER, player.lastTransactionSent.get());
 
                 if (player.getClientVersion().isOlderThan(ClientVersion.V_1_14)) { // 1.14+ players send a packet for this, listen for it instead
@@ -199,7 +199,7 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
 
                 if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16) && !this.hasFlag(respawn, KEEP_ATTRIBUTES)) {
                     // Reset attributes if not kept
-                    player.compensatedEntities.getSelf().resetAttributes();
+                    player.compensatedEntities.self.resetAttributes();
                     player.compensatedEntities.hasSprintingAttributeEnabled = false;
                 }
             });

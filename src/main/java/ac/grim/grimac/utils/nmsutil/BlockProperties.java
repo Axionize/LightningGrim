@@ -24,18 +24,18 @@ public class BlockProperties {
         }
 
         // The game uses values known as flyingSpeed for some vehicles in the air
-        if (player.compensatedEntities.getSelf().getRiding() != null) {
-            if (player.compensatedEntities.getSelf().getRiding().getType() == EntityTypes.PIG || player.compensatedEntities.getSelf().getRiding() instanceof PacketEntityHorse) {
+        if (player.inVehicle()) {
+            if (player.compensatedEntities.self.getRiding().getType() == EntityTypes.PIG || player.compensatedEntities.self.getRiding() instanceof PacketEntityHorse) {
                 return (float) (player.speed * 0.1f);
             }
 
-            if (player.compensatedEntities.getSelf().getRiding() instanceof PacketEntityStrider) {
+            if (player.compensatedEntities.self.getRiding() instanceof PacketEntityStrider) {
                 // Unsure which version the speed changed in
                 if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20)) {
                     return (float) player.speed * 0.1f;
                 }
 
-                PacketEntityStrider strider = (PacketEntityStrider) player.compensatedEntities.getSelf().getRiding();
+                PacketEntityStrider strider = (PacketEntityStrider) player.compensatedEntities.self.getRiding();
                 // Vanilla multiplies by 0.1 to calculate speed
                 return (float) strider.getAttributeValue(Attributes.MOVEMENT_SPEED) * (strider.isShaking ? 0.66F : 1.0F) * 0.1f;
             }
@@ -66,7 +66,7 @@ public class BlockProperties {
         }
 
         Vector3i pos = getOnPos(player, playerPos, mainSupportingBlockData, 0.2F);
-        return player.compensatedWorld.getStateTypeAt(pos.x, pos.y, pos.z);
+        return player.compensatedWorld.getBlockType(pos.x, pos.y, pos.z);
     }
 
     public static float getFriction(GrimPlayer player, MainSupportingBlockData mainSupportingBlockData, Vector3d playerPos) {
@@ -76,7 +76,7 @@ public class BlockProperties {
             if (player.getClientVersion().isOlderThan(ClientVersion.V_1_15))
                 searchBelowAmount = 1;
 
-            StateType type = player.compensatedWorld.getStateTypeAt(playerPos.getX(), playerPos.getY() - searchBelowAmount, playerPos.getZ());
+            StateType type = player.compensatedWorld.getBlockType(playerPos.getX(), playerPos.getY() - searchBelowAmount, playerPos.getZ());
             return getMaterialFriction(player, type);
         }
 
@@ -93,7 +93,7 @@ public class BlockProperties {
             return getBlockSpeedFactorLegacy(player, playerPos);
         }
 
-        WrappedBlockState inBlock = player.compensatedWorld.getWrappedBlockStateAt(playerPos.getX(), playerPos.getY(), playerPos.getZ());
+        WrappedBlockState inBlock = player.compensatedWorld.getBlock(playerPos.getX(), playerPos.getY(), playerPos.getZ());
         float inBlockSpeedFactor = getBlockSpeedFactor(player, inBlock.getType());
         if (inBlockSpeedFactor != 1.0f || inBlock.getType() == StateTypes.WATER || inBlock.getType() == StateTypes.BUBBLE_COLUMN) {
             return getModernVelocityMultiplier(player, inBlockSpeedFactor);
@@ -106,7 +106,7 @@ public class BlockProperties {
     public static boolean onHoneyBlock(GrimPlayer player, MainSupportingBlockData mainSupportingBlockData, Vector3d playerPos) {
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_15)) return false;
 
-        StateType inBlock = player.compensatedWorld.getStateTypeAt(playerPos.getX(), playerPos.getY(), playerPos.getZ());
+        StateType inBlock = player.compensatedWorld.getBlockType(playerPos.getX(), playerPos.getY(), playerPos.getZ());
         return inBlock == StateTypes.HONEY_BLOCK || getOnPos(player, mainSupportingBlockData, playerPos) == StateTypes.HONEY_BLOCK;
     }
 
@@ -119,13 +119,13 @@ public class BlockProperties {
      */
     private static StateType getBlockPosBelowThatAffectsMyMovement(GrimPlayer player, MainSupportingBlockData mainSupportingBlockData, Vector3d playerPos) {
         Vector3i pos = getOnPos(player, playerPos, mainSupportingBlockData, 0.500001F);
-        return player.compensatedWorld.getStateTypeAt(pos.x, pos.y, pos.z);
+        return player.compensatedWorld.getBlockType(pos.x, pos.y, pos.z);
     }
 
     private static Vector3i getOnPos(GrimPlayer player, Vector3d playerPos, MainSupportingBlockData mainSupportingBlockData, float searchBelowPlayer) {
         Vector3i mainBlockPos = mainSupportingBlockData.getBlockPos();
         if (mainBlockPos != null) {
-            StateType blockstate = player.compensatedWorld.getStateTypeAt(mainBlockPos.x, mainBlockPos.y, mainBlockPos.z);
+            StateType blockstate = player.compensatedWorld.getBlockType(mainBlockPos.x, mainBlockPos.y, mainBlockPos.z);
 
             // I genuinely don't understand this code, or why fences are special
             boolean shouldReturn = (!((double)searchBelowPlayer <= 0.5D) || !BlockTags.FENCES.contains(blockstate)) &&
@@ -158,10 +158,10 @@ public class BlockProperties {
     }
 
     private static StateType getOnBlock(GrimPlayer player, double x, double y, double z) {
-        StateType block1 = player.compensatedWorld.getStateTypeAt(GrimMath.floor(x), GrimMath.floor(y - 0.2F), GrimMath.floor(z));
+        StateType block1 = player.compensatedWorld.getBlockType(GrimMath.floor(x), GrimMath.floor(y - 0.2F), GrimMath.floor(z));
 
         if (block1.isAir()) {
-            StateType block2 = player.compensatedWorld.getStateTypeAt(GrimMath.floor(x), GrimMath.floor(y - 1.2F), GrimMath.floor(z));
+            StateType block2 = player.compensatedWorld.getBlockType(GrimMath.floor(x), GrimMath.floor(y - 1.2F), GrimMath.floor(z));
 
             if (Materials.isFence(block2) || Materials.isWall(block2) || Materials.isGate(block2)) {
                 return block2;
@@ -172,7 +172,7 @@ public class BlockProperties {
     }
 
     private static float getBlockSpeedFactorLegacy(GrimPlayer player, Vector3d pos) {
-        StateType block = player.compensatedWorld.getStateTypeAt(pos.getX(), pos.getY(), pos.getZ());
+        StateType block = player.compensatedWorld.getBlockType(pos.getX(), pos.getY(), pos.getZ());
 
         // This is the 1.16.0 and 1.16.1 method for detecting if the player is on soul speed
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16) && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_1)) {
@@ -184,7 +184,7 @@ public class BlockProperties {
         float speed = getBlockSpeedFactor(player, block);
         if (speed != 1.0f || block == StateTypes.SOUL_SAND || block == StateTypes.WATER || block == StateTypes.BUBBLE_COLUMN) return speed;
 
-        StateType block2 = player.compensatedWorld.getStateTypeAt(pos.getX(), pos.getY() - 0.5000001, pos.getZ());
+        StateType block2 = player.compensatedWorld.getBlockType(pos.getX(), pos.getY() - 0.5000001, pos.getZ());
         return getBlockSpeedFactor(player, block2);
     }
 
@@ -205,6 +205,6 @@ public class BlockProperties {
 
     private static float getModernVelocityMultiplier(GrimPlayer player, float blockSpeedFactor) {
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_21)) return blockSpeedFactor;
-        return (float) GrimMath.lerp((float) player.compensatedEntities.getSelf().getAttributeValue(Attributes.MOVEMENT_EFFICIENCY), blockSpeedFactor, 1.0F);
+        return (float) GrimMath.lerp((float) player.compensatedEntities.self.getAttributeValue(Attributes.MOVEMENT_EFFICIENCY), blockSpeedFactor, 1.0F);
     }
 }

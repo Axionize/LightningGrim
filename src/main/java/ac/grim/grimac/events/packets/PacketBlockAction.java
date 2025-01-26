@@ -34,7 +34,7 @@ public class PacketBlockAction extends PacketListenerAbstract {
 
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                 // The client ignores the state sent to the client.
-                WrappedBlockState existing = player.compensatedWorld.getWrappedBlockStateAt(blockPos);
+                WrappedBlockState existing = player.compensatedWorld.getBlock(blockPos);
                 if (Materials.isShulker(existing.getType())) {
                     // Param is the number of viewers of the shulker box.
                     // Hashset with .equals() set to be position

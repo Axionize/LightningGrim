@@ -44,11 +44,11 @@ public class CompensatedEntities {
     GrimPlayer player;
 
     public TrackerData selfTrackedEntity;
-    public PacketEntitySelf playerEntity;
+    public PacketEntitySelf self;
 
     public CompensatedEntities(GrimPlayer player) {
         this.player = player;
-        this.playerEntity = new PacketEntitySelf(player);
+        this.self = new PacketEntitySelf(player);
         this.selfTrackedEntity = new TrackerData(0, 0, 0, 0, 0, EntityTypes.PLAYER, player.lastTransactionSent.get());
     }
 
@@ -62,7 +62,7 @@ public class CompensatedEntities {
     }
 
     public void tick() {
-        this.playerEntity.setPositionRaw(player.boundingBox);
+        this.self.setPositionRaw(player.boundingBox);
         for (PacketEntity vehicle : entityMap.values()) {
             for (PacketEntity passenger : vehicle.passengers) {
                 tickPassenger(vehicle, passenger);
@@ -99,7 +99,7 @@ public class CompensatedEntities {
     }
 
     public PacketEntity getEntityInControl() {
-        return playerEntity.getRiding() != null ? playerEntity.getRiding() : playerEntity;
+        return self.getRiding() != null ? self.getRiding() : self;
     }
 
     public void updateAttributes(int entityID, List<WrapperPlayServerUpdateAttributes.Property> objects) {
@@ -202,13 +202,9 @@ public class CompensatedEntities {
 
     public PacketEntity getEntity(int entityID) {
         if (entityID == player.entityID) {
-            return playerEntity;
+            return self;
         }
         return entityMap.get(entityID);
-    }
-
-    public PacketEntitySelf getSelf() {
-        return playerEntity;
     }
 
     public TrackerData getTrackedEntity(int id) {
@@ -419,13 +415,13 @@ public class CompensatedEntities {
             if (fireworkWatchableObject.getValue() instanceof Integer) { // Pre 1.14
                 int attachedEntityID = (Integer) fireworkWatchableObject.getValue();
                 if (attachedEntityID == player.entityID) {
-                    player.compensatedFireworks.addNewFirework(entityID);
+                    player.fireworks.addNewFirework(entityID);
                 }
             } else { // 1.14+
                 Optional<Integer> attachedEntityID = (Optional<Integer>) fireworkWatchableObject.getValue();
 
                 if (attachedEntityID.isPresent() && attachedEntityID.get().equals(player.entityID)) {
-                    player.compensatedFireworks.addNewFirework(entityID);
+                    player.fireworks.addNewFirework(entityID);
                 }
             }
         } else if (entity instanceof PacketEntityHook) {

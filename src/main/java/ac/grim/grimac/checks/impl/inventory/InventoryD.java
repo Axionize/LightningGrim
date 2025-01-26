@@ -30,7 +30,7 @@ public class InventoryD extends InventoryCheck {
         }
 
         if (player.hasInventoryOpen) {
-            boolean inVehicle = player.compensatedEntities.getSelf().inVehicle();
+            boolean inVehicle = player.inVehicle();
             boolean isJumping, isMoving;
 
             if (inVehicle) {

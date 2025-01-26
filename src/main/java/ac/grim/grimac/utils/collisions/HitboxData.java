@@ -63,12 +63,12 @@ public enum HitboxData {
         boolean isInWall;
         boolean isXAxis = data.getFacing() == BlockFace.WEST || data.getFacing() == BlockFace.EAST;
         if (isXAxis) {
-            boolean zPosWall = Materials.isWall(player.compensatedWorld.getStateTypeAt(x, y, z + 1));
-            boolean zNegWall = Materials.isWall(player.compensatedWorld.getStateTypeAt(x, y, z - 1));
+            boolean zPosWall = Materials.isWall(player.compensatedWorld.getBlockType(x, y, z + 1));
+            boolean zNegWall = Materials.isWall(player.compensatedWorld.getBlockType(x, y, z - 1));
             isInWall = zPosWall || zNegWall;
         } else {
-            boolean xPosWall = Materials.isWall(player.compensatedWorld.getStateTypeAt(x + 1, y, z));
-            boolean xNegWall = Materials.isWall(player.compensatedWorld.getStateTypeAt(x - 1, y, z));
+            boolean xPosWall = Materials.isWall(player.compensatedWorld.getBlockType(x + 1, y, z));
+            boolean xNegWall = Materials.isWall(player.compensatedWorld.getBlockType(x - 1, y, z));
             isInWall = xPosWall || xNegWall;
         }
 

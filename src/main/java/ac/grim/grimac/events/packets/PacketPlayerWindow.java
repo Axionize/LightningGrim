@@ -153,7 +153,7 @@ public class PacketPlayerWindow extends PacketListenerAbstract {
         // Going inside nether portal with opened inventory cause desync, fixed in 1.12.2
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_12_1) &&
                 player.pointThreeEstimator.isNearNetherPortal) {
-            PacketEntitySelf playerEntity = player.compensatedEntities.getSelf();
+            PacketEntitySelf playerEntity = player.compensatedEntities.self;
             // Client ignore nether portal if player has passengers or riding an entity
             return !playerEntity.inVehicle() && playerEntity.passengers.isEmpty();
         }

@@ -32,7 +32,7 @@ public class SetbackBlocker extends Check implements PacketCheck {
             }
 
             // Look is the only valid packet to send while in a vehicle
-            if (player.compensatedEntities.getSelf().inVehicle() && event.getPacketType() != PacketType.Play.Client.PLAYER_ROTATION && !player.packetStateData.lastPacketWasTeleport) {
+            if (player.inVehicle() && event.getPacketType() != PacketType.Play.Client.PLAYER_ROTATION && !player.packetStateData.lastPacketWasTeleport) {
                 event.setCancelled(true);
             }
 
@@ -42,7 +42,7 @@ public class SetbackBlocker extends Check implements PacketCheck {
             }
 
             // Player is dead
-            if (player.compensatedEntities.getSelf().isDead) {
+            if (player.compensatedEntities.self.isDead) {
                 event.setCancelled(true);
             }
         }
@@ -53,7 +53,7 @@ public class SetbackBlocker extends Check implements PacketCheck {
             }
 
             // Don't let a player move a vehicle when not in a vehicle
-            if (!player.compensatedEntities.getSelf().inVehicle()) {
+            if (!player.inVehicle()) {
                 event.setCancelled(true);
             }
 
@@ -63,7 +63,7 @@ public class SetbackBlocker extends Check implements PacketCheck {
             }
 
             // Player is dead
-            if (player.compensatedEntities.getSelf().isDead) {
+            if (player.compensatedEntities.self.isDead) {
                 event.setCancelled(true);
             }
         }

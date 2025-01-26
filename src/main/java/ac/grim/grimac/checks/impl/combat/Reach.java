@@ -118,7 +118,7 @@ public class Reach extends Check implements PacketCheck {
             if (entity.getType() == EntityTypes.ARMOR_STAND && player.getClientVersion().isOlderThan(ClientVersion.V_1_8)) return;
 
             if (player.gamemode == GameMode.CREATIVE || player.gamemode == GameMode.SPECTATOR) return;
-            if (player.compensatedEntities.getSelf().inVehicle()) return;
+            if (player.inVehicle()) return;
             if (entity.riding != null) return;
 
             boolean tooManyAttacks = playerAttackQueue.size() > 10;
@@ -155,7 +155,7 @@ public class Reach extends Check implements PacketCheck {
             return false; // exempt
 
         if (player.gamemode == GameMode.CREATIVE || player.gamemode == GameMode.SPECTATOR) return false;
-        if (player.compensatedEntities.getSelf().inVehicle()) return false;
+        if (player.inVehicle()) return false;
 
         // Filter out what we assume to be cheats
         if (cancelBuffer != 0) {
@@ -166,7 +166,7 @@ public class Reach extends Check implements PacketCheck {
             if (reachEntity.getType() == EntityTypes.END_CRYSTAL) {
                 targetBox = new SimpleCollisionBox(reachEntity.trackedServerPosition.getPos().subtract(1, 0, 1), reachEntity.trackedServerPosition.getPos().add(1, 2, 1));
             }
-            return ReachUtils.getMinReachToBox(player, targetBox) > player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
+            return ReachUtils.getMinReachToBox(player, targetBox) > player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
         }
     }
 
@@ -239,7 +239,7 @@ public class Reach extends Check implements PacketCheck {
             }
         }
 
-        final double maxReach = player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
+        final double maxReach = player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
         // We raytrace for > the player's reach distance so in the case a player is hacking
         // We can return in the flag the distance of the reach hit instead of a generic "player failed reach check"
         // +3 would be 3 + 3 = 6, which is the pre-1.20.5 behaviour, preventing "Missed Hitbox"
@@ -298,7 +298,7 @@ public class Reach extends Check implements PacketCheck {
             } else if (minDistance == Double.MAX_VALUE) {
                 cancelBuffer = 1;
                 return new CheckResult(ResultType.HITBOX, "");
-            } else if (minDistance > player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)) {
+            } else if (minDistance > player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)) {
                 cancelBuffer = 1;
                 return new CheckResult(ResultType.REACH, String.format("%.5f", minDistance) + " blocks");
             } else {
@@ -342,7 +342,7 @@ public class Reach extends Check implements PacketCheck {
         // Only do this for nearby blocks
         if (new Vector(vector3i.x, vector3i.y, vector3i.z).distanceSquared(new Vector(player.x, player.y, player.z)) > 6) return;
         // Only do this if the state really had any world impact
-        if (state.equals(player.compensatedWorld.getWrappedBlockStateAt(vector3i))) return;
+        if (state.equals(player.compensatedWorld.getBlock(vector3i))) return;
         blocksChangedThisTick.add(vector3i);
     }
 

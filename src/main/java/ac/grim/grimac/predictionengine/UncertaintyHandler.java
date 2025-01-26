@@ -165,7 +165,7 @@ public class UncertaintyHandler {
 
         fishingRodPulls.clear();
 
-        int maxFireworks = player.compensatedFireworks.getMaxFireworksAppliedPossible() * 2;
+        int maxFireworks = player.fireworks.getMaxFireworksAppliedPossible() * 2;
         if (maxFireworks <= 0 || (!player.isGliding && !player.wasGliding)) {
             return;
         }
@@ -295,18 +295,18 @@ public class UncertaintyHandler {
         }
 
         // This is a section where I hack around current issues with Grim itself...
-        if (player.uncertaintyHandler.wasAffectedByStuckSpeed() && (!player.isPointThree() || player.compensatedEntities.getSelf().inVehicle())) {
+        if (player.uncertaintyHandler.wasAffectedByStuckSpeed() && (!player.isPointThree() || player.inVehicle())) {
             offset -= 0.01;
         }
 
-        if (player.uncertaintyHandler.influencedByBouncyBlock() && (!player.isPointThree() || player.compensatedEntities.getSelf().inVehicle())) {
+        if (player.uncertaintyHandler.influencedByBouncyBlock() && (!player.isPointThree() || player.inVehicle())) {
             offset -= 0.03;
         }
         // This is the end of that section.
 
         // I can't figure out how the client exactly tracks boost time
-        if (player.compensatedEntities.getSelf().getRiding() instanceof PacketEntityRideable) {
-            PacketEntityRideable vehicle = (PacketEntityRideable) player.compensatedEntities.getSelf().getRiding();
+        if (player.compensatedEntities.self.getRiding() instanceof PacketEntityRideable) {
+            PacketEntityRideable vehicle = (PacketEntityRideable) player.compensatedEntities.self.getRiding();
             if (vehicle.currentBoostTime < vehicle.boostTimeMax + 20)
                 offset -= 0.01;
         }
@@ -327,7 +327,7 @@ public class UncertaintyHandler {
     }
 
     private boolean regularHardCollision(SimpleCollisionBox expandedBB) {
-        final PacketEntity riding = player.compensatedEntities.getSelf().getRiding();
+        final PacketEntity riding = player.compensatedEntities.self.getRiding();
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
             if ((entity.isBoat() || entity.getType() == EntityTypes.SHULKER) && entity != riding
                     && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
@@ -340,9 +340,9 @@ public class UncertaintyHandler {
 
     private boolean striderCollision(SimpleCollisionBox expandedBB) {
         // Stiders can walk on top of other striders
-        if (player.compensatedEntities.getSelf().getRiding() instanceof PacketEntityStrider) {
+        if (player.compensatedEntities.self.getRiding() instanceof PacketEntityStrider) {
             for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-                if (entity.getType() == EntityTypes.STRIDER && entity != player.compensatedEntities.getSelf().getRiding()
+                if (entity.getType() == EntityTypes.STRIDER && entity != player.compensatedEntities.self.getRiding()
                         && !entity.hasPassenger(entity) && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
                     return true;
                 }
@@ -354,7 +354,7 @@ public class UncertaintyHandler {
 
     private boolean boatCollision(SimpleCollisionBox expandedBB) {
         // Boats can collide with quite literally anything
-        final PacketEntity riding = player.compensatedEntities.getSelf().getRiding();
+        final PacketEntity riding = player.compensatedEntities.self.getRiding();
         if (riding == null || !riding.isBoat()) return false;
 
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {

@@ -28,16 +28,16 @@ public class Slot {
         return true;
     }
 
-    public void set(ItemStack itemstack2) {
-        container.setItem(inventoryStorageSlot, itemstack2);
+    public void set(ItemStack itemStack) {
+        container.setItem(inventoryStorageSlot, itemStack);
     }
 
     public int getMaxStackSize() {
         return container.getMaxStackSize();
     }
 
-    public int getMaxStackSize(ItemStack itemstack2) {
-        return Math.min(itemstack2.getMaxStackSize(), getMaxStackSize());
+    public int getMaxStackSize(ItemStack itemStack) {
+        return Math.min(itemStack.getMaxStackSize(), getMaxStackSize());
     }
 
     // TODO: Implement for anvil and smithing table
@@ -52,10 +52,10 @@ public class Slot {
         return optional.orElse(ItemStack.EMPTY);
     }
 
-    public Optional<ItemStack> tryRemove(int p_150642_, int p_150643_, GrimPlayer p_150644_) {
-        if (!this.mayPickup(p_150644_)) {
+    public Optional<ItemStack> tryRemove(int p_150642_, int p_150643_, GrimPlayer player) {
+        if (!this.mayPickup(player)) {
             return Optional.empty();
-        } else if (!this.allowModification(p_150644_) && p_150643_ < this.getItem().getAmount()) {
+        } else if (!this.allowModification(player) && p_150643_ < this.getItem().getAmount()) {
             return Optional.empty();
         } else {
             p_150642_ = Math.min(p_150642_, p_150643_);
@@ -91,16 +91,16 @@ public class Slot {
         return this.container.removeItem(this.inventoryStorageSlot, p_40227_);
     }
 
-    public void onTake(GrimPlayer p_150645_, ItemStack p_150646_) {
+    public void onTake(GrimPlayer player, ItemStack itemStack) {
 
     }
 
     // No override
-    public boolean allowModification(GrimPlayer p_150652_) {
-        return this.mayPickup(p_150652_) && this.mayPlace(this.getItem());
+    public boolean allowModification(GrimPlayer player) {
+        return this.mayPickup(player) && this.mayPlace(this.getItem());
     }
 
-    public boolean mayPickup(GrimPlayer p_40228_) {
+    public boolean mayPickup(GrimPlayer player) {
         return true;
     }
 }

@@ -122,7 +122,7 @@ public class BoatPredictionEngine extends PredictionEngine {
                 if (j2 != 2) {
                     for (int k2 = k; k2 < l; ++k2) {
                         if (j2 <= 0 || k2 != k && k2 != l - 1) {
-                            WrappedBlockState blockData = player.compensatedWorld.getWrappedBlockStateAt(l1, k2, i2);
+                            WrappedBlockState blockData = player.compensatedWorld.getBlock(l1, k2, i2);
                             StateType blockMaterial = blockData.getType();
 
                             if (blockMaterial != StateTypes.LILY_PAD && CollisionData.getData(blockMaterial).getMovementCollisionBox(player, player.getClientVersion(), blockData, l1, k2, i2).isIntersected(axisalignedbb1)) {

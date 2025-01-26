@@ -2,9 +2,7 @@ package ac.grim.grimac.manager.config;
 
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.utils.anticheat.LogUtil;
-import ac.grim.grimac.utils.anticheat.MessageUtil;
 import lombok.Getter;
-import net.kyori.adventure.text.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,20 +39,20 @@ public class BaseConfigManager {
 
         printAlertsToConsole = config.getBooleanElse("alerts.print-to-console", true);
         prefix = config.getStringElse("prefix", "&bGrim &8»");
+
+        disconnectTimeout = config.getStringElse("disconnect.timeout", "<lang:disconnect.timeout>");
+        disconnectClosed = config.getStringElse("disconnect.closed", "<lang:disconnect.timeout>");
     }
 
     // ran on start, can be used to handle things that can't be done while loading
-    public void start() {
-        disconnectTimeout = MessageUtil.miniMessage(config.getStringElse("disconnect.timeout", "<lang:disconnect.timeout>"));
-        disconnectClosed = MessageUtil.miniMessage(config.getStringElse("disconnect.closed", "<lang:disconnect.timeout>"));
-    }
+    public void start() {}
 
     @Getter private boolean printAlertsToConsole = false;
 
     @Getter private String prefix = "&bGrim &8»";
 
-    @Getter private Component disconnectTimeout;
-    @Getter private Component disconnectClosed;
+    @Getter private String disconnectTimeout;
+    @Getter private String disconnectClosed;
 
     private final List<Pattern> ignoredClientPatterns = new ArrayList<>();
 

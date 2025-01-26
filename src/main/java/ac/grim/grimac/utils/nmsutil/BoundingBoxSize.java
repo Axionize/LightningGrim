@@ -143,7 +143,7 @@ public final class BoundingBoxSize {
                 float f1 = (float) (getPassengerRidingOffset(player, entity) - 0.35f); // hardcoded player offset
 
                 if (!entity.passengers.isEmpty()) {
-                    int i = entity.passengers.indexOf(player.compensatedEntities.getSelf());
+                    int i = entity.passengers.indexOf(player.compensatedEntities.self);
 
                     if (i == 0) {
                         f = 0.2f;

@@ -13,7 +13,7 @@ public class MovementTickerPig extends MovementTickerRideable {
 
     @Override
     public float getSteeringSpeed() { // Vanilla multiples by 0.225f
-        PacketEntityRideable pig = (PacketEntityRideable) player.compensatedEntities.getSelf().getRiding();
+        PacketEntityRideable pig = (PacketEntityRideable) player.compensatedEntities.self.getRiding();
         return (float) pig.getAttributeValue(Attributes.MOVEMENT_SPEED) * 0.225f;
     }
 }

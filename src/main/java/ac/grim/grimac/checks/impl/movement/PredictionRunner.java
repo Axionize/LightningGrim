@@ -12,7 +12,7 @@ public class PredictionRunner extends Check implements PositionCheck {
 
     @Override
     public void onPositionUpdate(final PositionUpdate positionUpdate) {
-        if (!player.compensatedEntities.getSelf().inVehicle()) {
+        if (!player.inVehicle()) {
             player.movementCheckRunner.processAndCheckMovementPacket(positionUpdate);
         }
     }

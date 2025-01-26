@@ -227,7 +227,8 @@ debug-pipeline-on-join: false
 # Habilitar comprobaciones experimentales
 experimental-checks: false
 
-mitigate-autoblock: false
+mitigate-autoblock: true
+mitigate-desync-noslow: true
 
 # Grim a veces cancela paquetes ilegal como los de Timer. Después de X paquetes en un solo segundo cancelados,
 # cuando deberíamos simplemente expulsar al jugador? Esto es obligatorio ya que algunos limitadores de paquetes

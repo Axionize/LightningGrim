@@ -91,7 +91,7 @@ public class VectorData {
         return Objects.hash(vectorType, lastVector, preUncertainty, vector, isKnockback, firstBreadKb, isExplosion, firstBreadExplosion, isTrident, isZeroPointZeroThree, isSwimHop, isFlipSneaking, isFlipItem, isJump, isAttackSlow);
     }
 
-    protected void addVectorType(VectorType type) {
+    public void addVectorType(VectorType type) {
         switch (type) {
             case Knockback:
                 isKnockback = true;

@@ -20,7 +20,7 @@ public class FarBreak extends Check implements BlockBreakCheck {
 
     @Override
     public void onBlockBreak(BlockBreak blockBreak) {
-        if (player.gamemode == GameMode.SPECTATOR || player.compensatedEntities.getSelf().inVehicle() || blockBreak.action == DiggingAction.CANCELLED_DIGGING) return; // falses
+        if (player.gamemode == GameMode.SPECTATOR || player.inVehicle() || blockBreak.action == DiggingAction.CANCELLED_DIGGING) return; // falses
 
         double min = Double.MAX_VALUE;
         for (double d : player.getPossibleEyeHeights()) {
@@ -32,7 +32,7 @@ public class FarBreak extends Check implements BlockBreakCheck {
 
         // getPickRange() determines this?
         // With 1.20.5+ the new attribute determines creative mode reach using a modifier
-        double maxReach = player.compensatedEntities.getSelf().getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
+        double maxReach = player.compensatedEntities.self.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
         if (player.packetStateData.didLastMovementIncludePosition || player.canSkipTicks()) {
             double threshold = player.getMovementThreshold();
             maxReach += Math.hypot(threshold, threshold);

@@ -7,8 +7,8 @@ import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 
 public class GetBoundingBox {
     public static SimpleCollisionBox getCollisionBoxForPlayer(GrimPlayer player, double centerX, double centerY, double centerZ) {
-        if (player.compensatedEntities.getSelf().getRiding() != null) {
-            return getPacketEntityBoundingBox(player, centerX, centerY, centerZ, player.compensatedEntities.getSelf().getRiding());
+        if (player.inVehicle()) {
+            return getPacketEntityBoundingBox(player, centerX, centerY, centerZ, player.compensatedEntities.self.getRiding());
         }
 
         return getPlayerBoundingBox(player, centerX, centerY, centerZ);
@@ -31,7 +31,7 @@ public class GetBoundingBox {
     }
 
     public static SimpleCollisionBox getBoundingBoxFromPosAndSize(GrimPlayer player, double centerX, double minY, double centerZ, float width, float height) {
-        return getBoundingBoxFromPosAndSize(player.compensatedEntities.getSelf(), centerX, minY, centerZ, width, height);
+        return getBoundingBoxFromPosAndSize(player.compensatedEntities.self, centerX, minY, centerZ, width, height);
     }
 
     public static SimpleCollisionBox getBoundingBoxFromPosAndSize(PacketEntity entity, double centerX, double minY, double centerZ, float width, float height) {

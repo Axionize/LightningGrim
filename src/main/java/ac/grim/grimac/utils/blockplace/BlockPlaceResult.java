@@ -115,7 +115,7 @@ public enum BlockPlaceResult {
     LADDER((player, place) -> {
         //  No placing a ladder against another ladder
         if (!place.isReplaceClicked()) {
-            WrappedBlockState existing = player.compensatedWorld.getWrappedBlockStateAt(place.getPlacedAgainstBlockLocation());
+            WrappedBlockState existing = player.compensatedWorld.getBlock(place.getPlacedAgainstBlockLocation());
             if (existing.getType() == StateTypes.LADDER && existing.getFacing() == place.getDirection()) {
                 return;
             }
@@ -414,7 +414,7 @@ public enum BlockPlaceResult {
                 toSearchPos = toSearchPos.withX(toSearchPos.getX() + direction.getModX());
                 toSearchPos = toSearchPos.withZ(toSearchPos.getZ() + direction.getModZ());
 
-                WrappedBlockState directional = player.compensatedWorld.getWrappedBlockStateAt(toSearchPos);
+                WrappedBlockState directional = player.compensatedWorld.getBlock(toSearchPos);
                 if (Materials.isWater(player.getClientVersion(), directional) || directional.getType() == StateTypes.FROSTED_ICE) {
                     place.set();
                     return;
@@ -474,7 +474,7 @@ public enum BlockPlaceResult {
                 Vector3i placedPos = place.getPlacedBlockPos();
                 placedPos = placedPos.add(direction.getModX(), -1, direction.getModZ());
 
-                WrappedBlockState blockstate2 = player.compensatedWorld.getWrappedBlockStateAt(placedPos);
+                WrappedBlockState blockstate2 = player.compensatedWorld.getBlock(placedPos);
                 if (blockstate2.getType() == StateTypes.CHORUS_PLANT || blockstate2.getType() == StateTypes.END_STONE) {
                     place.set();
                 }
@@ -906,7 +906,7 @@ public enum BlockPlaceResult {
             CollisionBox ccwBox = CollisionData.getData(ccwState.getType()).getMovementCollisionBox(player, player.getClientVersion(), ccwState);
 
             Vector aboveCCWPos = place.getClickedLocation().add(new Vector(ccw.getModX(), ccw.getModY(), ccw.getModZ())).add(new Vector(0, 1, 0));
-            WrappedBlockState aboveCCWState = player.compensatedWorld.getWrappedBlockStateAt(aboveCCWPos);
+            WrappedBlockState aboveCCWState = player.compensatedWorld.getBlock(aboveCCWPos);
             CollisionBox aboveCCWBox = CollisionData.getData(aboveCCWState.getType()).getMovementCollisionBox(player, player.getClientVersion(), aboveCCWState);
 
             BlockFace cw = BlockFaceHelper.getPEClockWise(playerFacing);
@@ -914,7 +914,7 @@ public enum BlockPlaceResult {
             CollisionBox cwBox = CollisionData.getData(cwState.getType()).getMovementCollisionBox(player, player.getClientVersion(), cwState);
 
             Vector aboveCWPos = place.getClickedLocation().add(new Vector(cw.getModX(), cw.getModY(), cw.getModZ())).add(new Vector(0, 1, 0));
-            WrappedBlockState aboveCWState = player.compensatedWorld.getWrappedBlockStateAt(aboveCWPos);
+            WrappedBlockState aboveCWState = player.compensatedWorld.getBlock(aboveCWPos);
             CollisionBox aboveCWBox = CollisionData.getData(aboveCWState.getType()).getMovementCollisionBox(player, player.getClientVersion(), aboveCWState);
 
             int i = (ccwBox.isFullBlock() ? -1 : 0) + (aboveCCWBox.isFullBlock() ? -1 : 0) + (cwBox.isFullBlock() ? 1 : 0) + (aboveCWBox.isFullBlock() ? 1 : 0);
@@ -989,8 +989,8 @@ public enum BlockPlaceResult {
             int i = 0;
             Vector3i starting = new Vector3i(place.getPlacedAgainstBlockLocation().getX() + direction.getModX(), place.getPlacedAgainstBlockLocation().getY() + direction.getModY(), place.getPlacedAgainstBlockLocation().getZ() + direction.getModZ());
             while (i < 7) {
-                if (player.compensatedWorld.getWrappedBlockStateAt(starting).getType() != StateTypes.SCAFFOLDING) {
-                    if (player.compensatedWorld.getWrappedBlockStateAt(starting).getType().isReplaceable()) {
+                if (player.compensatedWorld.getBlock(starting).getType() != StateTypes.SCAFFOLDING) {
+                    if (player.compensatedWorld.getBlock(starting).getType().isReplaceable()) {
                         place.setBlockPosition(starting);
                         place.setReplaceClicked(true);
                         break; // We found it!
