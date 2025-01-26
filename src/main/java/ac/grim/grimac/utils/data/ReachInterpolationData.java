@@ -36,12 +36,19 @@ public class ReachInterpolationData {
     private int interpolationSteps = 1;
     private boolean expandNonRelative = false;
 
+    private GrimPlayer player;
+    private TrackedPosition position;
+    private PacketEntity entity;
+
     public ReachInterpolationData(GrimPlayer player, SimpleCollisionBox startingLocation, TrackedPosition position, PacketEntity entity) {
         final boolean isPointNine = !player.inVehicle() && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9);
 
         this.startingLocation = startingLocation;
         final Vector3d pos = position.getPos();
-        this.targetLocation = GetBoundingBox.getPacketEntityBoundingBox(player, pos.x, pos.y, pos.z, entity);
+        this.targetLocation = new SimpleCollisionBox(pos.x, pos.y, pos.z, pos.x, pos.y, pos.z, false);
+        this.player = player;
+        this.position = position;
+        this.entity = entity;
 
         // 1.9 -> 1.8 precision loss in packets
         // (ViaVersion is doing some stuff that makes this code difficult)
@@ -112,10 +119,24 @@ public class ReachInterpolationData {
         return new SimpleCollisionBox(overlapMinX, overlapMinY, overlapMinZ, overlapMaxX, overlapMaxY, overlapMaxZ);
     }
 
-    // To avoid huge branching when bruteforcing interpolation -
-    // we combine the collision boxes for the steps.
-    //
-    // Designed around being unsure of minimum interp, maximum interp, and target location on 1.9 clients
+    /**
+     * Calculates a bounding box that contains all possible positions where the entity could be located
+     * during interpolation. This takes into account:<p>
+     * • The starting position<br>
+     * • The target position<br>
+     * • The number of interpolation steps<br>
+     * • The current interpolation progress (low and high bounds)<p>
+     *
+     * To avoid expensive branching when bruteforcing interpolation, this method combines
+     * the collision boxes for all possible steps into a single bounding box. This approach
+     * was specifically designed to handle the uncertainty of minimum interpolation,
+     * maximum interpolation, and target location on 1.9+ clients while still supporting 1.7-1.8.<p>
+     *
+     * For each possible interpolation step between the bounds, it calculates the position
+     * and combines all these positions into a single bounding box that encompasses all of them.
+     *
+     * @return A SimpleCollisionBox containing all possible positions of the entity during interpolation
+     */
     public SimpleCollisionBox getPossibleLocationCombined() {
         int interpSteps = getInterpolationSteps();
 
@@ -144,8 +165,42 @@ public class ReachInterpolationData {
                     startingLocation.maxZ + (step * stepMaxZ)));
         }
 
+        return minimumInterpLocation;
+    }
+
+    /**
+     * Builds upon getPossibleLocationCombined() to create a larger bounding box that contains
+     * not just where the entity could be located, but where any part of its hitbox could be.
+     * This is done by:<p>
+     *
+     * 1. Getting the possible locations using getPossibleLocationCombined()<br>
+     * 2. If needed expand appropriately due to a recent teleport that moved the entity by:<br>
+     *    • X: 0.03125D<br>
+     *    • Y: 0.015625D<br>
+     *    • Z: 0.03125D<br>
+     * 3. Expanding by the entity's bounding box dimensions, but only expanding:<br>
+     *    • Minimum coordinates by negative bounding box values<br>
+     *    • Maximum coordinates by positive bounding box values<p>
+     *
+     * This ensures we have a box containing all possible hitbox positions during interpolation.
+     *
+     * @return A SimpleCollisionBox containing all possible hitbox positions during interpolation
+     */
+    public SimpleCollisionBox getPossibleHitboxCombined() {
+        SimpleCollisionBox minimumInterpLocation = getPossibleLocationCombined();
+
         if (expandNonRelative)
             minimumInterpLocation.expand(0.03125D, 0.015625D, 0.03125D);
+
+        Vector3d pos = position.getPos();
+        SimpleCollisionBox box = GetBoundingBox.getPacketEntityBoundingBox(player, pos.x, pos.y, pos.z, entity);
+
+        minimumInterpLocation.minX += Math.min(0, box.minX);
+        minimumInterpLocation.minY += Math.min(0, box.minY);
+        minimumInterpLocation.minZ += Math.min(0, box.minZ);
+        minimumInterpLocation.maxX += Math.max(0, box.maxX);
+        minimumInterpLocation.maxY += Math.max(0, box.maxY);
+        minimumInterpLocation.maxZ += Math.max(0, box.maxZ);
 
         return minimumInterpLocation;
     }
