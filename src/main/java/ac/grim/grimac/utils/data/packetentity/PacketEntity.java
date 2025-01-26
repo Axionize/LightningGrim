@@ -214,10 +214,10 @@ public class PacketEntity extends TypedPacketEntity {
 
     public CollisionBox getMinimumPossibleCollisionBoxes() {
         if (oldPacketLocation == null) {
-            return newPacketLocation.getOverlapLocationCombined();
+            return newPacketLocation.getOverlapHitboxCombined();
         }
 
-        return ReachInterpolationData.getOverlapHitbox(oldPacketLocation.getOverlapLocationCombined(), newPacketLocation.getOverlapLocationCombined());
+        return ReachInterpolationData.getOverlapHitbox(oldPacketLocation.getOverlapHitboxCombined(), newPacketLocation.getOverlapLocationCombined());
     }
 
     public SimpleCollisionBox getPossibleCollisionBoxes() {

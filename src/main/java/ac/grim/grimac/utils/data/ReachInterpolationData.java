@@ -236,6 +236,24 @@ public class ReachInterpolationData {
         return overlapLocation;
     }
 
+    public SimpleCollisionBox getOverlapHitboxCombined() {
+        CollisionBox box = getOverlapLocationCombined();
+        Vector3d pos = position.getPos();
+        SimpleCollisionBox entityBoundingBox = GetBoundingBox.getPacketEntityBoundingBox(player, pos.x, pos.y, pos.z, entity);
+        if (box == NoCollisionBox.INSTANCE) {
+            return entityBoundingBox;
+        } else {
+            SimpleCollisionBox scb = (SimpleCollisionBox) box;
+            scb.minX += Math.min(0, entityBoundingBox.minX);
+            scb.minY += Math.min(0, entityBoundingBox.minY);
+            scb.minZ += Math.min(0, entityBoundingBox.minZ);
+            scb.maxX += Math.max(0, entityBoundingBox.maxX);
+            scb.maxY += Math.max(0, entityBoundingBox.maxY);
+            scb.maxZ += Math.max(0, entityBoundingBox.maxZ);
+            return scb;
+        }
+    }
+
     public void updatePossibleStartingLocation(SimpleCollisionBox possibleLocationCombined) {
         //GrimAC.staticGetLogger().info(ChatColor.BLUE + "Updated new starting location as second trans hasn't arrived " + startingLocation);
         this.startingLocation = combineCollisionBox(startingLocation, possibleLocationCombined);
