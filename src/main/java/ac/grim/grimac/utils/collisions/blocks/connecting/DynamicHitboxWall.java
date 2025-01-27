@@ -14,7 +14,7 @@ import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 
 public class DynamicHitboxWall extends DynamicConnecting implements HitBoxFactory {
     @Override
-    public CollisionBox fetch(GrimPlayer player, StateType heldItem, ClientVersion version, WrappedBlockState state, int x, int y, int z) {
+    public CollisionBox fetch(GrimPlayer player, StateType heldItem, ClientVersion version, WrappedBlockState state, boolean isTargetBlock, int x, int y, int z) {
         int[] connections = getConnections(player, version, state, x, y, z);
         int north = connections[0], south = connections[1], west = connections[2], east = connections[3], up = connections[4];
 

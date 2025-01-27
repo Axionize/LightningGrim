@@ -20,7 +20,8 @@ public class AimModulo360 extends Check implements RotationCheck {
 
     @Override
     public void process(final RotationUpdate rotationUpdate) {
-        if (player.packetStateData.lastPacketWasTeleport) {
+        // Exempt for teleport or entering a vehicle due to rotation reset
+        if (player.packetStateData.lastPacketWasTeleport || player.vehicleData.wasVehicleSwitch) {
             lastDeltaYaw = rotationUpdate.getDeltaXRot();
             return;
         }

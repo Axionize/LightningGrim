@@ -444,21 +444,9 @@ public class PacketEntityReplication extends Check implements PacketCheck {
                 data.setY(data.getY() + deltaY);
                 data.setZ(data.getZ() + deltaZ);
             } else {
-                // In versions < 1.16.2 when the client receives non-relative teleport for an entity
-                // And they move less by the thresholds given, the entity does not move client side
-                if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_1)
-                        && Math.abs(deltaX - data.getX()) < 0.03125D
-                        && Math.abs(deltaY - data.getY()) < 0.015625D
-                        && Math.abs(deltaZ - data.getZ()) < 0.03125D
-                ) {
-                    // We don't have to do anything
-                    // yaw and pitch are still updated as they should be
-                } else {
-//                    player.compensatedEntities.entityMap.updateEntityPosition(player.compensatedEntities.entityMap.get(entityId), new Vector3d(deltaX, deltaY, deltaZ));
-                    data.setX(deltaX);
-                    data.setY(deltaY);
-                    data.setZ(deltaZ);
-                }
+                data.setX(deltaX);
+                data.setY(deltaY);
+                data.setZ(deltaZ);
             }
             if (yaw != null) {
                 data.setXRot(yaw);

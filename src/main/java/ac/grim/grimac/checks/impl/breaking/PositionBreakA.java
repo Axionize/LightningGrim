@@ -6,6 +6,8 @@ import ac.grim.grimac.checks.type.BlockBreakCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockBreak;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 
 @CheckData(name = "PositionBreakA")
 public class PositionBreakA extends Check implements BlockBreakCheck {
@@ -15,6 +17,11 @@ public class PositionBreakA extends Check implements BlockBreakCheck {
 
     @Override
     public void onBlockBreak(BlockBreak blockBreak) {
+        if (player.compensatedEntities.getSelf().inVehicle()
+                || blockBreak.action == DiggingAction.CANCELLED_DIGGING
+                || blockBreak.block.getType() == StateTypes.REDSTONE_WIRE
+        ) return;
+
         SimpleCollisionBox combined = blockBreak.getCombinedBox();
 
         final double[] possibleEyeHeights = player.getPossibleEyeHeights();

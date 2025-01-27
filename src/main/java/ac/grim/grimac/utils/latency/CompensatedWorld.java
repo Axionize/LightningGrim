@@ -508,7 +508,7 @@ public class CompensatedWorld {
 
             return isPowered ? state.getPower() : 0;
         } else if (state.getType() == StateTypes.REDSTONE_WALL_TORCH) {
-            return state.getFacing() != face && state.isPowered() ? 15 : 0;
+            return state.getFacing() != face && state.isLit() ? 15 : 0;
         } else if (state.getType() == StateTypes.DAYLIGHT_DETECTOR) {
             return state.getPower();
         } else if (state.getType() == StateTypes.OBSERVER) {

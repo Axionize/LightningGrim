@@ -1,6 +1,5 @@
 package ac.grim.grimac.predictionengine;
 
-import ac.grim.grimac.checks.impl.sprint.SprintB;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.attribute.ValuedAttribute;
@@ -62,7 +61,7 @@ public final class PlayerBaseTick {
             player.trackBaseTickAddition(waterPushVector);
         }
 
-        final boolean wasSlowMovement = player.isSlowMovement;
+        player.lastPose = player.pose;
 
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_13_2)) {
             // 1.13.2 and below logic: If crouching, then slow movement, simple!
@@ -78,13 +77,11 @@ public final class PlayerBaseTick {
 
             // Mojang also accidentally left this in with 1.14-1.14.4
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14) && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14_4)) {
-                player.isSlowMovement = player.isSlowMovement || player.isSneaking;
+                player.isSlowMovement |= player.isSneaking;
             }
         }
 
         if (player.compensatedEntities.getSelf().inVehicle()) player.isSlowMovement = false;
-
-        if (wasSlowMovement != player.isSlowMovement) player.checkManager.getPostPredictionCheck(SprintB.class).startedSprintingBeforeSlowMovement = player.isSlowMovement && player.isSprinting;
 
         // Players in boats don't care about being in blocks
         if (!player.compensatedEntities.getSelf().inVehicle()) {

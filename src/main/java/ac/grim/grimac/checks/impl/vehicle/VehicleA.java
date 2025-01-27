@@ -1,4 +1,4 @@
-package ac.grim.grimac.checks.impl.badpackets;
+package ac.grim.grimac.checks.impl.vehicle;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
@@ -8,9 +8,9 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientSteerVehicle;
 
-@CheckData(name = "BadPacketsB", description = "Sent impossible steer vehicle packet")
-public class BadPacketsB extends Check implements PacketCheck {
-    public BadPacketsB(GrimPlayer player) {
+@CheckData(name = "VehicleA", description = "Impossible input values")
+public class VehicleA extends Check implements PacketCheck {
+    public VehicleA(GrimPlayer player) {
         super(player);
     }
 

@@ -135,22 +135,23 @@ public class PacketEntity extends TypedPacketEntity {
                 }
                 trackedServerPosition.setPos(vec3d);
             } else {
+                // I think we can reduce this but I'm too lazy to minimize interpolations needed so...
+                SimpleCollisionBox clientArea = newPacketLocation.getPossibleLocationCombined();
                 // In versions < 1.16.2 when the client receives non-relative teleport for an entity
                 // And they move less by the thresholds given, the entity does not move client side
                 if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_1)
-                        && Math.abs(relX - trackedServerPosition.getPos().getX()) < 0.03125D
-                        && Math.abs(relY - trackedServerPosition.getPos().getY()) < 0.015625D
-                        && Math.abs(relZ - trackedServerPosition.getPos().getZ()) < 0.03125D
+                        && clientArea.distanceX(relX) < 0.03125D
+                        && clientArea.distanceY(relY) < 0.015625D
+                        && clientArea.distanceZ(relZ) < 0.03125D
                 ) {
-
-                } else {
-                    trackedServerPosition.setPos(new Vector3d(relX, relY, relZ));
-                    // ViaVersion desync's here for teleports
-                    // It simply teleports the entity with its position divided by 32... ignoring the offset this causes.
-                    // Thanks a lot ViaVersion!  Please don't fix this, or it will be a pain to support.
-                    if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)) {
-                        trackedServerPosition.setPos(new Vector3d(((int) (relX * 32)) / 32d, ((int) (relY * 32)) / 32d, ((int) (relZ * 32)) / 32d));
-                    }
+                    newPacketLocation.expandNonRelative();
+                }
+                trackedServerPosition.setPos(new Vector3d(relX, relY, relZ));
+                // ViaVersion desync's here for teleports
+                // It simply teleports the entity with its position divided by 32... ignoring the offset this causes.
+                // Thanks a lot ViaVersion!  Please don't fix this, or it will be a pain to support.
+                if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)) {
+                    trackedServerPosition.setPos(new Vector3d(((int) (relX * 32)) / 32d, ((int) (relY * 32)) / 32d, ((int) (relZ * 32)) / 32d));
                 }
             }
         }

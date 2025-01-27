@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fMeldingen ingeschakeld"
 alerts-disabled: "%prefix% &fMeldingen uitgeschakeld"
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% is lid geworden met %brand%"
 console-specify-target: "%prefix% &cJe moet een doel opgeven als de console!"
 reloading: "%prefix% &7Reloading config..."
@@ -17,6 +21,9 @@ upload-log: "%prefix% &fDebug geüpload naar: %url%"
 upload-log-start: "%prefix% &fLog wordt geüpload... even geduld"
 upload-log-not-found: "%prefix% &cKan dat log niet vinden"
 upload-log-upload-failure: "%prefix% &cEr is iets misgegaan tijdens het uploaden van dit log, zie console voor meer informatie"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Geldige plaatsaanduidingen:
 # %prefix%
@@ -43,6 +50,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7Meldingen inschakelen"
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile <player> &f- &7Bekijk speler info"
   - "/grim help &f- &7Bekijk dit helpbericht"
   - "/grim debug <player> &f- &7Voorspellingsuitvoer ontwikkelaar"

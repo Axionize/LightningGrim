@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fアラートが有効になりました"
 alerts-disabled: "%prefix% &fアラートが無効になりました"
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% が %brand% を使用して参加しました"
 console-specify-target: "%prefix% &cコンソールでターゲットを指定する必要があります！"
 player-not-found: "%prefix% &cプレイヤーはチェックから免除されているか、オフラインです！"
@@ -14,6 +18,9 @@ upload-log: "%prefix% &fデバッグをアップロードしました: %url%"
 upload-log-start: "%prefix% &fログをアップロード中... しばらくお待ちください"
 upload-log-not-found: "%prefix% &cそのログが見つかりません"
 upload-log-upload-failure: "%prefix% &cログのアップロード中に問題が発生しました。詳細はコンソールを確認してください"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # 使用可能なプレースホルダー:
 # %prefix%
@@ -40,6 +47,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7アラートを切り替えます"
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile <player> &f- &7プレイヤー情報を表示します"
   - "/grim help &f- &7このヘルプメッセージを表示します"
   - "/grim debug <player> &f- &7開発者用の予測出力を表示します"

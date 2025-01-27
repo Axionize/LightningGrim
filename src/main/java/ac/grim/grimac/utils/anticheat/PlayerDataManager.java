@@ -1,5 +1,6 @@
 package ac.grim.grimac.utils.anticheat;
 
+import ac.grim.grimac.api.events.GrimJoinEvent;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.floodgate.FloodgateUtil;
 import com.github.retrooper.packetevents.PacketEvents;
@@ -67,11 +68,12 @@ public class PlayerDataManager {
         if (shouldCheck(user)) {
             GrimPlayer player = new GrimPlayer(user);
             playerDataMap.put(user, player);
+            Bukkit.getPluginManager().callEvent(new GrimJoinEvent(player));
         }
     }
 
-    public void remove(final User player) {
-        playerDataMap.remove(player);
+    public GrimPlayer remove(final User user) {
+       return playerDataMap.remove(user);
     }
 
     public Collection<GrimPlayer> getEntries() {

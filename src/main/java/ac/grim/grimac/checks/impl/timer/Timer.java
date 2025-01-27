@@ -82,7 +82,9 @@ public class Timer extends Check implements PacketCheck {
                     player.onPacketCancel();
                 }
 
-                if (isAboveSetbackVl()) player.getSetbackTeleportUtil().executeNonSimulatingSetback();
+                if (shouldSetback()) {
+                    player.getSetbackTeleportUtil().executeNonSimulatingSetback();
+                }
             }
 
             // Reset the violation by 1 movement

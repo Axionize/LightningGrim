@@ -6,12 +6,11 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 public abstract class TypedPacketEntity {
 
     private final EntityType type;
-    private final boolean isLiving, isSize, isMinecart, isHorse, isAgeable, isAnimal, isBoat;
+    private final boolean isLiving, isMinecart, isHorse, isAgeable, isAnimal, isBoat;
 
     public TypedPacketEntity(EntityType type) {
         this.type = type;
         this.isLiving = EntityTypes.isTypeInstanceOf(type, EntityTypes.LIVINGENTITY);
-        this.isSize = type == EntityTypes.PHANTOM || type == EntityTypes.SLIME || type == EntityTypes.MAGMA_CUBE;
         this.isMinecart = EntityTypes.isTypeInstanceOf(type, EntityTypes.MINECART_ABSTRACT);
         this.isHorse = EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_HORSE);
         this.isAgeable = EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_AGEABLE);
@@ -21,10 +20,6 @@ public abstract class TypedPacketEntity {
 
     public boolean isLivingEntity() {
         return isLiving;
-    }
-
-    public boolean isSize() {
-        return isSize;
     }
 
     public boolean isMinecart() {

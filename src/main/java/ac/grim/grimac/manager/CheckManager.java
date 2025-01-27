@@ -9,8 +9,10 @@ import ac.grim.grimac.checks.impl.breaking.*;
 import ac.grim.grimac.checks.impl.combat.Hitboxes;
 import ac.grim.grimac.checks.impl.combat.*;
 import ac.grim.grimac.checks.impl.crash.*;
+import ac.grim.grimac.checks.impl.elytra.*;
 import ac.grim.grimac.checks.impl.exploit.ExploitA;
 import ac.grim.grimac.checks.impl.exploit.ExploitB;
+import ac.grim.grimac.checks.impl.exploit.ExploitC;
 import ac.grim.grimac.checks.impl.groundspoof.NoFall;
 import ac.grim.grimac.checks.impl.inventory.*;
 import ac.grim.grimac.checks.impl.misc.ClientBrand;
@@ -30,6 +32,10 @@ import ac.grim.grimac.checks.impl.timer.NegativeTimer;
 import ac.grim.grimac.checks.impl.timer.TickTimer;
 import ac.grim.grimac.checks.impl.timer.Timer;
 import ac.grim.grimac.checks.impl.timer.VehicleTimer;
+import ac.grim.grimac.checks.impl.vehicle.VehicleA;
+import ac.grim.grimac.checks.impl.vehicle.VehicleB;
+import ac.grim.grimac.checks.impl.vehicle.VehicleC;
+import ac.grim.grimac.checks.impl.vehicle.VehicleD;
 import ac.grim.grimac.checks.impl.velocity.ExplosionHandler;
 import ac.grim.grimac.checks.impl.velocity.KnockbackHandler;
 import ac.grim.grimac.checks.impl.visual.EffectsHider;
@@ -95,14 +101,12 @@ public class CheckManager {
                 .put(NoFall.class, new NoFall(player))
                 .put(BadPacketsO.class, new BadPacketsO(player))
                 .put(BadPacketsA.class, new BadPacketsA(player))
-                .put(BadPacketsB.class, new BadPacketsB(player))
                 .put(BadPacketsC.class, new BadPacketsC(player))
                 .put(BadPacketsD.class, new BadPacketsD(player))
                 .put(BadPacketsE.class, new BadPacketsE(player))
                 .put(BadPacketsF.class, new BadPacketsF(player))
                 .put(BadPacketsG.class, new BadPacketsG(player))
                 .put(BadPacketsI.class, new BadPacketsI(player))
-                .put(BadPacketsJ.class, new BadPacketsJ(player))
                 .put(BadPacketsK.class, new BadPacketsK(player))
                 .put(BadPacketsL.class, new BadPacketsL(player))
                 .put(BadPacketsN.class, new BadPacketsN(player))
@@ -173,15 +177,24 @@ public class CheckManager {
                 .put(OffsetHandler.class, new OffsetHandler(player))
                 .put(SuperDebug.class, new SuperDebug(player))
                 .put(DebugHandler.class, new DebugHandler(player))
-                .put(EntityControl.class, new EntityControl(player))
                 .put(BadPacketsX.class, new BadPacketsX(player))
                 .put(NoSlow.class, new NoSlow(player))
                 .put(SprintB.class, new SprintB(player))
                 .put(SprintC.class, new SprintC(player))
                 .put(SprintD.class, new SprintD(player))
                 .put(SprintE.class, new SprintE(player))
+                .put(SprintF.class, new SprintF(player))
                 .put(MultiInteractA.class, new MultiInteractA(player))
                 .put(MultiInteractB.class, new MultiInteractB(player))
+                .put(ElytraA.class, new ElytraA(player))
+                .put(ElytraB.class, new ElytraB(player))
+                .put(ElytraC.class, new ElytraC(player))
+                .put(ElytraD.class, new ElytraD(player))
+                .put(ElytraE.class, new ElytraE(player))
+                .put(ElytraF.class, new ElytraF(player))
+                .put(ElytraG.class, new ElytraG(player))
+                .put(ElytraH.class, new ElytraH(player))
+                .put(ElytraI.class, new ElytraI(player))
                 .put(SetbackTeleportUtil.class, new SetbackTeleportUtil(player)) // Avoid teleporting to new position, update safe pos last
                 .put(CompensatedFireworks.class, player.compensatedFireworks)
                 .put(SneakingEstimator.class, new SneakingEstimator(player))
@@ -217,6 +230,7 @@ public class CheckManager {
                 .put(CrashH.class, new CrashH(player))
                 .put(ExploitA.class, new ExploitA(player))
                 .put(ExploitB.class, new ExploitB(player))
+                .put(ExploitC.class, new ExploitC(player))
                 .put(VehicleTimer.class, new VehicleTimer(player))
                 .build();
 
@@ -418,17 +432,21 @@ public class CheckManager {
     }
 
     private void init() {
-        // Fast non-thread safe check
-        if (inited) return;
-        // Slow thread safe check
-        if (!initedAtomic.compareAndSet(false, true)) return;
+        if (inited || initedAtomic.getAndSet(true)) return;
         inited = true;
 
-        for (AbstractCheck check : allChecks.values()) {
-            if (check.getCheckName() != null) {
-                String permissionName = "grim.exempt." + check.getCheckName().toLowerCase();
-                Permission permission = Bukkit.getPluginManager().getPermission(permissionName);
+        final String[] permissions = {
+                "grim.exempt.",
+                "grim.nosetback.",
+                "grim.nomodifypacket.",
+        };
 
+        for (final AbstractCheck check : allChecks.values()) {
+            if (check.getCheckName() == null) continue;
+            final String id = check.getCheckName().toLowerCase();
+            for (String permissionName : permissions) {
+                permissionName += id;
+                final Permission permission = Bukkit.getPluginManager().getPermission(permissionName);
                 if (permission == null) {
                     Bukkit.getPluginManager().addPermission(new Permission(permissionName, PermissionDefault.FALSE));
                 } else {

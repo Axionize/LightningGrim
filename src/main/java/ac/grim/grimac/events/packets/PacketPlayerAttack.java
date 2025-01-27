@@ -34,7 +34,8 @@ public class PacketPlayerAttack extends PacketListenerAbstract {
 
             // The entity does not exist
             if (!player.compensatedEntities.entityMap.containsKey(interact.getEntityId()) && !player.compensatedEntities.serverPositionsMap.containsKey(interact.getEntityId())) {
-                if (player.checkManager.getPacketCheck(BadPacketsW.class).flagAndAlert("entityId=" + interact.getEntityId()) && player.checkManager.getPacketCheck(BadPacketsW.class).shouldModifyPackets()) {
+                final BadPacketsW badPacketsW = player.checkManager.getPacketCheck(BadPacketsW.class);
+                if (badPacketsW.flagAndAlert("entityId=" + interact.getEntityId()) && badPacketsW.shouldModifyPackets()) {
                     event.setCancelled(true);
                     player.onPacketCancel();
                 }
@@ -42,6 +43,10 @@ public class PacketPlayerAttack extends PacketListenerAbstract {
             }
 
             if (interact.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
+                if (player.isMitigateAutoblock()) {
+                    player.resetBukkitItemUsage();
+                }
+
                 ItemStack heldItem = player.getInventory().getHeldItem();
                 PacketEntity entity = player.compensatedEntities.getEntity(interact.getEntityId());
 

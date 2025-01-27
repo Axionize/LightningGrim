@@ -69,7 +69,7 @@ public class BlockPlaceCheck extends Check implements RotationCheck, PostPredict
     protected SimpleCollisionBox getCombinedBox(final BlockPlace place) {
         // Alright, instead of skidding AACAdditionsPro, let's just use bounding boxes
         Vector3i clicked = place.getPlacedAgainstBlockLocation();
-        CollisionBox placedOn = HitboxData.getBlockHitbox(player, place.getMaterial(), player.getClientVersion(), player.compensatedWorld.getWrappedBlockStateAt(clicked), clicked.getX(), clicked.getY(), clicked.getZ());
+        CollisionBox placedOn = HitboxData.getBlockHitbox(player, place.getMaterial(), player.getClientVersion(), player.compensatedWorld.getWrappedBlockStateAt(clicked), true, clicked.getX(), clicked.getY(), clicked.getZ());
 
         int size = placedOn.downCast(boxes);
 

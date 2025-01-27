@@ -17,7 +17,7 @@ import java.util.*;
 // Expansion to the CollisionData class, which is different than regular ray tracing hitboxes
 public enum RaycastData {
 
-    HOPPER((player, item, version, data, x, y, z) -> {
+    HOPPER((player, item, version, data, isTarget, x, y, z) -> {
         HexCollisionBox insideShape = new HexCollisionBox(2.0, 11.0, 2.0, 14.0, 16.0, 14.0);
         switch (data.getFacing()) {
             case NORTH:
@@ -33,11 +33,11 @@ public enum RaycastData {
         }
     }, StateTypes.HOPPER),
 
-    CAULDRON((player, item, version, data, x, y, z) -> {
+    CAULDRON((player, item, version, data, isTarget, x, y, z) -> {
         return new HexCollisionBox(2.0, 4.0, 2.0, 14.0, 16.0, 14.0);
     }, BlockTags.CAULDRONS.getStates().toArray(new StateType[0])),
 
-    FULL_BLOCK((player, item, version, data, x, y, z) -> {
+    FULL_BLOCK((player, item, version, data, isTarget, x, y, z) -> {
         return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
     }, StateTypes.COMPOSTER, StateTypes.SCAFFOLDING);
 
@@ -90,7 +90,7 @@ public enum RaycastData {
 
         // Allow this class to override collision boxes when they aren't the same as regular boxes
         HitBoxFactory hitBoxFactory = data.dynamic;
-        CollisionBox collisionBox = hitBoxFactory.fetch(player, heldItem, version, block, x, y, z);
+        CollisionBox collisionBox = hitBoxFactory.fetch(player, heldItem, version, block, false, x, y, z);
         collisionBox.offset(x, y, z);
         return collisionBox;
     }

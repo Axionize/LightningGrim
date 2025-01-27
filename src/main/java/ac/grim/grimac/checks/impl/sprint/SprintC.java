@@ -43,7 +43,7 @@ public class SprintC extends Check implements PostPredictionCheck {
             }
 
             if (player.isSprinting && (!player.isSwimming || client.isOlderThan(ClientVersion.V_1_21_4))) {
-                if (flaggedLastTick && flagWithSetback()) alert("");
+                if (flaggedLastTick) flagAndAlertWithSetback();
                 flaggedLastTick = true;
             } else {
                 reward();

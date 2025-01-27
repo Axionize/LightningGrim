@@ -14,7 +14,8 @@ public class DuplicateRotPlace extends BlockPlaceCheck {
     }
 
     private float deltaX, deltaY;
-
+    private float lastPlacedDeltaX;
+    private double lastPlacedDeltaDotsX;
     private double deltaDotsX;
     private boolean rotated = false;
 
@@ -26,9 +27,7 @@ public class DuplicateRotPlace extends BlockPlaceCheck {
         rotated = true;
     }
 
-    private float lastPlacedDeltaX;
-    private double lastPlacedDeltaDotsX;
-
+    @Override
     public void onPostFlyingBlockPlace(BlockPlace place) {
         if (rotated) {
             if (deltaX > 2) {
@@ -48,6 +47,4 @@ public class DuplicateRotPlace extends BlockPlaceCheck {
             rotated = false;
         }
     }
-
-
 }

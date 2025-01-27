@@ -724,7 +724,7 @@ public class PredictionEngine {
             forwardMin = forwardMax = strafeMin = strafeMax = 0;
 
             final KnownInput knownInput = player.packetStateData.knownInput;
-            if (knownInput.forward()) {
+            if (knownInput.forward() || player.isSprinting && !player.isSwimming) {
                 forwardMax++;
                 forwardMin++;
             }

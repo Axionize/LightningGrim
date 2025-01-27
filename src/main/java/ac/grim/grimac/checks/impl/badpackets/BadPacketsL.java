@@ -8,7 +8,6 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
-import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 
 import java.util.Locale;
@@ -29,19 +28,20 @@ public class BadPacketsL extends Check implements PacketCheck {
 
             // 1.8 and above clients always send digging packets that aren't used for digging at 0, 0, 0, facing DOWN
             // 1.7 and below clients do the same, except use SOUTH for RELEASE_USE_ITEM
-            final BlockFace expectedFace = player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_7_10) && packet.getAction() == DiggingAction.RELEASE_USE_ITEM
-                    ? BlockFace.SOUTH : BlockFace.DOWN;
+            final int expectedFace = player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_7_10) && packet.getAction() == DiggingAction.RELEASE_USE_ITEM
+                    ? 255 : 0;
 
-            if (packet.getBlockFace() != expectedFace
+            if (packet.getBlockFaceId() != expectedFace
                     || packet.getBlockPosition().getX() != 0
                     || packet.getBlockPosition().getY() != 0
                     || packet.getBlockPosition().getZ() != 0
                     || packet.getSequence() != 0
             ) {
-                if (flagAndAlert("xyzF="
-                        + packet.getBlockPosition().getX() + ", " + packet.getBlockPosition().getY() + ", " + packet.getBlockPosition().getZ() + ", " + packet.getBlockFace()
+                if (flagAndAlert("pos="
+                        + packet.getBlockPosition().getX() + ", " + packet.getBlockPosition().getY() + ", " + packet.getBlockPosition().getZ()
+                        + ", face=" + packet.getBlockFace()
                         + ", sequence=" + packet.getSequence()
-                        + ", action=" + packet.getAction().toString().toLowerCase(Locale.ROOT).replace("_", " ") + " v" + player.getVersionName()
+                        + ", action=" + packet.getAction().toString().toLowerCase(Locale.ROOT)
                 ) && shouldModifyPackets() && packet.getAction() != DiggingAction.RELEASE_USE_ITEM) {
                     event.setCancelled(true);
                     player.onPacketCancel();

@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fAlertas habilitados."
 alerts-disabled: "%prefix% &fAlertas desabilitados."
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% entrou usando %brand%."
 console-specify-target: "%prefix% &cVocê deve especificar o nome do alvo!"
 reloading: "%prefix% &7Reloading config..."
@@ -17,6 +21,9 @@ upload-log: "%prefix% &fRegistro enviado para: %url%"
 upload-log-start: "%prefix% &fEnviando o registro. Aguarde."
 upload-log-not-found: "%prefix% &cNúmero do registro não encontrado."
 upload-log-upload-failure: "%prefix% &cAlgo deu errado ao enviar o registro, veja o terminal para mais informações."
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Placeholders válidos:
 # %prefix%
@@ -41,6 +48,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7Alterna noificações."
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile <player> &f- &7Mosta as informações do jogador."
   - "/grim help &f- &7Mostra essa mensagem de ajuda."
   - "/grim debug <player> &f- &7Depura a simulação."

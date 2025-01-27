@@ -63,8 +63,7 @@ public class FastBreak extends Check implements BlockBreakCheck {
             }
 
             if (blockDelayBalance > 1000) { // If more than a second of advantage
-                flagAndAlert("Delay=" + breakDelay);
-                if (shouldModifyPackets()) {
+                if (flagAndAlert("Delay=" + breakDelay) && shouldModifyPackets()) {
                     blockBreak.cancel();
                 }
             }

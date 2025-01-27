@@ -2,10 +2,7 @@ package ac.grim.grimac.utils.nmsutil;
 
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
-import ac.grim.grimac.utils.data.packetentity.PacketEntity;
-import ac.grim.grimac.utils.data.packetentity.PacketEntityHorse;
-import ac.grim.grimac.utils.data.packetentity.PacketEntitySizeable;
-import ac.grim.grimac.utils.data.packetentity.PacketEntityTrackXRot;
+import ac.grim.grimac.utils.data.packetentity.*;
 import ac.grim.grimac.utils.math.GrimMath;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
@@ -55,12 +52,13 @@ public final class BoundingBoxSize {
             return 0.9f;
         } else if (EntityTypes.PHANTOM.equals(type)) {
             if (packetEntity instanceof PacketEntitySizeable) {
-                return 0.9f + ((PacketEntitySizeable) packetEntity).size * 0.2f;
+                PacketEntitySizeable sizeable = (PacketEntitySizeable) packetEntity;
+                return 0.9f + sizeable.size * 0.2f;
             }
 
             return 1.5f;
-        } else if (EntityTypes.ELDER_GUARDIAN.equals(type)) { // TODO: 2.35 * guardian?
-            return 1.9975f;
+        } else if (packetEntity instanceof PacketEntityGuardian) { // TODO: 2.35 * guardian?
+            return ((PacketEntityGuardian) packetEntity).isElder ? 1.9975f : 0.85f;
         } else if (EntityTypes.END_CRYSTAL.equals(type)) {
             return 2f;
         } else if (EntityTypes.ENDER_DRAGON.equals(type)) {
@@ -71,13 +69,12 @@ public final class BoundingBoxSize {
             return 4f;
         } else if (EntityTypes.GIANT.equals(type)) {
             return 3.6f;
-        } else if (EntityTypes.GUARDIAN.equals(type)) {
-            return 0.85f;
         } else if (EntityTypes.IRON_GOLEM.equals(type)) {
             return 1.4f;
         } else if (EntityTypes.MAGMA_CUBE.equals(type)) {
             if (packetEntity instanceof PacketEntitySizeable) {
-                float size = ((PacketEntitySizeable) packetEntity).size;
+                PacketEntitySizeable sizeable = (PacketEntitySizeable) packetEntity;
+                float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
                         ? 2.04f * (0.255f * size)
@@ -97,7 +94,8 @@ public final class BoundingBoxSize {
             return 1f;
         } else if (EntityTypes.SLIME.equals(type)) {
             if (packetEntity instanceof PacketEntitySizeable) {
-                float size = ((PacketEntitySizeable) packetEntity).size;
+                PacketEntitySizeable sizeable = (PacketEntitySizeable) packetEntity;
+                float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
                         ? 2.04f * (0.255f * size) : 0.51000005f * size;
@@ -275,8 +273,8 @@ public final class BoundingBoxSize {
             return 1.7f;
         } else if (EntityTypes.DONKEY.equals(type)) {
             return 1.5f;
-        } else if (EntityTypes.ELDER_GUARDIAN.equals(type)) {
-            return 1.9975f;
+        } else if (packetEntity instanceof PacketEntityGuardian) { // TODO: 2.35 * guardian?
+            return ((PacketEntityGuardian) packetEntity).isElder ? 1.9975f : 0.85f;
         } else if (EntityTypes.ENDERMAN.equals(type) || EntityTypes.WARDEN.equals(type)) {
             return 2.9f;
         } else if (EntityTypes.ENDERMITE.equals(type) || EntityTypes.COD.equals(type)) {
@@ -293,8 +291,6 @@ public final class BoundingBoxSize {
             return 4f;
         } else if (EntityTypes.GIANT.equals(type)) {
             return 12f;
-        } else if (EntityTypes.GUARDIAN.equals(type)) {
-            return 0.85f;
         } else if (EntityTypes.HORSE.equals(type)) {
             return 1.6f;
         } else if (EntityTypes.IRON_GOLEM.equals(type)) {
@@ -305,7 +301,8 @@ public final class BoundingBoxSize {
             return 0.4f;
         } else if (EntityTypes.MAGMA_CUBE.equals(type)) {
             if (packetEntity instanceof PacketEntitySizeable) {
-                float size = ((PacketEntitySizeable) packetEntity).size;
+                PacketEntitySizeable sizeable = (PacketEntitySizeable) packetEntity;
+                float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
                         ? 2.04f * (0.255f * size)
@@ -325,7 +322,8 @@ public final class BoundingBoxSize {
             return 1.25f;
         } else if (EntityTypes.PHANTOM.equals(type)) {
             if (packetEntity instanceof PacketEntitySizeable) {
-                return 0.5f + ((PacketEntitySizeable) packetEntity).size * 0.1f;
+                PacketEntitySizeable sizeable = (PacketEntitySizeable) packetEntity;
+                return 0.5f + sizeable.size * 0.1f;
             }
 
             return 1.8f;
@@ -353,7 +351,8 @@ public final class BoundingBoxSize {
             return 1.6f;
         } else if (EntityTypes.SLIME.equals(type)) {
             if (packetEntity instanceof PacketEntitySizeable) {
-                float size = ((PacketEntitySizeable) packetEntity).size;
+                PacketEntitySizeable sizeable = (PacketEntitySizeable) packetEntity;
+                float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
                         ? 2.04f * (0.255f * size)

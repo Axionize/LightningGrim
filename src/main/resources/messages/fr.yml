@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fAlertes activées"
 alerts-disabled: "%prefix% &fAlertes désactivées"
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% a rejoint en utilisant %brand%"
 console-specify-target: "%prefix% &cVous devez spécifier une cible en tant que console !"
 reloading: "%prefix% &7Reloading config..."
@@ -17,6 +21,9 @@ upload-log: "%prefix% &fLe fichier de débogage a été téléversé vers : %url
 upload-log-start: "%prefix% &fTéléversement du journal... Veuillez patienter"
 upload-log-not-found: "%prefix% &cUImpossible de trouver le journal de débogage"
 upload-log-upload-failure: "%prefix% &cUne erreur est survenue lors du téléversement de ce journal, regardez la console pour plus d'information"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Placeholders valides :
 # %prefix%
@@ -43,6 +50,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7Activer/Désactiver les alertes"
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile <player> &f- &7Voir le profil du joueur"
   - "/grim help &f- &7Afficher l'aide"
   - "/grim debug <player> &f- &7Afficher les informations de débogage du joueur"

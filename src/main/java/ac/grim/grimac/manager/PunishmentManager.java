@@ -139,7 +139,7 @@ public class PunishmentManager implements ConfigReloadable {
                         // Any other number means execute every X interval
                         boolean inInterval = command.interval == 0 ? (command.executeCount == 0) : (violationCount % command.interval == 0);
                         if (inInterval) {
-                            CommandExecuteEvent executeEvent = new CommandExecuteEvent(player, check, cmd);
+                            CommandExecuteEvent executeEvent = new CommandExecuteEvent(player, check, verbose, cmd);
                             Bukkit.getPluginManager().callEvent(executeEvent);
                             if (executeEvent.isCancelled()) continue;
 

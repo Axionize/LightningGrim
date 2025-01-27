@@ -33,9 +33,7 @@ public class BadPacketsX extends Check implements PostPredictionCheck {
 
         if (player.isTickingReliablyFor(3)) {
             for (; flags > 0; flags--) {
-                if (flagAndAlert()) {
-                    setbackIfAboveSetbackVL();
-                }
+                flagAndAlertWithSetback();
             }
         }
 
@@ -64,6 +62,10 @@ public class BadPacketsX extends Check implements PostPredictionCheck {
 
                 case START_SPRINTING:
                 case STOP_SPRINTING:
+                    if (player.inVehicle()) {
+                        return;
+                    }
+
                     if (sprint) {
                         if (player.canSkipTicks() || flagAndAlert()) {
                             flags++;

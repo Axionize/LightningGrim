@@ -5,6 +5,7 @@ import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.PacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 
@@ -17,6 +18,7 @@ public class BadPacketsC extends Check implements PacketCheck {
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
         if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
+            if (player.gamemode == GameMode.SPECTATOR) return;
             if (new WrapperPlayClientInteractEntity(event).getEntityId() == player.entityID) {
                 // Instant ban
                 if (flagAndAlert() && shouldModifyPackets()) {

@@ -41,6 +41,7 @@ public class InitManager {
                 .add(GrimAPI.INSTANCE.getViolationDatabaseManager())
                 .add(new JavaVersion())
                 .add(new ViaVersion())
+                .add(new TAB())
                 .add(() -> {
                     if (MessageUtil.hasPlaceholderAPI) {
                         new PlaceholderAPIExpansion().register();

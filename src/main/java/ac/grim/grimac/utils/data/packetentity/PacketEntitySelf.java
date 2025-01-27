@@ -128,7 +128,7 @@ public class PacketEntitySelf extends PacketEntity {
                     }
 
                     final int swiftSneak = player.getInventory().getLeggings().getEnchantmentLevel(EnchantmentTypes.SWIFT_SNEAK, player.getClientVersion());
-                    final double clamped = GrimMath.clampFloat(0.3F + (swiftSneak * 0.15F), 0f, 1f);
+                    final double clamped = GrimMath.clamp(0.3f + swiftSneak * 0.15f, 0f, 1f);
                     if (player.getClientVersion().isOlderThan(ClientVersion.V_1_21)) {
                         return clamped;
                     }

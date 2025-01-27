@@ -8,7 +8,7 @@ import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 
-@CheckData(name = "NoSlow (Prediction)", configName = "NoSlow", description = "Was not slowed while using an item", setback = 5)
+@CheckData(name = "NoSlow", description = "Was not slowed while using an item", setback = 5)
 public class NoSlow extends Check implements PostPredictionCheck {
     double offsetToFlag;
     double bestOffset = 1;
@@ -34,8 +34,8 @@ public class NoSlow extends Check implements PostPredictionCheck {
             }
 
             if (bestOffset > offsetToFlag) {
-                if (flaggedLastTick && flagWithSetback()) {
-                    alert("");
+                if (flaggedLastTick) {
+                    flagAndAlertWithSetback();
                 }
                 flaggedLastTick = true;
             } else {
@@ -52,6 +52,6 @@ public class NoSlow extends Check implements PostPredictionCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        offsetToFlag = config.getDoubleElse("NoSlow.threshold", 0.001);
+        offsetToFlag = config.getDoubleElse(getConfigName() + ".threshold", 0.001);
     }
 }

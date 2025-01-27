@@ -37,7 +37,7 @@ public final class BlockBreak {
     }
 
     public SimpleCollisionBox getCombinedBox() {
-        CollisionBox placedOn = HitboxData.getBlockHitbox(player, player.getInventory().getHeldItem().getType().getPlacedType(), player.getClientVersion(), block, position.x, position.y, position.z);
+        CollisionBox placedOn = HitboxData.getBlockHitbox(player, player.getInventory().getHeldItem().getType().getPlacedType(), player.getClientVersion(), block, true, position.x, position.y, position.z);
 
         List<SimpleCollisionBox> boxes = new ArrayList<>();
         placedOn.downCast(boxes);

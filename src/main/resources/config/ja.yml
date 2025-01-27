@@ -140,9 +140,6 @@ TimerVehicle:
   # 目標タイマー値は1.005です
   setbackvl: 10
 
-EntityControl:
-  setbackvl: 25
-
 Reach:
   # ヒットボックスをどれだけ拡大するかを設定します。0.0005に設定することで3.0005以上のリーチを検出できます
   #
@@ -181,6 +178,8 @@ debug-pipeline-on-join: false
 
 # 実験的なチェックを有効にします
 experimental-checks: false
+
+mitigate-autoblock: false
 
 # Grimは "Timer" のような違反パケットをキャンセルすることがありますが、1秒間にキャンセルされたパケット数がXを超えた場合、
 # プレイヤーを強制的にキックしますか？これは、いくつかのパケットリミッターがGrimによってキャンセルされたパケットをカウントしないためです。

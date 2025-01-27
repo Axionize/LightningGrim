@@ -14,6 +14,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class AlertManagerImpl implements AlertManager {
     private final Set<Player> enabledAlerts = new CopyOnWriteArraySet<>(new HashSet<>());
     private final Set<Player> enabledVerbose = new CopyOnWriteArraySet<>(new HashSet<>());
+    private final Set<Player> enabledBrands = new CopyOnWriteArraySet<>(new HashSet<>());
 
     @Override
     public boolean hasAlertsEnabled(Player player) {
@@ -39,6 +40,10 @@ public class AlertManagerImpl implements AlertManager {
         return enabledVerbose.contains(player);
     }
 
+    public boolean hasBrandsEnabled(Player player) {
+        return enabledBrands.contains(player) && player.hasPermission("grim.brand");
+    }
+
     @Override
     public void toggleVerbose(Player player) {
         if (!enabledVerbose.remove(player)) {
@@ -53,8 +58,22 @@ public class AlertManagerImpl implements AlertManager {
         }
     }
 
+    public void toggleBrands(Player player) {
+        if (!enabledBrands.remove(player)) {
+            String alertString = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringElse("brands-enabled", "%prefix% &fBrands enabled");
+            alertString = MessageUtil.replacePlaceholders(player, alertString);
+            MessageUtil.sendMessage(player, MessageUtil.miniMessage(alertString));
+            enabledBrands.add(player);
+        } else {
+            String alertString = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringElse("brands-disabled", "%prefix% &fBrands disabled");
+            alertString = MessageUtil.replacePlaceholders(player, alertString);
+            MessageUtil.sendMessage(player, MessageUtil.miniMessage(alertString));
+        }
+    }
+
     public void handlePlayerQuit(Player player) {
         enabledAlerts.remove(player);
         enabledVerbose.remove(player);
+        enabledBrands.remove(player);
     }
 }

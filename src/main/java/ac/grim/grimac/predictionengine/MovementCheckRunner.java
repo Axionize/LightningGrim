@@ -2,7 +2,7 @@ package ac.grim.grimac.predictionengine;
 
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.impl.movement.EntityControl;
+import ac.grim.grimac.checks.impl.vehicle.VehicleC;
 import ac.grim.grimac.checks.impl.prediction.Phase;
 import ac.grim.grimac.checks.type.PositionCheck;
 import ac.grim.grimac.manager.SetbackTeleportUtil;
@@ -274,7 +274,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
             // For whatever reason the vehicle move packet occurs AFTER the player changes slots...
             if (riding instanceof PacketEntityRideable) {
-                EntityControl control = player.checkManager.getPostPredictionCheck(EntityControl.class);
+                VehicleC vehicleC = player.checkManager.getPacketCheck(VehicleC.class);
 
                 ItemType requiredItem = riding.getType() == EntityTypes.PIG ? ItemTypes.CARROT_ON_A_STICK : ItemTypes.WARPED_FUNGUS_ON_A_STICK;
                 ItemStack mainHand = player.getInventory().getHeldItem();
@@ -285,9 +285,9 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
                 if (!correctMainHand && !correctOffhand) {
                     // Entity control cheats!  Set the player back
-                    control.flagAndAlert();
+                    vehicleC.flagAndAlert();
                 } else {
-                    control.reward();
+                    vehicleC.reward();
                 }
             }
         }
@@ -320,7 +320,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             //player.fallDistance = 0;
             player.isFlying = false;
             player.isGliding = false;
-            player.isSprinting = riding instanceof PacketEntityCamel && player.isSprinting; // camels can sprint
+            player.isSprinting &= riding instanceof PacketEntityCamel; // camels can sprint
             player.isSneaking = false;
 
             if (riding.getType() != EntityTypes.PIG && riding.getType() != EntityTypes.STRIDER) {

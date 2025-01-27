@@ -22,7 +22,6 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
-import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.util.Vector3i;
 import org.bukkit.util.Vector;
@@ -221,8 +220,9 @@ public class BlockRayTrace {
 
     public static BlockHitData didHitBlock(GrimPlayer player, double[] startPos, double[] lookVec, double currentDistance, double maxDistance, int[] targetBlockVec, BlockFace expectedBlockFace, SimpleCollisionBox[] boxes, boolean raycastContext, WrappedBlockState block, Vector3i vector3i) {
         CollisionBox data;
+        boolean isTargetBlock = Arrays.equals(new int[]{vector3i.x, vector3i.y, vector3i.z}, targetBlockVec);
         if (!raycastContext) {
-            data = HitboxData.getBlockHitbox(player, player.getInventory().getHeldItem().getType().getPlacedType(), player.getClientVersion(), block, vector3i.x, vector3i.y, vector3i.z);
+            data = HitboxData.getBlockHitbox(player, player.getInventory().getHeldItem().getType().getPlacedType(), player.getClientVersion(), block, isTargetBlock, vector3i.x, vector3i.y, vector3i.z);
         } else {
             data = RaycastData.getBlockHitbox(player, null, player.getClientVersion(), block, vector3i.x, vector3i.y, vector3i.z);
         }
@@ -233,16 +233,6 @@ public class BlockRayTrace {
         double[] bestHitLoc = null;
         BlockFace bestFace = null;
 
-        boolean isTargetBlock = Arrays.equals(new int[]{vector3i.x, vector3i.y, vector3i.z}, targetBlockVec);
-        if (isTargetBlock) {
-            // BEWARE OF https://bugs.mojang.com/browse/MC-85109 FOR 1.8 PLAYERS
-            // 1.8 Brewing Stand hitbox is a fullblock until it is hit sometimes, can be caused be restarting client and joining server
-            if (block.getType() == StateTypes.BREWING_STAND && player.getClientVersion().equals(ClientVersion.V_1_8)) {
-                size++;
-                boxes[size] = new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
-            }
-        }
-
         double[] currentEnd = new double[]{
                 startPos[0] + lookVec[0] * currentDistance,
                 startPos[1] + lookVec[1] * currentDistance,
@@ -250,17 +240,6 @@ public class BlockRayTrace {
         };
 
         for (int i = 0; i < size; i++) {
-            // TODO temporary debugging code remove later
-            if (boxes[i] == null) {
-                StringBuilder boxesStr = new StringBuilder();
-                for (int j = 0; j < size; j++) {
-                    boxesStr.append("Box[").append(j).append("]=").append(boxes[j]).append(" ");
-                }
-                throw new NullPointerException("block=" + block.getType().toString() +
-                        " i=" + i +
-                        " raycastContext=" + raycastContext +
-                        " boxes=[" + boxesStr + "]");
-            }
             Pair<double[], BlockFace> intercept = ReachUtilsPrimitives.calculateIntercept(boxes[i], startPos, currentEnd);
             if (intercept.first() == null) continue; // No intercept or wrong blockFace
 
@@ -404,7 +383,8 @@ public class BlockRayTrace {
     // 3. Do not expand or shrink everything, we do not expect 0.03/0.002 or we legacy example where we want to keep old behaviour
     private static HitData getTraverseResult(GrimPlayer player, @Nullable StateType heldItem, Vector3d startingPos, Vector startingVec, Ray trace, Vector3d endPos, boolean sourcesHaveHitbox, boolean checkInside, double knownDistance, boolean shrinkBlocks) {
         return traverseBlocks(player, startingPos, endPos, (block, vector3i) -> {
-            CollisionBox data = HitboxData.getBlockHitbox(player, heldItem, player.getClientVersion(), block, vector3i.getX(), vector3i.getY(), vector3i.getZ());
+            // even though sometimes we are raytracing against a block that is the target block, we pass false to this function because it only applies a change for brewing stands in 1.8
+            CollisionBox data = HitboxData.getBlockHitbox(player, heldItem, player.getClientVersion(), block, false, vector3i.getX(), vector3i.getY(), vector3i.getZ());
             SimpleCollisionBox[] boxes = new SimpleCollisionBox[ComplexCollisionBox.DEFAULT_MAX_COLLISION_BOX_SIZE];
             int size = data.downCast(boxes);
 

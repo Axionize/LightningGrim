@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fUyarılar aktif edildi."
 alerts-disabled: "%prefix% &fUyarılar deaktif edildi."
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% adlı oyuncu %brand% kullanarak giriş yaptı."
 console-specify-target: "%prefix% &cKonsol olarak bir hedef belirtmelisiniz!"
 reloading: "%prefix% &7Reloading config..."
@@ -17,6 +21,9 @@ upload-log: "%prefix% &fDebug şu adrese yüklendi: %url%"
 upload-log-start: "%prefix% &fLog yükleniyor... lütfen bekleyin."
 upload-log-not-found: "%prefix% &cLog bulunamadı."
 upload-log-upload-failure: "%prefix% &cLog yüklenirken bir problem oluştu, lütfen konsolu kontrol edin."
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Geçerli placeholderlar:
 # %prefix%
@@ -43,6 +50,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7Uyarıları aktif/deaktif eder"
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile (oyuncu) &f- &7Oyuncu profilini gösterir"
   - "/grim help &f- &7Bu yardım mesajını gösterir"
   - "/grim debug <player> &f- &7Geliştirici Debug'ını verir"

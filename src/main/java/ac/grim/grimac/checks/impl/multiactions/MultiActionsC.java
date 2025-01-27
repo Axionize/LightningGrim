@@ -8,7 +8,7 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 
-@CheckData(name = "MultiActionsC", description = "Clicked in inventory while performing other actions", experimental = true)
+@CheckData(name = "MultiActionsC", description = "Clicked in inventory while sprinting", experimental = true)
 public class MultiActionsC extends Check implements PacketCheck {
     public MultiActionsC(GrimPlayer player) {
         super(player);
@@ -19,13 +19,8 @@ public class MultiActionsC extends Check implements PacketCheck {
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
         if (event.getPacketType() == PacketType.Play.Client.CLICK_WINDOW) {
-            String verbose = player.isSprinting && !player.isSwimming && !serverOpenedInventoryThisTick ? "sprinting" : "";
 
-            if (player.packetStateData.isSlowedByUsingItem()) {
-                verbose += (verbose.isEmpty() ? "" : ", ") + "using";
-            }
-
-            if (!verbose.isEmpty() && flagAndAlert(verbose) && shouldModifyPackets()) {
+            if (player.isSprinting && !player.isSwimming && !serverOpenedInventoryThisTick && flagAndAlert() && shouldModifyPackets()) {
                 event.setCancelled(true);
                 player.onPacketCancel();
             }

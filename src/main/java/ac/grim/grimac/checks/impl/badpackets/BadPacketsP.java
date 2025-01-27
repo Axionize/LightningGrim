@@ -11,7 +11,6 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientCl
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClickWindow.WindowClickType;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerOpenWindow;
 
-
 @CheckData(name = "BadPacketsP", experimental = true)
 public class BadPacketsP extends Check implements PacketCheck {
 
@@ -43,14 +42,14 @@ public class BadPacketsP extends Check implements PacketCheck {
             switch (clickType) {
                 case PICKUP:
                 case QUICK_MOVE:
-                case THROW:
-                    flag = button != 0 && button != 1;
+                case CLONE:
+                    flag = button > 2 || button < 0;
                     break;
                 case SWAP:
                     flag = (button > 8 || button < 0) && button != 40;
                     break;
-                case CLONE:
-                    flag = button != 2;
+                case THROW:
+                    flag = button != 0 && button != 1;
                     break;
                 case QUICK_CRAFT:
                     flag = button == 3 || button == 7 || button > 10 || button < 0;

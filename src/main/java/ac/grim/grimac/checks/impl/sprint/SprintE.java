@@ -37,7 +37,7 @@ public class SprintE extends Check implements PostPredictionCheck {
 
         if (wasHorizontalCollision && !startedSprintingThisTick) {
             if (player.isSprinting) {
-                if (flagAndAlert()) setbackIfAboveSetbackVL();
+                flagAndAlertWithSetback();
             } else reward();
         }
 

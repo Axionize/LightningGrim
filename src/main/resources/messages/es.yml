@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fAlertas habilitadas"
 alerts-disabled: "%prefix% &fAlertas deshabilitadas"
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% se ha unido usando %brand%"
 console-specify-target: "%prefix% &c¡Debes especificar a alguien siendo la consola!"
 reloading: "%prefix% &7Reloading config..."
@@ -17,6 +21,9 @@ upload-log: "%prefix% &fSubido el registro de depuración a: %url%"
 upload-log-start: "%prefix% &fSubiendo registros... por favor espera"
 upload-log-not-found: "%prefix% &cNo se pudo encontrar ese registro"
 upload-log-upload-failure: "%prefix% &cAlgo salio mal mientras subíamos ese registro, mira la consola para mas información"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Placeholders validos:
 # %prefix%
@@ -43,6 +50,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7Alternar alertas"
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile <player> &f- &7Mostrar informacion del jugador"
   - "/grim help &f- &7Mostrar este mensaje de ayuda"
   - "/grim debug <player> &f- &7Salida de predicciones para desarrolladores"

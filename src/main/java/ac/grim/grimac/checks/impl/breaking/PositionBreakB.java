@@ -16,7 +16,7 @@ public class PositionBreakB extends Check implements BlockBreakCheck {
     }
 
     private BlockFace lastFace;
-    private final BlockFace releaseFace = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) ? BlockFace.DOWN : BlockFace.SOUTH;
+    private final int releaseFace = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) ? 0 : 255;
 
     @Override
     public void onBlockBreak(BlockBreak blockBreak) {
@@ -31,7 +31,7 @@ public class PositionBreakB extends Check implements BlockBreakCheck {
         }
 
         if (blockBreak.action == DiggingAction.CANCELLED_DIGGING) {
-            lastFace = blockBreak.face == releaseFace ? null : blockBreak.face;
+            lastFace = blockBreak.faceId == releaseFace ? null : blockBreak.face;
         }
     }
 }

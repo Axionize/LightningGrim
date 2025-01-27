@@ -1,6 +1,8 @@
 package ac.grim.grimac.events.packets;
 
 import ac.grim.grimac.GrimAPI;
+import ac.grim.grimac.api.events.GrimQuitEvent;
+import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import com.github.retrooper.packetevents.event.*;
 import com.github.retrooper.packetevents.netty.channel.ChannelHelper;
@@ -36,9 +38,12 @@ public class PacketPlayerJoinQuit extends PacketListenerAbstract {
         }
         if (player.hasPermission("grim.alerts") && player.hasPermission("grim.alerts.enable-on-join")) {
             GrimAPI.INSTANCE.getAlertManager().toggleAlerts(player);
-            if (player.hasPermission("grim.verbose") && player.hasPermission("grim.verbose.enable-on-join")) {
-                GrimAPI.INSTANCE.getAlertManager().toggleVerbose(player);
-            }
+        }
+        if (player.hasPermission("grim.verbose") && player.hasPermission("grim.verbose.enable-on-join")) {
+            GrimAPI.INSTANCE.getAlertManager().toggleVerbose(player);
+        }
+        if (player.hasPermission("grim.brand") && player.hasPermission("grim.brand.enable-on-join")) {
+            GrimAPI.INSTANCE.getAlertManager().toggleBrands(player);
         }
         if (player.hasPermission("grim.spectate") && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("spectators.hide-regardless", false)) {
             GrimAPI.INSTANCE.getSpectateManager().onLogin(player);
@@ -47,7 +52,8 @@ public class PacketPlayerJoinQuit extends PacketListenerAbstract {
 
     @Override
     public void onUserDisconnect(UserDisconnectEvent event) {
-        GrimAPI.INSTANCE.getPlayerDataManager().remove(event.getUser());
+        GrimPlayer grimPlayer = GrimAPI.INSTANCE.getPlayerDataManager().remove(event.getUser());
+        if (grimPlayer != null) Bukkit.getPluginManager().callEvent(new GrimQuitEvent(grimPlayer));
         GrimAPI.INSTANCE.getPlayerDataManager().exemptUsers.remove(event.getUser());
         //Check if calling async is safe
         if (event.getUser().getProfile().getUUID() == null) return; // folia doesn't like null getPlayer()

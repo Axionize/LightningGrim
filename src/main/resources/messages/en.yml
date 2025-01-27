@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fAlerts enabled"
 alerts-disabled: "%prefix% &fAlerts disabled"
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% joined using %brand%"
 console-specify-target: "%prefix% &cYou must specify a target as the console!"
 reloading: "%prefix% &7Reloading config..."
@@ -17,6 +21,9 @@ upload-log: "%prefix% &fUploaded debug to: %url%"
 upload-log-start: "%prefix% &fUploading log... please wait"
 upload-log-not-found: "%prefix% &cUnable to find that log"
 upload-log-upload-failure: "%prefix% &cSomething went wrong while uploading this log, see console for more info"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Valid placeholders:
 # %prefix%
@@ -43,6 +50,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7Toggle alerts"
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile <player> &f- &7View player info"
   - "/grim help &f- &7View this help message"
   - "/grim debug <player> &f- &7Developer Prediction output"

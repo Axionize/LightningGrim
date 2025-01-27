@@ -2,6 +2,7 @@ package ac.grim.grimac.utils.data;
 
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
+import ac.grim.grimac.utils.data.packetentity.PacketEntityShulker;
 import com.github.retrooper.packetevents.util.Vector3i;
 
 import java.util.Objects;
@@ -23,7 +24,7 @@ public class ShulkerData {
         this.blockPos = position;
     }
 
-    public ShulkerData(PacketEntity entity, int lastTransactionSent, boolean isClosing) {
+    public ShulkerData(PacketEntityShulker entity, int lastTransactionSent, boolean isClosing) {
         this.lastTransactionSent = lastTransactionSent;
         this.isClosing = isClosing;
         this.entity = entity;

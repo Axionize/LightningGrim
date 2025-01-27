@@ -204,11 +204,9 @@ public class ExplosionHandler extends Check implements PostPredictionCheck {
         }
 
         // 100% known kb was taken
-        if (player.likelyExplosions != null) {
+        if (player.likelyExplosions != null && !player.compensatedEntities.getSelf().isDead) {
             if (player.likelyExplosions.offset > offsetToFlag) {
-                if (flagAndAlert(player.likelyExplosions.offset == Integer.MAX_VALUE ? "ignored explosion" : "o: " + formatOffset(offset))) {
-                    setbackIfAboveSetbackVL();
-                }
+                flagAndAlertWithSetback(player.likelyExplosions.offset == Integer.MAX_VALUE ? "ignored explosion" : "o: " + formatOffset(offset));
             } else {
                 reward();
             }

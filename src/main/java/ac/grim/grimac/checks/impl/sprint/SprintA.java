@@ -7,7 +7,7 @@ import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
-@CheckData(name = "SprintA", description = "Sprinting with too low hunger", setback = 5)
+@CheckData(name = "SprintA", description = "Sprinting with too low hunger", setback = 0)
 public class SprintA extends Check implements PacketCheck {
 
     public SprintA(GrimPlayer player) {
@@ -27,7 +27,9 @@ public class SprintA extends Check implements PacketCheck {
                         event.setCancelled(true);
                         player.onPacketCancel();
                     }
-                    player.getSetbackTeleportUtil().executeNonSimulatingSetback();
+                    if (shouldSetback()) {
+                        player.getSetbackTeleportUtil().executeNonSimulatingSetback();
+                    }
                 }
             } else {
                 reward();

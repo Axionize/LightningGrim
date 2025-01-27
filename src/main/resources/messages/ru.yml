@@ -3,6 +3,10 @@ prefix: "&bGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fОповещения включены"
 alerts-disabled: "%prefix% &fОповещения отключены"
+verbose-enabled: "%prefix% &fVerbose enabled"
+verbose-disabled: "%prefix% &fVerbose disabled"
+brands-enabled: "%prefix% &fBrands enabled"
+brands-disabled: "%prefix% &fBrands disabled"
 client-brand-format: "%prefix% &f%player% присоединился, используя %brand%"
 console-specify-target: "%prefix% &cВы должны указать цель в качестве консоли!"
 reloading: "%prefix% &7Reloading config..."
@@ -17,6 +21,9 @@ upload-log: "%prefix% &fОтладка была загружена на: %url%"
 upload-log-start: "%prefix% &fЗагрузка журнала... пожалуйста, подождите"
 upload-log-not-found: "%prefix% &cНевозможно найти этот журнал"
 upload-log-upload-failure: "%prefix% &cЧто-то пошло не так при загрузке этого журнала, смотрите консоль для получения дополнительной информации"
+disconnect:
+  timeout: "<lang:disconnect.timeout>"
+  closed: "<lang:disconnect.closed>"
 
 # Допустимые заполнители:
 # %prefix%
@@ -43,6 +50,7 @@ profile:
 help:
   - "&7======================"
   - "/grim alerts &f- &7Включить/выключить оповещения"
+  - "/grim brands &f- &7Toggle brands"
   - "/grim profile <игрок> &f- &7Просмотреть информацию об игроке"
   - "/grim help &f- &7Просмотреть это сообщение помощи"
   - "/grim debug <игрок> &f- &7Вывод прогноза разработчика"

@@ -109,13 +109,15 @@ Punishments:
   Misc:
     remove-violations-after: 300
     checks:
-      - "EntityControl"
+      - "Vehicle"
       - "NoSlow"
       - "Sprint"
       - "MultiActions"
       - "Place"
       - "Baritone"
       - "Break"
+      - "TransactionOrder"
+      - "Elytra"
     commands:
       - "10:5 [alert]"
       - "20:10 [webhook]"

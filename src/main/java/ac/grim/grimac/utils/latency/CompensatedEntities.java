@@ -189,6 +189,10 @@ public class CompensatedEntities {
             packetEntity = new PacketEntityArmorStand(player, uuid, entityType, position.getX(), position.getY(), position.getZ(), data);
         } else if (EntityTypes.PAINTING.equals(entityType)) {
             packetEntity = new PacketEntityPainting(player, uuid, position.x, position.y, position.z, Direction.getByHorizontalIndex(data));
+        } else if (EntityTypes.GUARDIAN.equals(entityType)) {
+            packetEntity = new PacketEntityGuardian(player, uuid, entityType, position.x, position.y, position.z, false); // can still be an Elder Guardian in 1.8-1.10.2 from entity metadata updates
+        } else if (EntityTypes.ELDER_GUARDIAN.equals(entityType)) {
+            packetEntity = new PacketEntityGuardian(player, uuid, entityType, position.x, position.y, position.z, true);
         } else {
             packetEntity = new PacketEntity(player, uuid, entityType, position.getX(), position.getY(), position.getZ());
         }
@@ -247,7 +251,7 @@ public class CompensatedEntities {
             }
         }
 
-        if (entity.isSize()) {
+        if (entity instanceof PacketEntitySizeable) {
             int id;
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_8_8)) {
                 id = 16;
@@ -266,15 +270,18 @@ public class CompensatedEntities {
             EntityData sizeObject = WatchableIndexUtil.getIndex(watchableObjects, id);
             if (sizeObject != null) {
                 Object value = sizeObject.getValue();
+                PacketEntitySizeable sizeable = (PacketEntitySizeable) entity;
                 if (value instanceof Integer) {
-                    ((PacketEntitySizeable) entity).size = Math.max((int) value, 1);
+                    sizeable.size = Math.max((int) value, 1);
                 } else if (value instanceof Byte) {
-                    ((PacketEntitySizeable) entity).size = Math.max((byte) value, 1);
+                    sizeable.size = Math.max((byte) value, 1);
                 }
             }
         }
 
         if (entity instanceof PacketEntityShulker) {
+            PacketEntityShulker shulker = (PacketEntityShulker) entity;
+
             int id;
 
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_9_4)) {
@@ -293,28 +300,29 @@ public class CompensatedEntities {
 
             if (shulkerAttached != null) {
                 // This NMS -> Bukkit conversion is great and works in all 11 versions.
-                ((PacketEntityShulker) entity).facing = BlockFace.valueOf(shulkerAttached.getValue().toString().toUpperCase());
+                shulker.facing = BlockFace.valueOf(shulkerAttached.getValue().toString().toUpperCase());
             }
 
             EntityData height = WatchableIndexUtil.getIndex(watchableObjects, id + 2);
             if (height != null) {
                 if ((byte) height.getValue() == 0) {
-                    ShulkerData data = new ShulkerData(entity, player.lastTransactionSent.get(), true);
+                    ShulkerData data = new ShulkerData(shulker, player.lastTransactionSent.get(), true);
                     player.compensatedWorld.openShulkerBoxes.remove(data);
                     player.compensatedWorld.openShulkerBoxes.add(data);
                 } else {
-                    ShulkerData data = new ShulkerData(entity, player.lastTransactionSent.get(), false);
+                    ShulkerData data = new ShulkerData(shulker, player.lastTransactionSent.get(), false);
                     player.compensatedWorld.openShulkerBoxes.remove(data);
                     player.compensatedWorld.openShulkerBoxes.add(data);
                 }
             }
         } else if (entity instanceof PacketEntityRideable) {
+            PacketEntityRideable rideable = (PacketEntityRideable) entity;
             int offset = 0;
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_8_8)) {
                 if (entity.getType() == EntityTypes.PIG) {
                     EntityData pigSaddle = WatchableIndexUtil.getIndex(watchableObjects, 16);
                     if (pigSaddle != null) {
-                        ((PacketEntityRideable) entity).hasSaddle = ((byte) pigSaddle.getValue()) != 0;
+                        rideable.hasSaddle = ((byte) pigSaddle.getValue()) != 0;
                     }
                 }
             } else if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_9_4)) {
@@ -330,27 +338,28 @@ public class CompensatedEntities {
             if (entity.getType() == EntityTypes.PIG) {
                 EntityData pigSaddle = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset);
                 if (pigSaddle != null) {
-                    ((PacketEntityRideable) entity).hasSaddle = (boolean) pigSaddle.getValue();
+                    rideable.hasSaddle = (boolean) pigSaddle.getValue();
                 }
 
                 EntityData pigBoost = WatchableIndexUtil.getIndex(watchableObjects, 18 - offset);
                 if (pigBoost != null) { // What does 1.9-1.10 do here? Is this feature even here?
-                    ((PacketEntityRideable) entity).boostTimeMax = (int) pigBoost.getValue();
-                    ((PacketEntityRideable) entity).currentBoostTime = 0;
+                    rideable.boostTimeMax = (int) pigBoost.getValue();
+                    rideable.currentBoostTime = 0;
                 }
             } else if (entity instanceof PacketEntityStrider) {
                 EntityData striderBoost = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset);
                 if (striderBoost != null) {
-                    ((PacketEntityRideable) entity).boostTimeMax = (int) striderBoost.getValue();
-                    ((PacketEntityRideable) entity).currentBoostTime = 0;
+                    rideable.boostTimeMax = (int) striderBoost.getValue();
+                    rideable.currentBoostTime = 0;
                 }
 
                 EntityData striderSaddle = WatchableIndexUtil.getIndex(watchableObjects, 19 - offset);
                 if (striderSaddle != null) {
-                    ((PacketEntityRideable) entity).hasSaddle = (boolean) striderSaddle.getValue();
+                    rideable.hasSaddle = (boolean) striderSaddle.getValue();
                 }
             }
         } else if (entity instanceof PacketEntityHorse) {
+            PacketEntityHorse horse = (PacketEntityHorse) entity;
             if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9_4)) {
                 int offset = 0;
 
@@ -368,9 +377,9 @@ public class CompensatedEntities {
                 if (horseByte != null) {
                     byte info = (byte) horseByte.getValue();
 
-                    ((PacketEntityHorse) entity).isTame = (info & 0x02) != 0;
-                    ((PacketEntityHorse) entity).hasSaddle = (info & 0x04) != 0;
-                    ((PacketEntityHorse) entity).isRearing = (info & 0x20) != 0;
+                    horse.isTame = (info & 0x02) != 0;
+                    horse.hasSaddle = (info & 0x04) != 0;
+                    horse.isRearing = (info & 0x20) != 0;
                 }
 
                 // track camel dashing
@@ -389,10 +398,11 @@ public class CompensatedEntities {
                 if (horseByte != null) {
                     int info = (int) horseByte.getValue();
 
-                    ((PacketEntityHorse) entity).isTame = (info & 0x02) != 0;
-                    ((PacketEntityHorse) entity).hasSaddle = (info & 0x04) != 0;
-                    ((PacketEntityHorse) entity).hasSaddle = (info & 0x08) != 0;
-                    ((PacketEntityHorse) entity).isRearing = (info & 0x40) != 0;
+                    horse.isTame = (info & 0x02) != 0;
+                    // TODO: Check this
+                    horse.hasSaddle = (info & 0x04) != 0;
+                    horse.hasSaddle = (info & 0x08) != 0;
+                    horse.isRearing = (info & 0x40) != 0;
                 }
             }
         } else if (entity.getType() == EntityTypes.FIREWORK_ROCKET) {
@@ -419,6 +429,7 @@ public class CompensatedEntities {
                 }
             }
         } else if (entity instanceof PacketEntityHook) {
+            PacketEntityHook hook = (PacketEntityHook) entity;
             int index;
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_9_4)) {
                 index = 5;
@@ -434,7 +445,7 @@ public class CompensatedEntities {
             if (hookWatchableObject == null) return;
 
             Integer attachedEntityID = (Integer) hookWatchableObject.getValue();
-            ((PacketEntityHook) entity).attached = attachedEntityID - 1; // the server adds 1 to the ID
+            hook.attached = attachedEntityID - 1; // the server adds 1 to the ID
         } else if (entity instanceof PacketEntityArmorStand) {
             int index;
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_9_4)) {
@@ -455,6 +466,25 @@ public class CompensatedEntities {
 
                 entity.isBaby = (info & 0x01) != 0; // technically this is IsSmall which is a different tag, but it has the same effect for us
                 ((PacketEntityArmorStand) entity).isMarker = (info & 0x10) != 0;
+            }
+        } else if (entity instanceof PacketEntityGuardian && PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_11)) {
+            int index;
+            int isElderlyBitMask;
+            if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9)) {
+                index = 16;
+                isElderlyBitMask = 0x04; // the wiki is wrong 0x02 is not "Is Elderly"
+            } else if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_10)) {
+                index = 11;
+                isElderlyBitMask = 0x04;
+            } else {
+                index = 12;
+                isElderlyBitMask = 0x04;
+            }
+
+            EntityData guardianByte = WatchableIndexUtil.getIndex(watchableObjects, index);
+            if (guardianByte != null) {
+                int info = (Integer) guardianByte.getValue(); // wiki says this is a byte but testing on 1.8 shows its an integer
+                ((PacketEntityGuardian) entity).isElder = (info & isElderlyBitMask) != 0;
             }
         }
 

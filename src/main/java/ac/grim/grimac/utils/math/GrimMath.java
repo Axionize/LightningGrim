@@ -60,7 +60,14 @@ public class GrimMath {
         return Math.min(num, max);
     }
 
-    public static float clampFloat(float num, float min, float max) {
+    public static int clamp(int num, int min, int max) {
+        if (num < min) {
+            return min;
+        }
+        return Math.min(num, max);
+    }
+
+    public static float clamp(float num, float min, float max) {
         if (num < min) {
             return min;
         }

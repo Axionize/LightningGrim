@@ -67,9 +67,10 @@ dependencies {
     implementation("github.scarsz:configuralize:1.4.0")
     implementation("com.zaxxer:HikariCP:4.0.3")
 
-    //implementation("com.github.grimanticheat:grimapi:1193c4fa41")
-    // Used for local testing: implementation("ac.grim.grimac:GRIMAPI:1.0")
-    implementation("com.github.grimanticheat:grimapi:d7fdef7186")
+
+    // Used for local testing:
+    //implementation("ac.grim.grimac:GrimAPI:1.0")
+    implementation("com.github.grimanticheat:grimapi:ed1ec7b4a1")
 
     implementation("net.kyori:adventure-text-minimessage:4.17.0")
     implementation("net.kyori:adventure-platform-bukkit:4.3.4")
@@ -126,6 +127,11 @@ bukkit {
 
         register("grim.brand") {
             description = "Show client brands on join"
+            default = Permission.Default.OP
+        }
+
+        register("grim.brand.enable-on-join") {
+            description = "Enable showing client brands on join"
             default = Permission.Default.OP
         }
 

@@ -43,7 +43,7 @@ public class DynamicHitboxFence extends DynamicConnecting implements HitBoxFacto
     }
 
     @Override
-    public CollisionBox fetch(GrimPlayer player, StateType heldItem, ClientVersion version, WrappedBlockState block, int x, int y, int z) {
+    public CollisionBox fetch(GrimPlayer player, StateType heldItem, ClientVersion version, WrappedBlockState block, boolean isTargetBlock, int x, int y, int z) {
         boolean east;
         boolean north;
         boolean south;
