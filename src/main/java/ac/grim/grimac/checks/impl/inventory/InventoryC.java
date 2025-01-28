@@ -19,7 +19,7 @@ public class InventoryC extends InventoryCheck {
                 if (shouldModifyPackets()) {
                     place.resync();
                 }
-                if (shouldSetback()) {
+                if (!isNoSetbackPermission()) {
                     closeInventory();
                 }
             }

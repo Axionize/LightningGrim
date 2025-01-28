@@ -31,9 +31,8 @@ public class InventoryA extends InventoryCheck {
                         event.setCancelled(true);
                         player.onPacketCancel();
                     }
-                    if (shouldSetback()) {
+                    if (!isNoSetbackPermission())
                         closeInventory();
-                    }
                 }
             } else {
                 reward();
