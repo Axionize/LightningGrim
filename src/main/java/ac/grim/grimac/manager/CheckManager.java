@@ -38,6 +38,10 @@ import ac.grim.grimac.checks.impl.vehicle.VehicleC;
 import ac.grim.grimac.checks.impl.vehicle.VehicleD;
 import ac.grim.grimac.checks.impl.velocity.ExplosionHandler;
 import ac.grim.grimac.checks.impl.velocity.KnockbackHandler;
+import ac.grim.grimac.checks.impl.visual.EffectsHider;
+import ac.grim.grimac.checks.impl.visual.EquipmentHider;
+import ac.grim.grimac.checks.impl.visual.MetadataHider;
+import ac.grim.grimac.checks.impl.visual.SaturationHider;
 import ac.grim.grimac.checks.type.*;
 import ac.grim.grimac.events.packets.PacketChangeGameState;
 import ac.grim.grimac.events.packets.PacketEntityReplication;
@@ -131,10 +135,10 @@ public class CheckManager {
                 .put(PacketOrderO.class, new PacketOrderO(player))
                 .put(TransactionOrder.class, new TransactionOrder(player))
                 .put(SprintA.class, new SprintA(player))
-                .put(VehicleA.class, new VehicleA(player))
-                .put(VehicleB.class, new VehicleB(player))
-                .put(VehicleC.class, new VehicleC(player))
-                .put(VehicleD.class, new VehicleD(player))
+                .put(EffectsHider.class, new EffectsHider(player))
+                .put(MetadataHider.class, new MetadataHider(player))
+                .put(SaturationHider.class, new SaturationHider(player))
+                .put(EquipmentHider.class, new EquipmentHider(player))
                 .put(SetbackBlocker.class, new SetbackBlocker(player)) // Must be last class otherwise we can't check while blocking packets
                 .build();
         positionCheck = new ImmutableClassToInstanceMap.Builder<PositionCheck>()
