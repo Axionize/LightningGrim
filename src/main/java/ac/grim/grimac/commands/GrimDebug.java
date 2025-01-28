@@ -1,6 +1,7 @@
 package ac.grim.grimac.commands;
 
 import ac.grim.grimac.GrimAPI;
+import ac.grim.grimac.checks.debug.HitboxDebugHandler;
 import ac.grim.grimac.player.GrimPlayer;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
@@ -69,5 +70,18 @@ public class GrimDebug extends BaseCommand {
         boolean isOutput = grimPlayer.checkManager.getDebugHandler().toggleConsoleOutput();
 
         sender.sendMessage("Console output for " + (grimPlayer.bukkitPlayer == null ? grimPlayer.user.getProfile().getName() : grimPlayer.bukkitPlayer.getName()) + " is now " + isOutput);
+    }
+
+    @Subcommand("hitboxdebug")
+    @CommandPermission("grim.hitboxdebug")
+    @CommandCompletion("@players")
+    public void onHitboxDebug(CommandSender sender, @Optional OnlinePlayer target) {
+        Player player = null;
+        if (sender instanceof Player) player = (Player) sender;
+
+        GrimPlayer grimPlayer = parseTarget(sender, player, target);
+        if (grimPlayer == null) return;
+
+        grimPlayer.checkManager.getCheck(HitboxDebugHandler.class).toggleListener(player);
     }
 }

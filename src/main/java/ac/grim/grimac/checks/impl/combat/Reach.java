@@ -15,11 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package ac.grim.grimac.checks.impl.combat;
 
+import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
+import ac.grim.grimac.checks.debug.HitboxDebugHandler;
 import ac.grim.grimac.checks.type.PacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
+import ac.grim.grimac.utils.collisions.datatypes.NoCollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.BlockHitData;
 import ac.grim.grimac.utils.data.EntityHitData;
@@ -43,16 +47,12 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientIn
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.bukkit.Bukkit;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 // You may not copy the check unless you are licensed under GPL
 @CheckData(name = "Reach", setback = 10)
@@ -158,16 +158,15 @@ public class Reach extends Check implements PacketCheck {
         if (player.inVehicle()) return false;
 
         // Filter out what we assume to be cheats
-        if (cancelBuffer != 0) {
-            CheckResult result = checkReach(reachEntity, new Vector3d(player.x, player.y, player.z), true);
-            return result.isFlag(); // If they flagged
-        } else {
+//        if (cancelBuffer != 0) {
+//            return checkReach(reachEntity, new Vector3d(player.x, player.y, player.z), true) != null; // If they flagged
+//        } else {
             SimpleCollisionBox targetBox = reachEntity.getPossibleCollisionBoxes();
             if (reachEntity.getType() == EntityTypes.END_CRYSTAL) {
                 targetBox = new SimpleCollisionBox(reachEntity.trackedServerPosition.getPos().subtract(1, 0, 1), reachEntity.trackedServerPosition.getPos().add(1, 2, 1));
             }
             return ReachUtils.getMinReachToBox(player, targetBox) > player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
-        }
+//        }
     }
 
     private void tickBetterReachCheckWithAngle(boolean isFlying) {
@@ -239,6 +238,10 @@ public class Reach extends Check implements PacketCheck {
             }
         }
 
+        // all lookVecsAndEyeHeight pairs that landed a hit on the target entity
+        // We only need to check for blocking intersections for these
+        List<Pair<Vector, Double>> lookVecsAndEyeHeights = new ArrayList<>();
+
         final double maxReach = player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
         // We raytrace for > the player's reach distance so in the case a player is hacking
         // We can return in the flag the distance of the reach hit instead of a generic "player failed reach check"
@@ -260,26 +263,87 @@ public class Reach extends Check implements PacketCheck {
 
                 if (intercept != null) {
                     minDistance = Math.min(eyePos.distance(intercept), minDistance);
-//                    if (eye == possibleEyeHeights[0]) {
-//                        realMinDistance = minDistance;
-//                    }
+                    lookVecsAndEyeHeights.add(new Pair<>(lookVec, eye));
                 }
             }
         }
+
+        Map<Integer, CollisionBox> hitboxes = new HashMap<>();
+        for (Int2ObjectMap.Entry<PacketEntity> entry : player.compensatedEntities.entityMap.int2ObjectEntrySet()) {
+            PacketEntity entity = entry.getValue();
+            if (!entity.canHit()) continue;
+
+            CollisionBox box;
+
+            if (entity.equals(reachEntity)) {
+                // Target entity gets expanded hitbox
+                box = entity.getPossibleCollisionBoxes();
+                SimpleCollisionBox sBox = (SimpleCollisionBox) box;
+                sBox.expand(player.checkManager.getPacketCheck(Reach.class).reachThreshold);
+
+                // Add movement threshold uncertainty for 1.9+ or non-position updates
+                if (!player.packetStateData.didLastLastMovementIncludePosition
+                        || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
+                    sBox.expand(player.getMovementThreshold());
+                }
+            } else {
+                // Non-target entities
+                box = entity.getMinimumPossibleCollisionBoxes();
+                if (box instanceof NoCollisionBox) {
+                    hitboxes.put(entry.getIntKey(), NoCollisionBox.INSTANCE);
+                    continue;
+                } else if (box instanceof SimpleCollisionBox) {
+                    SimpleCollisionBox sBox = (SimpleCollisionBox) box;
+                    // Shrink non-target entities by movement threshold when applicable
+                    if (!player.packetStateData.didLastLastMovementIncludePosition
+                            || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
+                        sBox.expand(-player.getMovementThreshold());
+                    }
+                }
+            }
+
+            // Add 1.8 and below extra hitbox size
+            if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)
+                    && box instanceof SimpleCollisionBox) {
+                ((SimpleCollisionBox) box).expand(0.1f);
+            }
+
+            hitboxes.put(entry.getIntKey(), box);
+
+
+//            Pair<Vector, BlockFace> intercept = ReachUtils.calculateIntercept(box, trace.getOrigin(), trace.getPointAtDistance(Math.sqrt(closestDistanceSquared)));
+//
+//            if (intercept.first() != null) {
+//                double distSquared = intercept.first().distanceSquared(startingVec);
+//                if (distSquared < closestDistanceSquared) {
+//                    closestDistanceSquared = distSquared;
+//                    closestHitVec = intercept.first();
+//                    closestEntity = entity;
+//                }
+//            }
+        }
+
+        player.checkManager.getCheck(HitboxDebugHandler.class).sendHitboxData(hitboxes,
+                Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
+                lookVecsAndEyeHeights,
+                new Vector(from.getX(), from.getY(), from.getZ()),
+                isPrediction, player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
 
         HitData foundHitData = null;
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)
         // Ignore when could be hitting through a moving shulker, piston blocks. They are just too glitchy/uncertain to check.
         if (!skipEntityCheck || !skipBlockCheck) {
             if (minDistance <= distance - 3 && !player.compensatedWorld.isNearHardEntity(player.boundingBox.copy().expand(4))) {
-                final @Nullable Pair<Double, HitData> hitResult = didRayTraceHit(reachEntity, possibleLookDirs, from, minDistance);
+                final @Nullable Pair<Double, HitData> hitResult = didRayTraceHit(reachEntity, lookVecsAndEyeHeights, from, minDistance);
 
                 // if the hitResult is closer to the player than the target entity box, they shouldn't have hit the target entity
                 // We are checking if the diff > epsilon because the hit distance returned is slightly different due to floating point shennanigans
                 // - This filters out when the ray trace hits the target entity without having to do an expensive .equals()
                 // - You may have to adjust the epsilon if you increase the reach threshold, especially by a lot
                 // ...but there is literally no reason you would ever want to increase it, only decrease, so that doesn't matter.
-                if (hitResult != null && (minDistance * minDistance) - hitResult.first() > ENTITY_HITBOX_REACH_EPSILON) { // returned double is distanceSq
+                if (hitResult != null
+//                        && (minDistance * minDistance) - hitResult.first() > ENTITY_HITBOX_REACH_EPSILON
+                ) { // returned double is distanceSq
                     minDistance = Double.MIN_VALUE;
                     foundHitData = hitResult.second();
                 }
@@ -293,7 +357,13 @@ public class Reach extends Check implements PacketCheck {
                 if (foundHitData instanceof BlockHitData) {
                     return new CheckResult(ResultType.BLOCK, "Hit block=" + ((BlockHitData) foundHitData).getState().getType().getName() + " ");
                 } else { // entity hit data
-                    return new CheckResult(ResultType.ENTITY, "Hit entity=" + ((EntityHitData) foundHitData).getEntity().getType().getName() + " ");
+                    EntityHitData entityHitData = (EntityHitData) foundHitData;
+                    // hit target entity
+                    if (player.compensatedEntities.getPacketEntityID(entityHitData.getEntity()) == player.compensatedEntities.getPacketEntityID(reachEntity)) {
+                       return null;
+                    } else { // hit non-target entity
+                        return new CheckResult(ResultType.ENTITY, "Hit entity=" + ((EntityHitData) foundHitData).getEntity().getType().getName() + " ");
+                    }
                 }
             } else if (minDistance == Double.MAX_VALUE) {
                 cancelBuffer = 1;
@@ -348,7 +418,7 @@ public class Reach extends Check implements PacketCheck {
 
     // Checks if it was possible to hit a target entity
     @Nullable
-    private Pair<Double, HitData> didRayTraceHit(PacketEntity targetEntity, List<Vector> possibleLookDirs, Vector3d from, double minDistance) {
+    private Pair<Double, HitData> didRayTraceHit(PacketEntity targetEntity, List<Pair<Vector, Double>> possiblelookVecsAndEyeHeights, Vector3d from, double minDistance) {
         HitData bestHitData = null;
         double bestDistanceSq = Double.MAX_VALUE;
         double bestBlockingEntityDistanceSq = Double.MAX_VALUE;
@@ -356,42 +426,41 @@ public class Reach extends Check implements PacketCheck {
 
         // Check every possible look direction and every possible eye height
         // IF *NONE* of them allow the player to hit the entity, this is an invalid hit
-        for (Vector lookVec : possibleLookDirs) {
-            for (double eye : player.getPossibleEyeHeights()) {
-                Vector eyes = new Vector(from.getX(), from.getY() + eye, from.getZ());
-                // this function is completely 0.03 aware
-                final HitData hitResult = BlockRayTrace.getNearestHitResult(player, targetEntity, eyes, lookVec, minDistance, skipBlockCheck, skipEntityCheck);
+        for (Pair<Vector, Double> vectorDoublePair : possiblelookVecsAndEyeHeights) {
+            Vector lookVec = vectorDoublePair.first();
+            double eye = vectorDoublePair.second();
 
-                if (hitResult == null)
-                    if (skipEntityCheck)
-                        return null;
-                    else
-                        continue;
+            Vector eyes = new Vector(from.getX(), from.getY() + eye, from.getZ());
+            // this function is completely 0.03 aware
+            final HitData hitResult = BlockRayTrace.getNearestHitResult(player, targetEntity, eyes, lookVec, minDistance, skipBlockCheck, skipEntityCheck);
 
-                double distanceSquared = eyes.distanceSquared(hitResult.getBlockHitLocation());
+            if (hitResult == null)
+                if (skipEntityCheck)
+                    return null;
+                else
+                    continue;
 
-                // Check if the hit result is the target entity
-                if (hitResult instanceof EntityHitData && ((EntityHitData) hitResult).getEntity().equals(targetEntity)) {
-                    return new Pair<>(distanceSquared, hitResult); // Legitimate hit
+            double distanceSquared = eyes.distanceSquared(hitResult.getBlockHitLocation());
+
+            // Check if the hit result is the target entity
+            if (hitResult instanceof EntityHitData && ((EntityHitData) hitResult).getEntity().equals(targetEntity)) {
+                return new Pair<>(distanceSquared, hitResult); // Legitimate hit
+            // Check for potential blocking entities
+            } else if (hitResult instanceof EntityHitData) {
+                // Consider entities that are blocking the path to the target
+                if (distanceSquared < bestBlockingEntityDistanceSq) {
+                    bestBlockingEntityDistanceSq = distanceSquared;
+                    bestBlockingEntityHit = hitResult;
                 }
-
-                // Check for potential blocking entities
-                if (hitResult instanceof EntityHitData) {
-                    // Consider entities that are blocking the path to the target
-                    if (distanceSquared < bestBlockingEntityDistanceSq) {
-                        bestBlockingEntityDistanceSq = distanceSquared;
-                        bestBlockingEntityHit = hitResult;
-                    }
-                } else if (hitResult instanceof BlockHitData) {
-                    // don't false on recently rapidly changed blocks
-                    if (distanceSquared < (minDistance * minDistance) && blocksChangedThisTick.contains(((BlockHitData) hitResult).getPosition())) {
-                        return null;
-                    }
-                    // Check if block is closer than any blocking entity found
-                    if (bestBlockingEntityHit == null && distanceSquared < bestDistanceSq) {
-                        bestDistanceSq = distanceSquared;
-                        bestHitData = hitResult;
-                    }
+            } else if (hitResult instanceof BlockHitData) {
+                // don't false on recently rapidly changed blocks
+                if (distanceSquared < (minDistance * minDistance) && blocksChangedThisTick.contains(((BlockHitData) hitResult).getPosition())) {
+                    return null;
+                }
+                // Check if block is closer than any blocking entity found
+                if (bestBlockingEntityHit == null && distanceSquared < bestDistanceSq) {
+                    bestDistanceSq = distanceSquared;
+                    bestHitData = hitResult;
                 }
             }
         }

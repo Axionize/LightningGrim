@@ -1,6 +1,7 @@
 package ac.grim.grimac.manager;
 
 import ac.grim.grimac.api.AbstractCheck;
+import ac.grim.grimac.checks.debug.HitboxDebugHandler;
 import ac.grim.grimac.checks.impl.aim.AimDuplicateLook;
 import ac.grim.grimac.checks.impl.aim.AimModulo360;
 import ac.grim.grimac.checks.impl.aim.processor.AimProcessor;
@@ -242,6 +243,11 @@ public class CheckManager {
                 .put(PositionBreakB.class, new PositionBreakB(player))
                 .build();
 
+        // TODO put all modules with no listeners here
+        ClassToInstanceMap<AbstractCheck> noneModules = new ImmutableClassToInstanceMap.Builder<AbstractCheck>()
+                .put(HitboxDebugHandler.class, new HitboxDebugHandler(player))
+                .build();
+
         allChecks = new ImmutableClassToInstanceMap.Builder<AbstractCheck>()
                 .putAll(packetChecks)
                 .putAll(positionCheck)
@@ -251,6 +257,7 @@ public class CheckManager {
                 .putAll(blockPlaceCheck)
                 .putAll(prePredictionChecks)
                 .putAll(blockBreakChecks)
+                .putAll(noneModules)
                 .build();
 
         init();
@@ -359,6 +366,10 @@ public class CheckManager {
         for (BlockBreakCheck check : blockBreakChecks.values()) {
             check.onBlockBreak(blockBreak);
         }
+    }
+
+    public <T extends AbstractCheck> T getCheck(Class<T> check) {
+        return (T) allChecks.get(check);
     }
 
     public ExplosionHandler getExplosionHandler() {

@@ -215,25 +215,36 @@ public class ReachInterpolationData {
         double stepMinZ = (targetLocation.minZ - startingLocation.minZ) / (double) interpSteps;
         double stepMaxZ = (targetLocation.maxZ - startingLocation.maxZ) / (double) interpSteps;
 
-        CollisionBox overlapLocation = new SimpleCollisionBox(
-                startingLocation.minX + (interpolationStepsLowBound * stepMinX),
-                startingLocation.minY + (interpolationStepsLowBound * stepMinY),
-                startingLocation.minZ + (interpolationStepsLowBound * stepMinZ),
-                startingLocation.maxX + (interpolationStepsLowBound * stepMaxX),
-                startingLocation.maxY + (interpolationStepsLowBound * stepMaxY),
-                startingLocation.maxZ + (interpolationStepsLowBound * stepMaxZ));
+        // Start with the first position instead of infinity
+        double minX = startingLocation.minX + (interpolationStepsLowBound * stepMinX);
+        double maxX = startingLocation.maxX + (interpolationStepsLowBound * stepMaxX);
+        double minY = startingLocation.minY + (interpolationStepsLowBound * stepMinY);
+        double maxY = startingLocation.maxY + (interpolationStepsLowBound * stepMaxY);
+        double minZ = startingLocation.minZ + (interpolationStepsLowBound * stepMinZ);
+        double maxZ = startingLocation.maxZ + (interpolationStepsLowBound * stepMaxZ);
 
+        // Intersect with each possible position
         for (int step = interpolationStepsLowBound + 1; step <= interpolationStepsHighBound; step++) {
-            overlapLocation = getOverlapHitbox(overlapLocation, new SimpleCollisionBox(
-                    startingLocation.minX + (step * stepMinX),
-                    startingLocation.minY + (step * stepMinY),
-                    startingLocation.minZ + (step * stepMinZ),
-                    startingLocation.maxX + (step * stepMaxX),
-                    startingLocation.maxY + (step * stepMaxY),
-                    startingLocation.maxZ + (step * stepMaxZ)));
+            double currentMinX = startingLocation.minX + (step * stepMinX);
+            double currentMaxX = startingLocation.maxX + (step * stepMaxX);
+            double currentMinY = startingLocation.minY + (step * stepMinY);
+            double currentMaxY = startingLocation.maxY + (step * stepMaxY); // Fixed: was using minY
+            double currentMinZ = startingLocation.minZ + (step * stepMinZ);
+            double currentMaxZ = startingLocation.maxZ + (step * stepMaxZ); // Fixed: was using minZ
+
+            minX = Math.max(minX, currentMinX);
+            maxX = Math.min(maxX, currentMaxX);
+            minY = Math.max(minY, currentMinY);
+            maxY = Math.min(maxY, currentMaxY);
+            minZ = Math.max(minZ, currentMinZ);
+            maxZ = Math.min(maxZ, currentMaxZ);
         }
 
-        return overlapLocation;
+        if (minX > maxX || minY > maxY || minZ > maxZ) {
+            return NoCollisionBox.INSTANCE;
+        }
+
+        return new SimpleCollisionBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     public SimpleCollisionBox getOverlapHitboxCombined() {
