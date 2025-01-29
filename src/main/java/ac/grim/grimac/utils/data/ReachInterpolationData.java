@@ -192,15 +192,7 @@ public class ReachInterpolationData {
         if (expandNonRelative)
             minimumInterpLocation.expand(0.03125D, 0.015625D, 0.03125D);
 
-        Vector3d pos = position.getPos();
-        SimpleCollisionBox box = GetBoundingBox.getPacketEntityBoundingBox(player, pos.x, pos.y, pos.z, entity);
-
-        minimumInterpLocation.minX += Math.min(0, box.minX);
-        minimumInterpLocation.minY += Math.min(0, box.minY);
-        minimumInterpLocation.minZ += Math.min(0, box.minZ);
-        minimumInterpLocation.maxX += Math.max(0, box.maxX);
-        minimumInterpLocation.maxY += Math.max(0, box.maxY);
-        minimumInterpLocation.maxZ += Math.max(0, box.maxZ);
+        GetBoundingBox.expandBoundingBoxByEntityDimensions(minimumInterpLocation, player, entity);
 
         return minimumInterpLocation;
     }
@@ -247,22 +239,79 @@ public class ReachInterpolationData {
         return new SimpleCollisionBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
-    public SimpleCollisionBox getOverlapHitboxCombined() {
-        CollisionBox box = getOverlapLocationCombined();
-        Vector3d pos = position.getPos();
-        SimpleCollisionBox entityBoundingBox = GetBoundingBox.getPacketEntityBoundingBox(player, pos.x, pos.y, pos.z, entity);
-        if (box == NoCollisionBox.INSTANCE) {
-            return entityBoundingBox;
-        } else {
-            SimpleCollisionBox scb = (SimpleCollisionBox) box;
-            scb.minX += Math.min(0, entityBoundingBox.minX);
-            scb.minY += Math.min(0, entityBoundingBox.minY);
-            scb.minZ += Math.min(0, entityBoundingBox.minZ);
-            scb.maxX += Math.max(0, entityBoundingBox.maxX);
-            scb.maxY += Math.max(0, entityBoundingBox.maxY);
-            scb.maxZ += Math.max(0, entityBoundingBox.maxZ);
-            return scb;
+    public CollisionBox getOverlapHitboxCombined() {
+        int interpSteps = getInterpolationSteps();
+
+        // Calculate step increments for each axis
+        double stepMinX = (targetLocation.minX - startingLocation.minX) / (double) interpSteps;
+        double stepMaxX = (targetLocation.maxX - startingLocation.maxX) / (double) interpSteps;
+        double stepMinY = (targetLocation.minY - startingLocation.minY) / (double) interpSteps;
+        double stepMaxY = (targetLocation.maxY - startingLocation.maxY) / (double) interpSteps;
+        double stepMinZ = (targetLocation.minZ - startingLocation.minZ) / (double) interpSteps;
+        double stepMaxZ = (targetLocation.maxZ - startingLocation.maxZ) / (double) interpSteps;
+
+        // Track the intersection of all expanded hitboxes
+        double overallMinX = Double.NEGATIVE_INFINITY;
+        double overallMaxX = Double.POSITIVE_INFINITY;
+        double overallMinY = Double.NEGATIVE_INFINITY;
+        double overallMaxY = Double.POSITIVE_INFINITY;
+        double overallMinZ = Double.NEGATIVE_INFINITY;
+        double overallMaxZ = Double.POSITIVE_INFINITY;
+
+        boolean isFirstStep = true;
+
+        for (int step = interpolationStepsLowBound; step <= interpolationStepsHighBound; step++) {
+            // Compute interpolated position for this step
+            double currentMinX = startingLocation.minX + (step * stepMinX);
+            double currentMaxX = startingLocation.maxX + (step * stepMaxX);
+            double currentMinY = startingLocation.minY + (step * stepMinY);
+            double currentMaxY = startingLocation.maxY + (step * stepMaxY);
+            double currentMinZ = startingLocation.minZ + (step * stepMinZ);
+            double currentMaxZ = startingLocation.maxZ + (step * stepMaxZ);
+
+            // Create the collision box for this step's position
+            SimpleCollisionBox stepBox = new SimpleCollisionBox(
+                    currentMinX, currentMinY, currentMinZ,
+                    currentMaxX, currentMaxY, currentMaxZ
+            );
+
+            // Expand the box by the entity's hitbox dimensions
+            GetBoundingBox.expandBoundingBoxByEntityDimensions(stepBox, player, entity);
+
+            // Initialize overall bounds with the first expanded box
+            if (isFirstStep) {
+                overallMinX = stepBox.minX;
+                overallMaxX = stepBox.maxX;
+                overallMinY = stepBox.minY;
+                overallMaxY = stepBox.maxY;
+                overallMinZ = stepBox.minZ;
+                overallMaxZ = stepBox.maxZ;
+                isFirstStep = false;
+            } else {
+                // Update bounds to the intersection of all expanded boxes
+                overallMinX = Math.max(overallMinX, stepBox.minX);
+                overallMaxX = Math.min(overallMaxX, stepBox.maxX);
+                overallMinY = Math.max(overallMinY, stepBox.minY);
+                overallMaxY = Math.min(overallMaxY, stepBox.maxY);
+                overallMinZ = Math.max(overallMinZ, stepBox.minZ);
+                overallMaxZ = Math.min(overallMaxZ, stepBox.maxZ);
+            }
+
+            // Early exit if the intersection becomes empty
+            if (overallMinX > overallMaxX || overallMinY > overallMaxY || overallMinZ > overallMaxZ) {
+                return NoCollisionBox.INSTANCE;
+            }
         }
+
+        // Check if the final intersection is valid
+        if (overallMinX > overallMaxX || overallMinY > overallMaxY || overallMinZ > overallMaxZ) {
+            return NoCollisionBox.INSTANCE;
+        }
+
+        return new SimpleCollisionBox(
+                overallMinX, overallMinY, overallMinZ,
+                overallMaxX, overallMaxY, overallMaxZ
+        );
     }
 
     public void updatePossibleStartingLocation(SimpleCollisionBox possibleLocationCombined) {

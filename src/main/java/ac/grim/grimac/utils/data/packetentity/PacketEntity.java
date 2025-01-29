@@ -217,7 +217,7 @@ public class PacketEntity extends TypedPacketEntity {
             return newPacketLocation.getOverlapHitboxCombined();
         }
 
-        return ReachInterpolationData.getOverlapHitbox(oldPacketLocation.getOverlapHitboxCombined(), newPacketLocation.getOverlapLocationCombined());
+        return ReachInterpolationData.getOverlapHitbox(oldPacketLocation.getOverlapHitboxCombined(), newPacketLocation.getOverlapHitboxCombined());
     }
 
     public SimpleCollisionBox getPossibleCollisionBoxes() {

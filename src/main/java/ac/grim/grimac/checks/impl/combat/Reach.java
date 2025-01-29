@@ -179,11 +179,25 @@ public class Reach extends Check implements PacketCheck {
             switch (result.type()) {
                 case REACH:
                     added = reachEntity.getType() == EntityTypes.PLAYER ? "" : ", type=" + reachEntity.getType().getName().getKey();
-                    flagAndAlert(added);
+                    flagAndAlert(result.verbose() + added);
                     break;
                 case HITBOX:
                     added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
                     player.checkManager.getPacketCheck(Hitboxes.class).flagAndAlert(result.verbose() + added);
+                    break;
+                case BLOCK:
+                    added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
+                    player.checkManager.getPacketCheck(HitboxBlock.class).flagAndAlert(result.verbose() + added);
+                    Bukkit.getScheduler().runTask(GrimAPI.INSTANCE.getPlugin(), () -> {
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+                    });
+                    break;
+                case ENTITY:
+                    added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
+                    player.checkManager.getPacketCheck(HitboxEntity.class).flagAndAlert(result.verbose() + added);
+                    Bukkit.getScheduler().runTask(GrimAPI.INSTANCE.getPlugin(), () -> {
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
+                    });
                     break;
             }
         }
@@ -294,6 +308,7 @@ public class Reach extends Check implements PacketCheck {
                     continue;
                 } else if (box instanceof SimpleCollisionBox) {
                     SimpleCollisionBox sBox = (SimpleCollisionBox) box;
+                    sBox.expand(-player.checkManager.getPacketCheck(Reach.class).reachThreshold);
                     // Shrink non-target entities by movement threshold when applicable
                     if (!player.packetStateData.didLastLastMovementIncludePosition
                             || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
@@ -309,25 +324,13 @@ public class Reach extends Check implements PacketCheck {
             }
 
             hitboxes.put(entry.getIntKey(), box);
-
-
-//            Pair<Vector, BlockFace> intercept = ReachUtils.calculateIntercept(box, trace.getOrigin(), trace.getPointAtDistance(Math.sqrt(closestDistanceSquared)));
-//
-//            if (intercept.first() != null) {
-//                double distSquared = intercept.first().distanceSquared(startingVec);
-//                if (distSquared < closestDistanceSquared) {
-//                    closestDistanceSquared = distSquared;
-//                    closestHitVec = intercept.first();
-//                    closestEntity = entity;
-//                }
-//            }
         }
 
         player.checkManager.getCheck(HitboxDebugHandler.class).sendHitboxData(hitboxes,
                 Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
                 lookVecsAndEyeHeights,
                 new Vector(from.getX(), from.getY(), from.getZ()),
-                isPrediction, player.compensatedEntities.getSelf().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
+                isPrediction, player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
 
         HitData foundHitData = null;
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)
@@ -360,7 +363,7 @@ public class Reach extends Check implements PacketCheck {
                     EntityHitData entityHitData = (EntityHitData) foundHitData;
                     // hit target entity
                     if (player.compensatedEntities.getPacketEntityID(entityHitData.getEntity()) == player.compensatedEntities.getPacketEntityID(reachEntity)) {
-                       return null;
+                       return NONE;
                     } else { // hit non-target entity
                         return new CheckResult(ResultType.ENTITY, "Hit entity=" + ((EntityHitData) foundHitData).getEntity().getType().getName() + " ");
                     }
