@@ -270,13 +270,29 @@ public class ReachInterpolationData {
             double currentMaxZ = startingLocation.maxZ + (step * stepMaxZ);
 
             // Create the collision box for this step's position
-            SimpleCollisionBox stepBox = new SimpleCollisionBox(
-                    currentMinX, currentMinY, currentMinZ,
-                    currentMaxX, currentMaxY, currentMaxZ
-            );
+            // Create boxes for each bottom corner
+            SimpleCollisionBox[] cornerBoxes = new SimpleCollisionBox[4];
 
-            // Expand the box by the entity's hitbox dimensions
-            GetBoundingBox.expandBoundingBoxByEntityDimensions(stepBox, player, entity);
+            // Bottom corners: (minX,minY,minZ), (maxX,minY,minZ), (minX,minY,maxZ), (maxX,minY,maxZ)
+            cornerBoxes[0] = new SimpleCollisionBox(currentMinX, currentMinY, currentMinZ,
+                    currentMinX, currentMinY, currentMinZ);
+            cornerBoxes[1] = new SimpleCollisionBox(currentMaxX, currentMinY, currentMinZ,
+                    currentMaxX, currentMinY, currentMinZ);
+            cornerBoxes[2] = new SimpleCollisionBox(currentMinX, currentMinY, currentMaxZ,
+                    currentMinX, currentMinY, currentMaxZ);
+            cornerBoxes[3] = new SimpleCollisionBox(currentMaxX, currentMinY, currentMaxZ,
+                    currentMaxX, currentMinY, currentMaxZ);
+
+            // Expand each corner box by entity dimensions
+            for (SimpleCollisionBox cornerBox : cornerBoxes) {
+                GetBoundingBox.expandBoundingBoxByEntityDimensions(cornerBox, player, entity);
+            }
+
+            // Get the overlap of the 4 corner boxes
+            CollisionBox stepOverlap = getOverlapOfBoxes(cornerBoxes);
+            if (stepOverlap == NoCollisionBox.INSTANCE)
+                return NoCollisionBox.INSTANCE;
+            SimpleCollisionBox stepBox = (SimpleCollisionBox) stepOverlap;
 
             // Initialize overall bounds with the first expanded box
             if (isFirstStep) {
@@ -312,6 +328,42 @@ public class ReachInterpolationData {
                 overallMinX, overallMinY, overallMinZ,
                 overallMaxX, overallMaxY, overallMaxZ
         );
+    }
+
+    private CollisionBox getOverlapOfBoxes(SimpleCollisionBox[] boxes) {
+        double minX = Double.NEGATIVE_INFINITY;
+        double maxX = Double.POSITIVE_INFINITY;
+        double minY = Double.NEGATIVE_INFINITY;
+        double maxY = Double.POSITIVE_INFINITY;
+        double minZ = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.POSITIVE_INFINITY;
+
+        boolean first = true;
+
+        for (SimpleCollisionBox box : boxes) {
+            if (first) {
+                minX = box.minX;
+                maxX = box.maxX;
+                minY = box.minY;
+                maxY = box.maxY;
+                minZ = box.minZ;
+                maxZ = box.maxZ;
+                first = false;
+            } else {
+                minX = Math.max(minX, box.minX);
+                maxX = Math.min(maxX, box.maxX);
+                minY = Math.max(minY, box.minY);
+                maxY = Math.min(maxY, box.maxY);
+                minZ = Math.max(minZ, box.minZ);
+                maxZ = Math.min(maxZ, box.maxZ);
+            }
+
+            if (minX > maxX || minY > maxY || minZ > maxZ) {
+                return NoCollisionBox.INSTANCE;
+            }
+        }
+
+        return new SimpleCollisionBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     public void updatePossibleStartingLocation(SimpleCollisionBox possibleLocationCombined) {
