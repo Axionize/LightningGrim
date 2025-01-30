@@ -67,8 +67,6 @@ public class Reach extends Check implements PacketCheck {
             EntityTypes.CHEST_BOAT,
             EntityTypes.SHULKER);
 
-    private static final double ENTITY_HITBOX_REACH_EPSILON = 1E-12;
-
     private boolean ignoreNonPlayerTargets;
     private boolean skipBlockCheck;
     private boolean skipEntityCheck;
@@ -156,15 +154,15 @@ public class Reach extends Check implements PacketCheck {
         if (player.inVehicle()) return false;
 
         // Filter out what we assume to be cheats
-//        if (cancelBuffer != 0) {
-//            return checkReach(reachEntity, new Vector3d(player.x, player.y, player.z), true) != null; // If they flagged
-//        } else {
+        if (cancelBuffer != 0) {
+            return checkReach(reachEntity, new Vector3d(player.x, player.y, player.z), true) != NONE; // If they flagged
+        } else {
             SimpleCollisionBox targetBox = reachEntity.getPossibleCollisionBoxes();
             if (reachEntity.getType() == EntityTypes.END_CRYSTAL) {
                 targetBox = new SimpleCollisionBox(reachEntity.trackedServerPosition.getPos().subtract(1, 0, 1), reachEntity.trackedServerPosition.getPos().add(1, 2, 1));
             }
             return ReachUtils.getMinReachToBox(player, targetBox) > player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
-//        }
+        }
     }
 
     private void tickBetterReachCheckWithAngle(boolean isFlying) {
@@ -274,55 +272,8 @@ public class Reach extends Check implements PacketCheck {
             }
         }
 
-        Map<Integer, CollisionBox> hitboxes = new HashMap<>();
-        for (Int2ObjectMap.Entry<PacketEntity> entry : player.compensatedEntities.entityMap.int2ObjectEntrySet()) {
-            PacketEntity entity = entry.getValue();
-            if (!entity.canHit()) continue;
-
-            CollisionBox box;
-
-            if (entity.equals(reachEntity)) {
-                // Target entity gets expanded hitbox
-                box = entity.getPossibleCollisionBoxes();
-                SimpleCollisionBox sBox = (SimpleCollisionBox) box;
-                sBox.expand(player.checkManager.getPacketCheck(Reach.class).reachThreshold);
-
-                // Add movement threshold uncertainty for 1.9+ or non-position updates
-                if (!player.packetStateData.didLastLastMovementIncludePosition
-                        || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
-                    sBox.expand(player.getMovementThreshold());
-                }
-            } else {
-                // Non-target entities
-                box = entity.getMinimumPossibleCollisionBoxes();
-                if (box instanceof NoCollisionBox) {
-                    hitboxes.put(entry.getIntKey(), NoCollisionBox.INSTANCE);
-                    continue;
-                } else if (box instanceof SimpleCollisionBox) {
-                    SimpleCollisionBox sBox = (SimpleCollisionBox) box;
-                    sBox.expand(-player.checkManager.getPacketCheck(Reach.class).reachThreshold);
-                    // Shrink non-target entities by movement threshold when applicable
-                    if (!player.packetStateData.didLastLastMovementIncludePosition
-                            || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
-                        sBox.expand(-player.getMovementThreshold());
-                    }
-                }
-            }
-
-            // Add 1.8 and below extra hitbox size
-            if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)
-                    && box instanceof SimpleCollisionBox) {
-                ((SimpleCollisionBox) box).expand(0.1f);
-            }
-
-            hitboxes.put(entry.getIntKey(), box);
-        }
-
-        player.checkManager.getCheck(HitboxDebugHandler.class).sendHitboxData(hitboxes,
-                Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
-                lookVecsAndEyeHeights,
-                new Vector(from.getX(), from.getY(), from.getZ()),
-                isPrediction, player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
+        if (hitboxDebuggingEnabled())
+            sendHitboxDebugData(reachEntity, from, lookVecsAndEyeHeights, isPrediction);
 
         HitData foundHitData = null;
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)
@@ -467,6 +418,62 @@ public class Reach extends Check implements PacketCheck {
 
         // If no blocking entity, return the closest block
         return bestHitData == null ? null : new Pair<>(bestDistanceSq, bestHitData);
+    }
+
+    private boolean hitboxDebuggingEnabled() {
+        return player.checkManager.getCheck(HitboxDebugHandler.class).isEnabled();
+    }
+
+    private void sendHitboxDebugData(PacketEntity reachEntity, Vector3d from, List<Pair<Vector, Double>> lookVecsAndEyeHeights, boolean isPrediction) {
+        Map<Integer, CollisionBox> hitboxes = new HashMap<>();
+        for (Int2ObjectMap.Entry<PacketEntity> entry : player.compensatedEntities.entityMap.int2ObjectEntrySet()) {
+            PacketEntity entity = entry.getValue();
+            if (!entity.canHit()) continue;
+
+            CollisionBox box;
+
+            if (entity.equals(reachEntity)) {
+                // Target entity gets expanded hitbox
+                box = entity.getPossibleCollisionBoxes();
+                SimpleCollisionBox sBox = (SimpleCollisionBox) box;
+                sBox.expand(player.checkManager.getPacketCheck(Reach.class).reachThreshold);
+
+                // Add movement threshold uncertainty for 1.9+ or non-position updates
+                if (!player.packetStateData.didLastLastMovementIncludePosition
+                        || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
+                    sBox.expand(player.getMovementThreshold());
+                }
+            } else {
+                // Non-target entities
+                box = entity.getMinimumPossibleCollisionBoxes();
+                if (box instanceof NoCollisionBox) {
+                    hitboxes.put(entry.getIntKey(), NoCollisionBox.INSTANCE);
+                    continue;
+                } else if (box instanceof SimpleCollisionBox) {
+                    SimpleCollisionBox sBox = (SimpleCollisionBox) box;
+                    sBox.expand(-player.checkManager.getPacketCheck(Reach.class).reachThreshold);
+                    // Shrink non-target entities by movement threshold when applicable
+                    if (!player.packetStateData.didLastLastMovementIncludePosition
+                            || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
+                        sBox.expand(-player.getMovementThreshold());
+                    }
+                }
+            }
+
+            // Add 1.8 and below extra hitbox size
+            if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)
+                    && box instanceof SimpleCollisionBox) {
+                ((SimpleCollisionBox) box).expand(0.1f);
+            }
+
+            hitboxes.put(entry.getIntKey(), box);
+        }
+
+        player.checkManager.getCheck(HitboxDebugHandler.class).sendHitboxData(hitboxes,
+                Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
+                lookVecsAndEyeHeights,
+                new Vector(from.getX(), from.getY(), from.getZ()),
+                isPrediction, player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
     }
 
     @Override

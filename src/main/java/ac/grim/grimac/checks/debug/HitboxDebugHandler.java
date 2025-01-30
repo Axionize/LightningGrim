@@ -94,7 +94,7 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
     public void sendHitboxData(Map<Integer, CollisionBox> hitboxes, Set<Integer> targetEntities,
                                List<Pair<Vector, Double>> lookVecsAndEyeHeights, Vector basePos,
                                boolean isPrediction, double reachDistance) {
-        if (listeners.isEmpty()) return;
+        if (!isEnabled()) return;
 
         ByteBuf buffer = Unpooled.buffer();
         try {
@@ -177,6 +177,10 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
             // Release buffer to prevent memory leaks
             buffer.release();
         }
+    }
+
+    public boolean isEnabled() {
+        return !listeners.isEmpty();
     }
 
     /**
