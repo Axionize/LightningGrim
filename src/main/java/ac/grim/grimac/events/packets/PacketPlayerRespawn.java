@@ -56,11 +56,19 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
 
     private boolean hasFlag(WrapperPlayServerRespawn respawn, byte flag) {
         // This packet was added in 1.16
-        // On versions older than 1.15, via does not keep all data.
-        // https://github.com/ViaVersion/ViaVersion/blob/master/common/src/main/java/com/viaversion/viaversion/protocols/v1_15_2to1_16/rewriter/EntityPacketRewriter1_16.java#L124
-        if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_15)) {
-            return false;
+        if (flag == KEEP_ATTRIBUTES) {
+            // On versions older than 1.15, via does not keep all attributes.
+            // https://github.com/ViaVersion/ViaVersion/blob/master/common/src/main/java/com/viaversion/viaversion/protocols/v1_15_2to1_16/rewriter/EntityPacketRewriter1_16.java#L124
+            if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_15)) {
+                return false;
+            }
+        } else if (flag == KEEP_TRACKED_DATA) {
+            // But for metadata, via DOES keep all data
+            if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_15)) {
+                return true;
+            }
         }
+
         return (respawn.getKeptData() & flag) != 0;
     }
 
@@ -153,12 +161,13 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
                     player.playerEntityHasGravity = true;
                 }
 
-                if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19_4)) {
-                    if (!keepTrackedData) {
+                if (!keepTrackedData) {
+                    // 1.19.4 uses current sprinting, older versions use last sprinting
+                    if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19_4)) {
                         player.isSprinting = false;
+                    } else {
+                        player.lastSprintingForSpeed = false;
                     }
-                } else {
-                    player.lastSprintingForSpeed = false;
                 }
 
                 player.checkManager.getPacketCheck(BadPacketsE.class).handleRespawn(); // Reminder ticks reset

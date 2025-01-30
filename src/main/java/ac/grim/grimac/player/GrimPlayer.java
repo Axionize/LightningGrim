@@ -20,6 +20,7 @@ import ac.grim.grimac.predictionengine.PointThreeEstimator;
 import ac.grim.grimac.predictionengine.UncertaintyHandler;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import ac.grim.grimac.utils.anticheat.MessageUtil;
+import ac.grim.grimac.utils.anticheat.update.BlockBreak;
 import ac.grim.grimac.utils.change.PlayerBlockHistory;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.*;
@@ -226,24 +227,17 @@ public class GrimPlayer implements GrimUser {
     public DimensionType dimensionType;
     public Vector3d bedPosition;
     public long lastBlockPlaceUseItem = 0;
+    public long lastBlockBreak = 0;
     public AtomicInteger cancelledPackets = new AtomicInteger(0);
     public MainSupportingBlockData mainSupportingBlockData = new MainSupportingBlockData(null, false);
     // possibleEyeHeights[0] = Standing eye heights, [1] = Sneaking. [2] = Elytra, Swimming, and Riptide Trident which only exists in 1.9+
     public double[][] possibleEyeHeights = new double[3][];
-
-    public void onPacketCancel() {
-        if (spamThreshold != -1 && cancelledPackets.incrementAndGet() > spamThreshold) {
-            LogUtil.info("Disconnecting " + getName() + " for spamming invalid packets, packets cancelled within a second " + cancelledPackets);
-            disconnect(MessageUtil.miniMessage(MessageUtil.replacePlaceholders(this, GrimAPI.INSTANCE.getConfigManager().getDisconnectClosed())));
-            cancelledPackets.set(0);
-        }
-    }
-
     public int totalFlyingPacketsSent;
     public boolean hasInventoryOpen;
     public long lastInventoryOpen;
     public InventoryDesyncStatus inventoryDesyncStatus;
     public Queue<BlockPlaceSnapshot> placeUseItemPackets = new LinkedBlockingQueue<>();
+    public Queue<BlockBreak> queuedBreaks = new LinkedBlockingQueue<>();
     public PlayerBlockHistory blockHistory = new PlayerBlockHistory();
     // This variable is for support with test servers that want to be able to disable grim
     // Grim disabler 2022 still working!
@@ -292,6 +286,14 @@ public class GrimPlayer implements GrimUser {
 
         // reload last
         reload();
+    }
+
+    public void onPacketCancel() {
+        if (spamThreshold != -1 && cancelledPackets.incrementAndGet() > spamThreshold) {
+            LogUtil.info("Disconnecting " + getName() + " for spamming invalid packets, packets cancelled within a second " + cancelledPackets);
+            disconnect(MessageUtil.miniMessage(MessageUtil.replacePlaceholders(this, GrimAPI.INSTANCE.getConfigManager().getDisconnectClosed())));
+            cancelledPackets.set(0);
+        }
     }
 
     public Set<VectorData> getPossibleVelocities() {
@@ -382,8 +384,9 @@ public class GrimPlayer implements GrimUser {
                 playerClockAtLeast = data.second();
             } while (data.first() != id);
 
-            // A transaction means a new tick, so apply any block places
+            // A transaction means a new tick, so handle any block interactions
             CheckManagerListener.handleQueuedPlaces(this, false, 0, 0, System.currentTimeMillis());
+            CheckManagerListener.handleQueuedBreaks(this, false, 0, 0, System.currentTimeMillis());
             latencyUtils.handleNettySyncTransaction(lastTransactionReceived.get());
         }
 

@@ -103,9 +103,11 @@ public class CheckManager {
                 .put(BadPacketsE.class, new BadPacketsE(player))
                 .put(BadPacketsF.class, new BadPacketsF(player))
                 .put(BadPacketsG.class, new BadPacketsG(player))
+                .put(BadPacketsH.class, new BadPacketsH(player))
                 .put(BadPacketsI.class, new BadPacketsI(player))
                 .put(BadPacketsK.class, new BadPacketsK(player))
                 .put(BadPacketsL.class, new BadPacketsL(player))
+                .put(BadPacketsM.class, new BadPacketsM(player))
                 .put(BadPacketsN.class, new BadPacketsN(player))
                 .put(BadPacketsP.class, new BadPacketsP(player))
                 .put(BadPacketsQ.class, new BadPacketsQ(player))
@@ -208,6 +210,7 @@ public class CheckManager {
                 .put(FarPlace.class, new FarPlace(player))
                 .put(FabricatedPlace.class, new FabricatedPlace(player))
                 .put(PositionPlace.class, new PositionPlace(player))
+                .put(RotationPlace.class, new RotationPlace(player))
                 .put(PacketOrderN.class, new PacketOrderN(player))
                 .put(DuplicateRotPlace.class, new DuplicateRotPlace(player))
                 .put(LineOfSightPlace.class, new LineOfSightPlace(player))
@@ -234,6 +237,7 @@ public class CheckManager {
         blockBreakChecks = new ImmutableClassToInstanceMap.Builder<BlockBreakCheck>()
                 .put(AirLiquidBreak.class, new AirLiquidBreak(player))
                 .put(WrongBreak.class, new WrongBreak(player))
+                .put(RotationBreak.class, new RotationBreak(player))
                 .put(FastBreak.class, new FastBreak(player))
                 .put(MultiBreak.class, new MultiBreak(player))
                 .put(NoSwingBreak.class, new NoSwingBreak(player))
@@ -370,6 +374,12 @@ public class CheckManager {
 
     public <T extends AbstractCheck> T getCheck(Class<T> check) {
         return (T) allChecks.get(check);
+    }
+
+    public void onPostFlyingBlockBreak(final BlockBreak blockBreak) {
+        for (BlockBreakCheck check : blockBreakChecks.values()) {
+            check.onPostFlyingBlockBreak(blockBreak);
+        }
     }
 
     public ExplosionHandler getExplosionHandler() {

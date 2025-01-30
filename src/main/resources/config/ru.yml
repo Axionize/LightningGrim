@@ -25,6 +25,7 @@ client-brand:
     - "^fabric$"
     - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4}$"
     - "^Feather Fabric$"
+    - "^labymod$"
 
 spectators:
   # Скрыть всех зрителей с разрешением grim.spectator, независимо от того, являются ли они активными зрителями.
