@@ -7,7 +7,6 @@ import ac.grim.grimac.checks.impl.aim.AimModulo360;
 import ac.grim.grimac.checks.impl.aim.processor.AimProcessor;
 import ac.grim.grimac.checks.impl.badpackets.*;
 import ac.grim.grimac.checks.impl.breaking.*;
-import ac.grim.grimac.checks.impl.combat.Hitboxes;
 import ac.grim.grimac.checks.impl.combat.*;
 import ac.grim.grimac.checks.impl.crash.*;
 import ac.grim.grimac.checks.impl.elytra.*;
@@ -82,7 +81,6 @@ public class CheckManager {
         // Include post checks in the packet check too
         packetChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
                 .put(PacketOrderProcessor.class, player.packetOrderProcessor)
-                .put(Hitboxes.class, new Hitboxes(player))
                 .put(Reach.class, new Reach(player))
                 .put(HitboxMiss.class, new HitboxMiss(player))
                 .put(HitboxBlock.class, new HitboxBlock(player))
@@ -107,7 +105,6 @@ public class CheckManager {
                 .put(BadPacketsI.class, new BadPacketsI(player))
                 .put(BadPacketsK.class, new BadPacketsK(player))
                 .put(BadPacketsL.class, new BadPacketsL(player))
-                .put(BadPacketsM.class, new BadPacketsM(player))
                 .put(BadPacketsN.class, new BadPacketsN(player))
                 .put(BadPacketsP.class, new BadPacketsP(player))
                 .put(BadPacketsQ.class, new BadPacketsQ(player))
@@ -128,7 +125,6 @@ public class CheckManager {
                 .put(MultiActionsC.class, new MultiActionsC(player))
                 .put(MultiActionsD.class, new MultiActionsD(player))
                 .put(MultiActionsE.class, new MultiActionsE(player))
-                .put(BadPacketsH.class, new BadPacketsH(player))
                 .put(PacketOrderC.class, new PacketOrderC(player))
                 .put(PacketOrderD.class, new PacketOrderD(player))
                 .put(PacketOrderO.class, new PacketOrderO(player))

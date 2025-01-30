@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package ac.grim.grimac.checks.impl.combat;
 
-import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
@@ -47,7 +46,6 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientIn
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.bukkit.Bukkit;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -183,21 +181,15 @@ public class Reach extends Check implements PacketCheck {
                     break;
                 case HITBOX:
                     added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
-                    player.checkManager.getPacketCheck(Hitboxes.class).flagAndAlert(result.verbose() + added);
+                    player.checkManager.getPacketCheck(HitboxMiss.class).flagAndAlert(result.verbose() + added);
                     break;
                 case BLOCK:
                     added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
                     player.checkManager.getPacketCheck(HitboxBlock.class).flagAndAlert(result.verbose() + added);
-                    Bukkit.getScheduler().runTask(GrimAPI.INSTANCE.getPlugin(), () -> {
-                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
-                    });
                     break;
                 case ENTITY:
                     added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
                     player.checkManager.getPacketCheck(HitboxEntity.class).flagAndAlert(result.verbose() + added);
-                    Bukkit.getScheduler().runTask(GrimAPI.INSTANCE.getPlugin(), () -> {
-                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "tick freeze");
-                    });
                     break;
             }
         }
