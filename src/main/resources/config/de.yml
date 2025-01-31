@@ -201,7 +201,7 @@ Reach:
   # Skips checking if a block is blocking a hit on the target
   skip-block-check: false
   # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: true
+  skip-entity-check: false
   # Dies sendet ein zusätzliches Paket am Ende jedes Ticks, um die Wahrscheinlichkeit zu erhöhen, dass Betrüger erwischt werden.
   # Dies injiziert in die Verbindungsliste des Servers, um ein letztes Paket zu senden, kurz bevor der Server geleert wird.
   # Aktivieren dieser Funktion erhöht die Bandbreitennutzung für alle Spieler.

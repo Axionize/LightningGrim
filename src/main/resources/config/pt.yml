@@ -204,7 +204,7 @@ Reach:
   # Skips checking if a block is blocking a hit on the target
   skip-block-check: false
   # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: true
+  skip-entity-check: false
   # Isso enviará um pacote adicional no final de todos os ticks para aumentar a probabilidade de detectarmos trapaceiros.
   # Isso injeta na lista de conecção do servidor para envar um pacote final logo antes do servidor recarregar.
   # Habilitando isso, irá aumentar o uso de banda para todos os jogadores.

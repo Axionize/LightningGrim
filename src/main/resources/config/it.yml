@@ -186,7 +186,7 @@ Reach:
   # Skips checking if a block is blocking a hit on the target
   skip-block-check: false
   # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: true
+  skip-entity-check: false
   # Abilita l'invio di pacchetti aggiuntivi per il rilevamento degli attacchi
   enable-post-packet: false
 

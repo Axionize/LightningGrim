@@ -201,7 +201,7 @@ Reach:
   # Skips checking if a block is blocking a hit on the target
   skip-block-check: false
   # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: true
+  skip-entity-check: false
   # Это отправит дополнительный пакет в конце каждого тика, чтобы увеличить вероятность поимки читов.
   # Это встраивается в список соединений сервера для отправки последнего пакета непосредственно перед тем, как сервер будет удален.
   # Включение этой функции увеличит использование полосы пропускания для всех игроков.

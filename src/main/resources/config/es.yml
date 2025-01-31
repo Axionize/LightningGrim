@@ -206,7 +206,7 @@ Reach:
   # Skips checking if a block is blocking a hit on the target
   skip-block-check: false
   # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: true
+  skip-entity-check: false
   # Esto mandará un paquete adicional al final de cada tick para aumentar las chances de encontrar trampas
   # Esto se inyecta en la lista de conexiones del servidor para mandar un paquete final justo antes de que el servidor haga "flush".
   # Habilitar esto causará que el uso de banda ancha de todos los jugadores aumente

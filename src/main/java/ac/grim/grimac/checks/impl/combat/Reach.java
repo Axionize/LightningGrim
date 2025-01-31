@@ -480,7 +480,7 @@ public class Reach extends Check implements PacketCheck {
     public void onReload(ConfigManager config) {
         this.ignoreNonPlayerTargets = config.getBooleanElse("Reach.ignore-non-player-targets", false);
         this.skipBlockCheck = config.getBooleanElse("Reach.skip-block-check", false);
-        this.skipEntityCheck = config.getBooleanElse("Reach.skip-entity-check", true);
+        this.skipEntityCheck = config.getBooleanElse("Reach.skip-entity-check", false);
         this.cancelImpossibleHits = config.getBooleanElse("Reach.block-impossible-hits", true);
         this.reachThreshold = config.getDoubleElse("Reach.threshold", 0.0005);
     }

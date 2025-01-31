@@ -202,7 +202,7 @@ Reach:
   # Skips checking if a block is blocking a hit on the target
   skip-block-check: false
   # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: true
+  skip-entity-check: false
   # 这将在每个ticks结束时发送一个额外的数据包，以检查作弊的可能性
   # 这会注入服务器的连接列表以在服务器刷新之前发送最终数据包
   # 启用这将增加所有玩家的带宽使用
