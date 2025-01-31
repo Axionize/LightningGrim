@@ -720,13 +720,16 @@ public class GrimPlayer implements GrimUser {
     }
 
     public boolean canGlide() {
-        if (getClientVersion().isOlderThan(ClientVersion.V_1_21_2)) {
+        // Servers older than 1.21.2 don't have this component
+        if (getClientVersion().isOlderThan(ClientVersion.V_1_21_2)
+                || PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_21_2)) {
             final ItemStack chestPlate = getInventory().getChestplate();
             return chestPlate.getType() == ItemTypes.ELYTRA && chestPlate.getDamageValue() < chestPlate.getMaxDamage();
         }
 
         final CompensatedInventory inventory = getInventory();
         // PacketEvents mappings are wrong
+        // TODO https://github.com/retrooper/packetevents/pull/1125
         return isGlider(inventory.getHelmet(), EquipmentSlot.CHEST_PLATE)
                 || isGlider(inventory.getChestplate(), EquipmentSlot.LEGGINGS)
                 || isGlider(inventory.getLeggings(), EquipmentSlot.BOOTS)

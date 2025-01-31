@@ -1,6 +1,9 @@
 package ac.grim.grimac.utils.latency;
 
+import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.anticheat.LogUtil;
+import ac.grim.grimac.utils.anticheat.MessageUtil;
 import ac.grim.grimac.utils.data.Pair;
 import com.github.retrooper.packetevents.netty.channel.ChannelHelper;
 
@@ -50,13 +53,15 @@ public class LatencyUtils {
                 if (transaction == pair.first() - 1)
                     continue;
 
-
                 try {
                     // Run the task
                     pair.second().run();
                 } catch (Exception e) {
-                    System.out.println("An error has occurred when running transactions for player: " + player.user.getName());
-                    e.printStackTrace();
+                    LogUtil.error("An error has occurred when running transactions for player: " + player.user.getName(), e);
+                    // Kick the player SO PEOPLE ACTUALLY REPORT PROBLEMS AND KNOW WHEN THEY HAPPEN
+                    if (!Boolean.getBoolean("grim.disable-transaction-kick")) {
+                        player.disconnect(MessageUtil.miniMessage(MessageUtil.replacePlaceholders(player, GrimAPI.INSTANCE.getConfigManager().getDisconnectPacketError())));
+                    }
                 }
                 // We ran a task, remove it from the list
                 iterator.remove();

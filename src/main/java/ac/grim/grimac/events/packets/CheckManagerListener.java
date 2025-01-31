@@ -281,7 +281,7 @@ public class CheckManagerListener extends PacketListenerAbstract {
 
             blockPlace.setInside(place.getInsideBlock().orElse(false));
 
-            if (placedWith.getType().getPlacedType() != null || placedWith.getType() == ItemTypes.FIRE_CHARGE) {
+            if (placedWith.getType().getPlacedType() != null || placedWith.getType() == ItemTypes.FLINT_AND_STEEL || placedWith.getType() == ItemTypes.FIRE_CHARGE) {
                 BlockPlaceResult.getMaterialData(placedWith.getType()).applyBlockPlaceToWorld(player, blockPlace);
             }
         }
