@@ -16,7 +16,9 @@ import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 import com.github.retrooper.packetevents.util.Vector3i;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
+import com.sun.tools.javac.util.List;
 
+import java.util.Collections;
 import java.util.Set;
 
 // Based loosely off of Hawk BlockBreakSpeedSurvival
@@ -27,7 +29,7 @@ public class FastBreak extends Check implements BlockBreakCheck {
 
     // For some reason these states flag and I don't know why.
     // Better to just exempt to not annoy legit players.
-    private static final Set<StateType> EXEMPT_STATES = Set.of(StateTypes.TRIAL_SPAWNER);
+    private static final Set<StateType> EXEMPT_STATES = Collections.singleton(StateTypes.TRIAL_SPAWNER);
 
     public FastBreak(GrimPlayer playerData) {
         super(playerData);
