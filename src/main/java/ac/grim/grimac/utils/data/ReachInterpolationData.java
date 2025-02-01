@@ -36,9 +36,8 @@ public class ReachInterpolationData {
     private int interpolationSteps = 1;
     private boolean expandNonRelative = false;
 
-    private GrimPlayer player;
-    private TrackedPosition position;
-    private PacketEntity entity;
+    private final GrimPlayer player;
+    private final PacketEntity entity;
 
     public ReachInterpolationData(GrimPlayer player, SimpleCollisionBox startingLocation, TrackedPosition position, PacketEntity entity) {
         final boolean isPointNine = !player.inVehicle() && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9);
@@ -47,7 +46,6 @@ public class ReachInterpolationData {
         final Vector3d pos = position.getPos();
         this.targetLocation = new SimpleCollisionBox(pos.x, pos.y, pos.z, pos.x, pos.y, pos.z, false);
         this.player = player;
-        this.position = position;
         this.entity = entity;
 
         // 1.9 -> 1.8 precision loss in packets
@@ -72,9 +70,11 @@ public class ReachInterpolationData {
     }
 
     // While riding entities, there is no interpolation.
-    public ReachInterpolationData(SimpleCollisionBox finishedLoc) {
+    public ReachInterpolationData(GrimPlayer player, SimpleCollisionBox finishedLoc, PacketEntity entity) {
         this.startingLocation = finishedLoc;
         this.targetLocation = finishedLoc;
+        this.entity = entity;
+        this.player = player;
     }
 
     private int getInterpolationSteps() {
