@@ -133,17 +133,6 @@ public class PacketEntity extends TypedPacketEntity {
                 }
                 trackedServerPosition.setPos(vec3d);
             } else {
-                // I think we can reduce this but I'm too lazy to minimize interpolations needed so...
-                SimpleCollisionBox clientArea = newPacketLocation.getPossibleLocationCombined();
-                // In versions < 1.16.2 when the client receives non-relative teleport for an entity
-                // And they move less by the thresholds given, the entity does not move client side
-                if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_1)
-                        && clientArea.distanceX(relX) < 0.03125D
-                        && clientArea.distanceY(relY) < 0.015625D
-                        && clientArea.distanceZ(relZ) < 0.03125D
-                ) {
-                    newPacketLocation.expandNonRelative();
-                }
                 trackedServerPosition.setPos(new Vector3d(relX, relY, relZ));
                 // ViaVersion desync's here for teleports
                 // It simply teleports the entity with its position divided by 32... ignoring the offset this causes.
@@ -153,7 +142,6 @@ public class PacketEntity extends TypedPacketEntity {
                 }
             }
         }
-
         this.oldPacketLocation = newPacketLocation;
         this.newPacketLocation = new ReachInterpolationData(player, oldPacketLocation.getPossibleLocationCombined(), trackedServerPosition, this);
 
@@ -209,6 +197,14 @@ public class PacketEntity extends TypedPacketEntity {
         this.trackedServerPosition.setPos(new Vector3d((box.maxX - box.minX) / 2 + box.minX, box.minY, (box.maxZ - box.minZ) / 2 + box.minZ));
         // This disables interpolation
         this.newPacketLocation = new ReachInterpolationData(player, box, this);
+    }
+
+    public SimpleCollisionBox getPossibleLocationBoxes() {
+        if (oldPacketLocation == null) {
+            return newPacketLocation.getPossibleLocationCombined();
+        }
+
+        return ReachInterpolationData.combineCollisionBox(oldPacketLocation.getPossibleLocationCombined(), newPacketLocation.getPossibleLocationCombined());
     }
 
     public SimpleCollisionBox getPossibleCollisionBoxes() {
