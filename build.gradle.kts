@@ -26,7 +26,7 @@ spotless {
 }
 
 group = "ac.grim.grimac"
-version = "2.3.70"
+version = "2.3.71"
 description = "Libre simulation anticheat designed for 1.21 with 1.8-1.21 support, powered by PacketEvents 2.0."
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 java.targetCompatibility = JavaVersion.VERSION_1_8
