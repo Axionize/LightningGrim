@@ -37,7 +37,6 @@ public class NoSlowD extends Check implements PostPredictionCheck {
 
             // https://bugs.mojang.com/browse/MC-152728
             if (startedSprintingBeforeUse && client.isNewerThanOrEquals(ClientVersion.V_1_14_2) && client.isOlderThan(ClientVersion.V_1_21_4)) {
-                reward();
                 flaggedLastTick = false;
                 return;
             }
