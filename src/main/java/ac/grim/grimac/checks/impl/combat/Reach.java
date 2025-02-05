@@ -224,25 +224,7 @@ public class Reach extends Check implements PacketCheck {
 
         double minDistance = Double.MAX_VALUE;
 
-        // https://bugs.mojang.com/browse/MC-67665
-        List<Vector> possibleLookDirs = new ArrayList<>(Collections.singletonList(ReachUtils.getLook(player, player.xRot, player.yRot)));
-
-        // If we are a tick behind, we don't know their next look so don't bother doing this
-        if (!isPrediction) {
-            possibleLookDirs.add(ReachUtils.getLook(player, player.lastXRot, player.yRot));
-
-            // 1.9+ players could be a tick behind because we don't get skipped ticks
-            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
-                possibleLookDirs.add(ReachUtils.getLook(player, player.lastXRot, player.lastYRot));
-            }
-
-            // 1.7 players do not have any of these issues! They are always on the latest look vector
-            if (player.getClientVersion().isOlderThan(ClientVersion.V_1_8)) {
-                possibleLookDirs = Collections.singletonList(ReachUtils.getLook(player, player.xRot, player.yRot));
-            }
-        }
-
-        // all lookVecsAndEyeHeight pairs that landed a hit on the target entity
+        // will store all lookVecsAndEyeHeight pairs that landed a hit on the target entity
         // We only need to check for blocking intersections for these
         List<Pair<Vector, Double>> lookVecsAndEyeHeights = new ArrayList<>();
 
@@ -252,6 +234,7 @@ public class Reach extends Check implements PacketCheck {
         // +3 would be 3 + extraSearchDistance = 6, which is the pre-1.20.5 behaviour, preventing "Missed Hitbox"
         final double distance = maxReach + extraSearchDistance;
         final double[] possibleEyeHeights = player.getPossibleEyeHeights();
+        final Vector[] possibleLookDirs = player.getPossibleLookVectors(isPrediction);
         final Vector eyePos = new Vector(from.getX(), 0, from.getZ());
         for (Vector lookVec : possibleLookDirs) {
             for (double eye : possibleEyeHeights) {
