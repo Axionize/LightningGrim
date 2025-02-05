@@ -62,14 +62,14 @@ public class Reach extends Check implements PacketCheck {
     // Used to prevent falses in the wall hit check
     private final Set<Vector3i> blocksChangedThisTick = new HashSet<>();
 
+    public static final double extraSearchDistance = 3; // extra distance to raytrace beyond reach distance so we know far beyond the legit distance a cheater hit
+
     private static final List<EntityType> blacklisted = Arrays.asList(
             EntityTypes.BOAT,
             EntityTypes.CHEST_BOAT,
             EntityTypes.SHULKER);
 
     private boolean ignoreNonPlayerTargets;
-    private boolean skipBlockCheck;
-    private boolean skipEntityCheck;
     private boolean cancelImpossibleHits;
     public double reachThreshold;
     private double cancelBuffer; // For the next 4 hits after using reach, we aggressively cancel reach
@@ -249,8 +249,8 @@ public class Reach extends Check implements PacketCheck {
         final double maxReach = player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
         // We raytrace for > the player's reach distance so in the case a player is hacking
         // We can return in the flag the distance of the reach hit instead of a generic "player failed reach check"
-        // +3 would be 3 + 3 = 6, which is the pre-1.20.5 behaviour, preventing "Missed Hitbox"
-        final double distance = maxReach + 3;
+        // +3 would be 3 + extraSearchDistance = 6, which is the pre-1.20.5 behaviour, preventing "Missed Hitbox"
+        final double distance = maxReach + extraSearchDistance;
         final double[] possibleEyeHeights = player.getPossibleEyeHeights();
         final Vector eyePos = new Vector(from.getX(), 0, from.getZ());
         for (Vector lookVec : possibleLookDirs) {
@@ -278,21 +278,14 @@ public class Reach extends Check implements PacketCheck {
         HitData foundHitData = null;
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)
         // Ignore when could be hitting through a moving shulker, piston blocks. They are just too glitchy/uncertain to check.
-        if (!skipEntityCheck || !skipBlockCheck) {
-            if (minDistance <= distance - 3 && !player.compensatedWorld.isNearHardEntity(player.boundingBox.copy().expand(4))) {
-                final @Nullable Pair<Double, HitData> hitResult = didRayTraceHit(reachEntity, lookVecsAndEyeHeights, from, minDistance);
-
-                // if the hitResult is closer to the player than the target entity box, they shouldn't have hit the target entity
-                // We are checking if the diff > epsilon because the hit distance returned is slightly different due to floating point shennanigans
-                // - This filters out when the ray trace hits the target entity without having to do an expensive .equals()
-                // - You may have to adjust the epsilon if you increase the reach threshold, especially by a lot
-                // ...but there is literally no reason you would ever want to increase it, only decrease, so that doesn't matter.
-                if (hitResult != null
-//                        && (minDistance * minDistance) - hitResult.first() > ENTITY_HITBOX_REACH_EPSILON
-                ) { // returned double is distanceSq
-                    minDistance = Double.MIN_VALUE;
-                    foundHitData = hitResult.second();
-                }
+        if (minDistance <= distance - extraSearchDistance && !player.compensatedWorld.isNearHardEntity(player.boundingBox.copy().expand(4))) {
+            final @Nullable Pair<Double, HitData> hitResult = didRayTraceHit(reachEntity, lookVecsAndEyeHeights, from, minDistance);
+            HitData hitData = hitResult.second();
+            // If the returned hit result was NOT the target entity we flag the check
+            if (!(hitData instanceof EntityHitData &&
+                    player.compensatedEntities.getPacketEntityID(((EntityHitData) hitData).getEntity()) == player.compensatedEntities.getPacketEntityID(reachEntity))) {
+                minDistance = Double.MIN_VALUE;
+                foundHitData = hitData;
             }
         }
 
@@ -303,13 +296,7 @@ public class Reach extends Check implements PacketCheck {
                 if (foundHitData instanceof BlockHitData) {
                     return new CheckResult(ResultType.BLOCK, "Hit block=" + ((BlockHitData) foundHitData).getState().getType().getName() + " ");
                 } else { // entity hit data
-                    EntityHitData entityHitData = (EntityHitData) foundHitData;
-                    // hit target entity
-                    if (player.compensatedEntities.getPacketEntityID(entityHitData.getEntity()) == player.compensatedEntities.getPacketEntityID(reachEntity)) {
-                       return NONE;
-                    } else { // hit non-target entity
-                        return new CheckResult(ResultType.ENTITY, "Hit entity=" + ((EntityHitData) foundHitData).getEntity().getType().getName() + " ");
-                    }
+                    return new CheckResult(ResultType.ENTITY, "Hit entity=" + ((EntityHitData) foundHitData).getEntity().getType().getName() + " ");
                 }
             } else if (minDistance == Double.MAX_VALUE) {
                 cancelBuffer = 1;
@@ -363,61 +350,40 @@ public class Reach extends Check implements PacketCheck {
     }
 
     // Checks if it was possible to hit a target entity
-    @Nullable
-    private Pair<Double, HitData> didRayTraceHit(PacketEntity targetEntity, List<Pair<Vector, Double>> possiblelookVecsAndEyeHeights, Vector3d from, double minDistance) {
-        HitData bestHitData = null;
-        double bestDistanceSq = Double.MAX_VALUE;
-        double bestBlockingEntityDistanceSq = Double.MAX_VALUE;
-        HitData bestBlockingEntityHit = null;
+    // TODO refactor to return list of rays and why each of them didn't hit instead of closest obstruction
+    // NOTE: It should be impossible for the returned Pair to be null
+    // because all of the possibleLookVecsAndEyeHeights passed in should be ones that hit the target entity
+    // in previous parts of this check when we didn't check for any obstructions like blocks/entities
+    private @NotNull Pair<@NotNull Double, @NotNull HitData> didRayTraceHit(PacketEntity targetEntity,
+                                                                            List<Pair<Vector, Double>> possibleLookVecsAndEyeHeights,
+                                                                            Vector3d from, double minDistance) {
+        HitData firstObstruction = null;
+        double firstObstructionDistanceSq = 0;
 
         // Check every possible look direction and every possible eye height
-        // IF *NONE* of them allow the player to hit the entity, this is an invalid hit
-        for (Pair<Vector, Double> vectorDoublePair : possiblelookVecsAndEyeHeights) {
+        for (Pair<Vector, Double> vectorDoublePair : possibleLookVecsAndEyeHeights) {
             Vector lookVec = vectorDoublePair.first();
             double eye = vectorDoublePair.second();
 
             Vector eyes = new Vector(from.getX(), from.getY() + eye, from.getZ());
             // this function is completely 0.03 aware
-            final HitData hitResult = BlockRayTrace.getNearestHitResult(player, targetEntity, eyes, lookVec, minDistance, skipBlockCheck, skipEntityCheck);
+            final HitData hitResult = BlockRayTrace.getNearestHitResult(player, targetEntity, eyes, lookVec, minDistance);
 
-            if (hitResult == null)
-                if (skipEntityCheck)
-                    return null;
-                else
-                    continue;
-
-            double distanceSquared = eyes.distanceSquared(hitResult.getBlockHitLocation());
-
-            // Check if the hit result is the target entity
+            // If we hit the target entity, it's a valid hit
             if (hitResult instanceof EntityHitData && ((EntityHitData) hitResult).getEntity().equals(targetEntity)) {
+                double distanceSquared = eyes.distanceSquared(hitResult.getBlockHitLocation());
                 return new Pair<>(distanceSquared, hitResult); // Legitimate hit
-            // Check for potential blocking entities
-            } else if (hitResult instanceof EntityHitData) {
-                // Consider entities that are blocking the path to the target
-                if (distanceSquared < bestBlockingEntityDistanceSq) {
-                    bestBlockingEntityDistanceSq = distanceSquared;
-                    bestBlockingEntityHit = hitResult;
-                }
-            } else if (hitResult instanceof BlockHitData) {
-                // don't false on recently rapidly changed blocks
-                if (distanceSquared < (minDistance * minDistance) && blocksChangedThisTick.contains(((BlockHitData) hitResult).getPosition())) {
-                    return null;
-                }
-                // Check if block is closer than any blocking entity found
-                if (bestBlockingEntityHit == null && distanceSquared < bestDistanceSq) {
-                    bestDistanceSq = distanceSquared;
-                    bestHitData = hitResult;
-                }
+            } else if (hitResult != null && firstObstruction == null) {
+                // Store the first obstruction only
+                firstObstruction = hitResult;
+                firstObstructionDistanceSq = eyes.distanceSquared(hitResult.getBlockHitLocation());
             }
         }
 
-        // Prefer returning the entity that blocks the path to the target entity
-        if (bestBlockingEntityHit != null) {
-            return new Pair<>(bestBlockingEntityDistanceSq, bestBlockingEntityHit);
-        }
-
-        // If no blocking entity, return the closest block
-        return bestHitData == null ? null : new Pair<>(bestDistanceSq, bestHitData);
+        // Return the first obstruction if no valid hit found
+        // Since we sort eye heights by likeniness, we should in effect return the most likely (first) obstruction
+        assert firstObstruction != null;
+        return new Pair<>(firstObstructionDistanceSq, firstObstruction);
     }
 
     private boolean hitboxDebuggingEnabled() {
@@ -479,8 +445,6 @@ public class Reach extends Check implements PacketCheck {
     @Override
     public void onReload(ConfigManager config) {
         this.ignoreNonPlayerTargets = config.getBooleanElse("Reach.ignore-non-player-targets", false);
-        this.skipBlockCheck = config.getBooleanElse("Reach.skip-block-check", false);
-        this.skipEntityCheck = config.getBooleanElse("Reach.skip-entity-check", false);
         this.cancelImpossibleHits = config.getBooleanElse("Reach.block-impossible-hits", true);
         this.reachThreshold = config.getDoubleElse("Reach.threshold", 0.0005);
     }

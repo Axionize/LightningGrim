@@ -1,5 +1,6 @@
 package ac.grim.grimac.checks.debug;
 
+import ac.grim.grimac.checks.impl.combat.Reach;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.NoCollisionBox;
@@ -123,6 +124,8 @@ public class HitboxDebugHandler extends AbstractDebugHandler {
                 double eyeHeight = pair.second();
 
                 // Write eye height delta and look vector
+                // we make them 3 meters shorter because all of the vectors passed into here are made 3 meters longer
+                // then they need to be so grim can report correct reach distance for too far away hits
                 buffer.writeDouble(eyeHeight);
                 writeVector(buffer, lookVec);
             }
