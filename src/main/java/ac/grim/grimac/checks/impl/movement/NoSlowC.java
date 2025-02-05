@@ -13,7 +13,7 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
 
 @CheckData(name = "NoSlowC", description = "Sprinting while sneaking", setback = 5, experimental = true)
-public class NoSlowC extends Check implements PostPredictionCheck, PacketCheck {
+public class NoSlowC extends Check implements PostPredictionCheck {
     public NoSlowC(GrimPlayer player) {
         super(player);
     }
