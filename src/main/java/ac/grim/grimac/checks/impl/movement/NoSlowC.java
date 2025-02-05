@@ -38,7 +38,6 @@ public class NoSlowC extends Check implements PostPredictionCheck {
 
             // https://bugs.mojang.com/browse/MC-152728
             if (startedSprintingBeforeSlowMovement && client.isNewerThanOrEquals(ClientVersion.V_1_14_2) && client.isOlderThan(ClientVersion.V_1_21_4)) {
-                reward();
                 return;
             }
             if (player.isSprinting
