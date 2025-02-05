@@ -10,6 +10,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Predicate;
 
+import static com.github.retrooper.packetevents.manager.server.ServerVersion.V_1_12_2;
+
 @UtilityClass
 public class BukkitNMS {
     // resets item usage, then returns whether the player was using an item
@@ -24,12 +26,18 @@ public class BukkitNMS {
 
     static {
         try {
+            Class<?> EntityLiving;
+            Method getHandle;
+            Method clearActiveItem;
+            Method getItemInUse;
+            Method isUsingItem;
+            Method isEmpty;
             switch (PacketEvents.getAPI().getServerManager().getVersion()) {
-                case V_1_8_8 -> {
+                case V_1_8_8:
                     Class<?> EntityHuman = Class.forName("net.minecraft.server.v1_8_R3.EntityHuman");
-                    Method getHandle = Class.forName("org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer").getMethod("getHandle");
-                    Method clearActiveItem = EntityHuman.getMethod("bV");
-                    Method isUsingItem = EntityHuman.getMethod("bS");
+                    getHandle = Class.forName("org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer").getMethod("getHandle");
+                    clearActiveItem = EntityHuman.getMethod("bV");
+                    isUsingItem = EntityHuman.getMethod("bS");
 
                     resetActiveBukkitItem = player -> {
                         try {
@@ -40,13 +48,13 @@ public class BukkitNMS {
                             throw new RuntimeException(e);
                         }
                     };
-                }
-                case V_1_12_2 -> {
-                    Class<?> EntityLiving = Class.forName("net.minecraft.server.v1_12_R1.EntityLiving");
-                    Method getHandle = Class.forName("org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer").getMethod("getHandle");
-                    Method clearActiveItem = EntityLiving.getMethod("cN");
-                    Method getItemInUse = EntityLiving.getMethod("cJ");
-                    Method isEmpty = Class.forName("net.minecraft.server.v1_12_R1.ItemStack").getMethod("isEmpty");
+                    break;
+                case V_1_12_2:
+                    EntityLiving = Class.forName("net.minecraft.server.v1_12_R1.EntityLiving");
+                    getHandle = Class.forName("org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer").getMethod("getHandle");
+                    clearActiveItem = EntityLiving.getMethod("cN");
+                    getItemInUse = EntityLiving.getMethod("cJ");
+                    isEmpty = Class.forName("net.minecraft.server.v1_12_R1.ItemStack").getMethod("isEmpty");
 
                     resetActiveBukkitItem = player -> {
                         try {
@@ -58,13 +66,13 @@ public class BukkitNMS {
                             throw new RuntimeException(e);
                         }
                     };
-                }
-                case V_1_16_5 -> {
-                    Class<?> EntityLiving = Class.forName("net.minecraft.server.v1_16_R3.EntityLiving");
-                    Method getHandle = Class.forName("org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer").getMethod("getHandle");
-                    Method clearActiveItem = EntityLiving.getMethod("clearActiveItem");
-                    Method getItemInUse = EntityLiving.getMethod("getActiveItem");
-                    Method isEmpty = Class.forName("net.minecraft.server.v1_16_R3.ItemStack").getMethod("isEmpty");
+                    break;
+                case V_1_16_5:
+                    EntityLiving = Class.forName("net.minecraft.server.v1_16_R3.EntityLiving");
+                    getHandle = Class.forName("org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer").getMethod("getHandle");
+                    clearActiveItem = EntityLiving.getMethod("clearActiveItem");
+                    getItemInUse = EntityLiving.getMethod("getActiveItem");
+                    isEmpty = Class.forName("net.minecraft.server.v1_16_R3.ItemStack").getMethod("isEmpty");
 
                     resetActiveBukkitItem = player -> {
                         try {
@@ -76,17 +84,20 @@ public class BukkitNMS {
                             throw new RuntimeException(e);
                         }
                     };
-                }
-                default -> {
+                    break;
+                default:
                     // cause an exception if these methods don't exist
-                    Player.class.getMethod("clearActiveItem");
-                    Player.class.getMethod("getItemInUse");
-
+                    clearActiveItem = Player.class.getMethod("clearActiveItem");
+                    getItemInUse = Player.class.getMethod("getItemInUse");
                     resetActiveBukkitItem = player -> {
-                        player.clearActiveItem();
-                        return player.getItemInUse() != null;
+                        try {
+                            clearActiveItem.invoke(player);
+                            return getItemInUse.invoke(player) != null;
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
                     };
-                }
+                    break;
             }
         } catch (ClassNotFoundException | NoSuchMethodException e) {
             throw new RuntimeException("you are likely using an unsupported server software and or version!", e);

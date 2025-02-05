@@ -200,10 +200,6 @@ Reach:
   block-impossible-hits: true
   # Only apply reach checks if the target is a player
   ignore-non-player-targets: false
-  # Skips checking if a block is blocking a hit on the target
-  skip-block-check: false
-  # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: false
   # This will send an additional packet at the end of every tick to increase the likelihood of catching cheats
   # This injects into server's connection list to send a final packet just before the server flushes
   # Enabling this will increase bandwidth usage for all players

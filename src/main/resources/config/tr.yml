@@ -200,10 +200,6 @@ Reach:
   block-impossible-hits: true
   # Only apply reach checks if the target is a player
   ignore-non-player-targets: false
-  # Skips checking if a block is blocking a hit on the target
-  skip-block-check: false
-  # Skips checking if an entity is blocking a hit on the target
-  skip-entity-check: false
   # Bu, hileleri yakalama olasılığını artırmak için her tikin sonunda ek bir paket gönderecektir
   # Bu, sunucunun bağlantı listesine enjekte edilerek sunucu boşaltmadan hemen önce son bir paket göndermek için yapılır
   # Bunu etkinleştirmek, tüm oyuncular için bant genişliği kullanımını artıracaktır
