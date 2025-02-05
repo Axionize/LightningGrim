@@ -181,6 +181,10 @@ publishing.publications.create<MavenPublication>("maven") {
 }
 
 tasks.shadowJar {
+    manifest {
+        attributes["paperweight-mappings-namespace"] = "mojang"
+    }
+
     minimize()
     archiveFileName.set("${project.name}-${project.version}.jar")
     if (relocate) {

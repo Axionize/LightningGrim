@@ -69,31 +69,23 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 // Everything in this class should be sync'd to the anticheat thread.
 // Put variables sync'd to the netty thread in PacketStateData
 // Variables that need lag compensation should have their own class
 // Soon there will be a generic class for lag compensation
 public class GrimPlayer implements GrimUser {
-    private static final @Nullable Consumer<@NotNull Player> resetActiveBukkitItem;
-    private static final @Nullable Predicate<@NotNull Player> isUsingBukkitItem;
     public UUID uuid;
     public final User user;
     public int entityID;

@@ -27,6 +27,11 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
     }
 
     @Override
+    public boolean persist() {
+        return true;
+    }
+
+    @Override
     public @NotNull List<String> getPlaceholders() {
         Set<String> placeholders = GrimAPI.INSTANCE.getExternalAPI().getStaticReplacements().keySet();
         placeholders.addAll(GrimAPI.INSTANCE.getExternalAPI().getVariableReplacements().keySet());
