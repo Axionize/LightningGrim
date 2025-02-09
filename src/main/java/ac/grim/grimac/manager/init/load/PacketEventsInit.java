@@ -30,7 +30,7 @@ public class PacketEventsInit implements Initable {
             GrimAPI.INSTANCE.signalCriticalFailure();
             throw new RuntimeException("\n" +
                     "******************************************************\n" +
-                    "GrimAC requires PacketEvents > 2.7.0\n" +
+                    "GrimAC requires PacketEvents > " + NEWEST_UNSUPPORTED_PE_VERSION + "\n" +
                     "Please update PacketEvents to a compatible version.\n" +
                     "This is a critical error. GrimAC will be disabled.\n" +
                     "*****************************************************");
