@@ -38,6 +38,12 @@ val relocate: Boolean = project.findProperty("relocate")?.toString()?.toBoolean(
     ?: System.getenv("RELOCATE_JAR")?.toBoolean()
     ?: true
 
+// Whether or not to shade PE into the jar, some servers may not want this if they use other plugins
+// With PE; this prevents duplicate listening and reduces RAM usage by ~80-100 MB
+val shadePE: Boolean = project.findProperty("shadePE")?.toString()?.toBoolean()
+    ?: System.getenv("SHADE_PE")?.toBoolean()
+    ?: true
+
 repositories {
     mavenLocal()
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") // Spigot
@@ -60,7 +66,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")
+    // PE dependency is now conditional
+    if (shadePE) {
+        implementation("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")
+    } else {
+        compileOnly("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")
+    }
     implementation("co.aikar:acf-paper:0.5.1-SNAPSHOT")
     implementation("club.minnced:discord-webhooks:0.8.0") // Newer versions include kotlin-stdlib, which leads to incompatibility with plugins that use Kotlin
     implementation("it.unimi.dsi:fastutil:8.5.15")
@@ -90,6 +101,10 @@ bukkit {
     website = "https://grim.ac/"
     apiVersion = "1.13"
     foliaSupported = true
+
+    if (!shadePE) {
+        depend = listOf("packetevents") + (depend ?: emptyList())
+    }
 
     softDepend = listOf(
         "ProtocolLib",
@@ -186,10 +201,13 @@ tasks.shadowJar {
     }
 
     minimize()
-    archiveFileName.set("${project.name}-${project.version}.jar")
+    archiveFileName.set("${project.name}-${project.version}${if (shadePE) "" else "-lite"}.jar")
     if (relocate) {
-        relocate("io.github.retrooper.packetevents", "ac.grim.grimac.shaded.io.github.retrooper.packetevents")
-        relocate("com.github.retrooper.packetevents", "ac.grim.grimac.shaded.com.github.retrooper.packetevents")
+        // Only relocate PE if we're shading it
+        if (shadePE) {
+            relocate("io.github.retrooper.packetevents", "ac.grim.grimac.shaded.io.github.retrooper.packetevents")
+            relocate("com.github.retrooper.packetevents", "ac.grim.grimac.shaded.com.github.retrooper.packetevents")
+        }
         relocate("co.aikar.commands", "ac.grim.grimac.shaded.acf")
         relocate("co.aikar.locale", "ac.grim.grimac.shaded.locale")
         relocate("club.minnced", "ac.grim.grimac.shaded.discord-webhooks")
