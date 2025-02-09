@@ -265,8 +265,12 @@ public class Reach extends Check implements PacketCheck {
             final @Nullable Pair<Double, HitData> hitResult = didRayTraceHit(reachEntity, lookVecsAndEyeHeights, from, minDistance);
             HitData hitData = hitResult.second();
             // If the returned hit result was NOT the target entity we flag the check
-            if (!(hitData instanceof EntityHitData &&
-                    player.compensatedEntities.getPacketEntityID(((EntityHitData) hitData).getEntity()) == player.compensatedEntities.getPacketEntityID(reachEntity))) {
+            if (hitData instanceof EntityHitData &&
+                    player.compensatedEntities.getPacketEntityID(((EntityHitData) hitData).getEntity()) != player.compensatedEntities.getPacketEntityID(reachEntity)) {
+                minDistance = Double.MIN_VALUE;
+                foundHitData = hitData;
+            // until I fix block modeling exempt any blocks changed this tick
+            } else if (hitData instanceof BlockHitData && !blocksChangedThisTick.contains(((BlockHitData) hitData).getPosition())) {
                 minDistance = Double.MIN_VALUE;
                 foundHitData = hitData;
             }
