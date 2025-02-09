@@ -36,4 +36,4 @@ jobs:
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          path: build/libs/*.jar
+          path: ${{ github.workspace }}/build/libs/*.jar
