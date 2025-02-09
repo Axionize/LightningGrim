@@ -29,11 +29,68 @@ jobs:
           server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
           settings-path: ${{ github.workspace }} # location for the settings.xml file
 
-      - name: Build with Gradle
+      - name: Extract Version from build.gradle.kts
+        id: extract-version
+        run: |
+            # Extract the version from build.gradle.kts using grep and sed
+            VERSION=$(grep "^version\s*=" build.gradle.kts | sed 's/version\s*=\s*"\(.*\)"/\1/')
+            echo "VERSION: $VERSION"
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build Main Jar with Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           arguments: build
-      - name: Upload a Build Artifact
+
+      - name: Upload Main Artifact
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/build/libs/*.jar
+            name: grimac-main
+            path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}.jar
+
+      - name: Build Lite Jar with Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+            arguments: build -PshadePE=false
+
+      - name: Upload Lite Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: grimac-lite
+            path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}-lite.jar
+
+      - name: Generate build number
+        id: buildnumber
+        uses: onyxmueller/build-tag-number@v1
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: Kir-Antipov/mc-publish@v3.3
+        with:
+            modrinth-id: ${{ vars.MODRINTH_ID  }}
+            modrinth-featured: true
+            modrinth-unfeature-mode: subset
+            modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+
+            files: |
+                ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}.jar
+                ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}-lite.jar
+
+            name: Lightning Grim Anticheat ${{ env.VERSION }}-b${{ steps.buildnumber.outputs.build_number }}
+            version: ${{ env.VERSION }}-b${{ steps.buildnumber.outputs.build_number }}
+            version-type: release
+
+            loaders: |
+                bukkit
+                spigot
+                paper
+                folia
+                purpur
+
+            game-versions: |
+                >=1.7
+
+            retry-attempts: 2
+            retry-delay: 10000
+            fail-mode: fail
