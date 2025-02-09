@@ -15,24 +15,85 @@ jobs:
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # Allows the workflow to create or update references (tags)
       packages: write
+      actions: write
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        settings-path: ${{ github.workspace }} # location for the settings.xml file
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+          settings-path: ${{ github.workspace }} # location for the settings.xml file
 
-    - name: Build with Gradle
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        arguments: build
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        path: /home/runner/work/Grim/Grim/build/libs/**.jar
+      - name: Extract Version from build.gradle.kts
+        id: extract-version
+        run: |
+            # Extract the version from build.gradle.kts using grep and sed
+            VERSION=$(grep "^version\s*=" build.gradle.kts | sed 's/version\s*=\s*"\(.*\)"/\1/')
+            echo "VERSION: $VERSION"
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build Lite Jar with Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+            arguments: build -PshadePE=false
+
+      - name: Upload Lite Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: grimac-lite
+            path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}-lite.jar
+
+      - name: Build Main Jar with Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+            arguments: build
+
+      - name: Upload Main Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: grimac-main
+            path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}.jar
+
+      - name: Generate build number
+        if: contains(fromJSON('["merge", "release", "main"]'), github.ref_name)
+        id: buildnumber
+        uses: onyxmueller/build-tag-number@v1
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Modrinth
+        if: contains(fromJSON('["merge", "release", "main"]'), github.ref_name)
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+            modrinth-id: ${{ vars.MODRINTH_ID  }}
+            modrinth-featured: true
+            modrinth-unfeature-mode: subset
+            modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+
+            files: |
+                ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}.jar
+                ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}-lite.jar
+
+            name: Lightning Grim Anticheat ${{ env.VERSION }}-b${{ steps.buildnumber.outputs.build_number }}
+            version: ${{ env.VERSION }}-b${{ steps.buildnumber.outputs.build_number }}
+            version-type: release
+
+            loaders: |
+                bukkit
+                spigot
+                paper
+                folia
+                purpur
+
+            game-versions: |
+                >=1.7
+
+            retry-attempts: 2
+            retry-delay: 10000
+            fail-mode: fail

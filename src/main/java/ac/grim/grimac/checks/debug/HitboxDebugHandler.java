@@ -1,6 +1,5 @@
 package ac.grim.grimac.checks.debug;
 
-import ac.grim.grimac.checks.impl.combat.Reach;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.NoCollisionBox;

@@ -2,7 +2,6 @@ package ac.grim.grimac.events.packets;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.checks.impl.movement.NoSlow;
-import ac.grim.grimac.checks.impl.sprint.SprintC;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
@@ -223,10 +222,6 @@ public class PacketPlayerDigging extends PacketListenerAbstract {
             final boolean wasSlow = player.packetStateData.isSlowedByUsingItem();
 
             handleUseItem(player, item, hand);
-
-            if (!wasSlow) {
-                player.checkManager.getPostPredictionCheck(SprintC.class).startedSprintingBeforeUse = player.packetStateData.isSlowedByUsingItem() && player.isSprinting;
-            }
         }
     }
 }
