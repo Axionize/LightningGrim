@@ -38,17 +38,6 @@ jobs:
             echo "VERSION=$VERSION" >> $GITHUB_ENV
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build Main Jar with Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: build
-
-      - name: Upload Main Artifact
-        uses: actions/upload-artifact@v4
-        with:
-            name: grimac-main
-            path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}.jar
-
       - name: Build Lite Jar with Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -59,6 +48,17 @@ jobs:
         with:
             name: grimac-lite
             path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}-lite.jar
+
+      - name: Build Main Jar with Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+            arguments: build
+
+      - name: Upload Main Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: grimac-main
+            path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}.jar
 
       - name: Generate build number
         id: buildnumber
