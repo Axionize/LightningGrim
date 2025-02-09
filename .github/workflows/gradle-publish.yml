@@ -15,7 +15,7 @@ jobs:
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # Allows the workflow to create or update references (tags)
       packages: write
       actions: write
 
