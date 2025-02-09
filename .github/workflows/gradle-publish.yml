@@ -61,12 +61,15 @@ jobs:
             path: ${{ github.workspace }}/build/libs/grimac-${{ env.VERSION }}.jar
 
       - name: Generate build number
+        if: contains(fromJSON('["merge", "release", "main"]'), github.ref_name)
         id: buildnumber
         uses: onyxmueller/build-tag-number@v1
         with:
             token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: Kir-Antipov/mc-publish@v3.3
+      - name: Publish to Modrinth
+        if: contains(fromJSON('["merge", "release", "main"]'), github.ref_name)
+        uses: Kir-Antipov/mc-publish@v3.3
         with:
             modrinth-id: ${{ vars.MODRINTH_ID  }}
             modrinth-featured: true
