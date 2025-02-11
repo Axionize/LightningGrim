@@ -1,7 +1,6 @@
 package ac.grim.grimac.utils.data.packetentity;
 
 import ac.grim.grimac.player.GrimPlayer;
-import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.math.GrimMath;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
@@ -17,7 +16,8 @@ import java.util.UUID;
 public class PacketEntityPainting extends PacketEntity {
 
     private final Direction side;
-    public SimpleCollisionBox paintingHitBox;
+    public SimpleCollisionBox paintingHitBox = new SimpleCollisionBox(trackedServerPosition.getPos().x, trackedServerPosition.getPos().y, trackedServerPosition.getPos().z,
+            trackedServerPosition.getPos().x, trackedServerPosition.getPos().y, trackedServerPosition.getPos().z);
 
     private int width, height;
 
@@ -26,14 +26,6 @@ public class PacketEntityPainting extends PacketEntity {
         this.side = direction;
     }
 
-//    public CollisionBox getMinimumPossibleCollisionBoxes() {
-//        return paintingHitBox;
-//    }
-//
-//    public SimpleCollisionBox getPossibleLocationBoxes() {
-//        return paintingHitBox;
-//    }
-
     public SimpleCollisionBox calculateBoundingBoxDimensions(int width, int height) {
         if (this.width == width && this.height == height) return paintingHitBox;
 
@@ -41,30 +33,47 @@ public class PacketEntityPainting extends PacketEntity {
         this.height = height;
 
         float f = 0.46875F;
+        System.out.println("f: " + f);
 
         Vector3d trackedServerPositionVector = this.trackedServerPosition.getPos();
         Vector3i attachedBlockPos = new Vector3i(GrimMath.floor(trackedServerPositionVector.getX()),
                 GrimMath.floor(trackedServerPositionVector.getY()),
                 GrimMath.floor(trackedServerPositionVector.getZ()));
+        Vector3d vec3d = attachedBlockPos.toVector3d().add(0.5, 0.5, 0.5);
 
-        Vector3d vec3d = attachedBlockPos.toVector3d().add(0.5, 0.5, 0.5); // get center of block
+        System.out.println("Initial vec3d (center of block): " + vec3d);
+        System.out.println("Side: " + side);
 
-        this.offset(vec3d, side, -f);
+        vec3d = offset(vec3d, side, -f);
+        System.out.println("vec3d after offset to back: " + vec3d);
+
         double d = this.getOffset(width);
         double e = this.getOffset(height);
+        System.out.println("d (horizontal offset): " + d + ", e (vertical offset): " + e);
+
         Direction direction = rotateYCounterclockwise(side);
-        this.offset(vec3d, direction, d);
-        Vector3d vec3d2 = this.offset(vec3d, Direction.UP, e);
+        System.out.println("Perpendicular direction: " + direction);
+
+        Vector3d vec3d2 = offset(vec3d, direction, d);
+        System.out.println("vec3d2 after horizontal offset: " + vec3d2);
+        vec3d2 = offset(vec3d2, Direction.UP, e);
+        System.out.println("vec3d2 after vertical offset: " + vec3d2);
 
         Axis axis = this.getAxis(side);
+        System.out.println("Axis: " + axis);
+
         double g = axis == Axis.X ? 0.0625 : (double) width;
         double h = (double) height;
         double i = axis == Axis.Z ? 0.0625 : (double) width;
+        System.out.println("g: " + g + ", h: " + h + ", i: " + i);
 
-        return new SimpleCollisionBox(
+        SimpleCollisionBox box = new SimpleCollisionBox(
                 vec3d2.getX() - g/2, vec3d2.getY() - h/2, vec3d2.getZ() - i/2,
                 vec3d2.getX() + g/2, vec3d2.getY() + h/2, vec3d2.getZ() + i/2
         );
+        System.out.println("Final box: " + box);
+        System.out.println("--- End calculation ---");
+        return box;
     }
 
     private double getOffset(int length) {
@@ -88,8 +97,8 @@ public class PacketEntityPainting extends PacketEntity {
 
     private Vector3d offset(Vector3d vector3d, Direction side, double value) {
         Vector3i vec3i = getDirectionVector(side);
-        vector3d.add(value * vec3i.getX(), value * vec3i.getY(), value * vec3i.getZ());
-        return vector3d;
+        //return vector3d.add(value * vec3i.getX(), value * vec3i.getY(), value * vec3i.getZ()); //Incorrect
+        return new Vector3d(vector3d.getX() + value * vec3i.getX(), vector3d.getY() + value * vec3i.getY(), vector3d.getZ() + value * vec3i.getZ()); //Correct
     }
 
     private Vector3i getDirectionVector(Direction side) {

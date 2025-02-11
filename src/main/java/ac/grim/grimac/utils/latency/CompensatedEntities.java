@@ -191,7 +191,7 @@ public class CompensatedEntities {
         } else if (EntityTypes.ARMOR_STAND.equals(entityType)) {
             packetEntity = new PacketEntityArmorStand(player, uuid, entityType, position.getX(), position.getY(), position.getZ(), data);
         } else if (EntityTypes.PAINTING.equals(entityType)) {
-            packetEntity = new PacketEntityPainting(player, uuid, position.x, position.y, position.z, Direction.getByHorizontalIndex(data));
+            packetEntity = new PacketEntityPainting(player, uuid, position.x, position.y, position.z, Direction.values()[data]);
         } else if (EntityTypes.GUARDIAN.equals(entityType)) {
             packetEntity = new PacketEntityGuardian(player, uuid, entityType, position.x, position.y, position.z, false); // can still be an Elder Guardian in 1.8-1.10.2 from entity metadata updates
         } else if (EntityTypes.ELDER_GUARDIAN.equals(entityType)) {
@@ -494,8 +494,7 @@ public class CompensatedEntities {
             if (paintingRegistryData != null) {
                 Integer paintingRegistryID = (Integer) paintingRegistryData.getValue();
                 // if this is null that means there is a mapping error, just let it error out so we can fix it
-                PaintingVariant paintingVariant = PaintingVariants.getById(player.getClientVersion(), paintingRegistryID);
-
+                PaintingVariant paintingVariant = PaintingVariants.getById(player.getClientVersion(), paintingRegistryID - 1);
 
                 PacketEntityPainting packetEntityPainting = ((PacketEntityPainting) entity);
                 packetEntityPainting.paintingHitBox = packetEntityPainting.calculateBoundingBoxDimensions(paintingVariant.getWidth(), paintingVariant.getHeight());
