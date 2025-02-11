@@ -1,6 +1,8 @@
 package ac.grim.grimac.utils.nmsutil;
 
+import ac.grim.grimac.GrimAPI;
 import com.github.retrooper.packetevents.PacketEvents;
+import io.github.retrooper.packetevents.util.folia.FoliaScheduler;
 import lombok.experimental.UtilityClass;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -18,10 +20,14 @@ public class BukkitNMS {
     private final @NotNull Predicate<@NotNull Player> resetActiveBukkitItem;
 
     public void resetBukkitItemUsage(@Nullable Player player) {
-        if (player != null && resetActiveBukkitItem.test(player)) {
-            // only update if they were using an item to prevent certain issues
-            player.updateInventory();
-        }
+        if (player == null) return;
+
+        FoliaScheduler.getEntityScheduler().run(player, GrimAPI.INSTANCE.getPlugin(), (unused) -> {
+            if (resetActiveBukkitItem.test(player)) {
+                // only update if they were using an item to prevent certain issues
+                player.updateInventory();
+            }
+        }, null);
     }
 
     static {

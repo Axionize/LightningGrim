@@ -3,6 +3,7 @@ package ac.grim.grimac.utils.nmsutil;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
+import ac.grim.grimac.utils.data.packetentity.PacketEntityPainting;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 
 public class GetBoundingBox {
@@ -57,6 +58,18 @@ public class GetBoundingBox {
     }
 
     public static void expandBoundingBoxByEntityDimensions(SimpleCollisionBox box, GrimPlayer player, PacketEntity entity) {
+        if (entity instanceof PacketEntityPainting) {
+            SimpleCollisionBox paintingBox = ((PacketEntityPainting) entity).paintingHitBox;
+            // Copy the painting's hitbox dimensions
+            box.minX = paintingBox.minX;
+            box.minY = paintingBox.minY;
+            box.minZ = paintingBox.minZ;
+            box.maxX = paintingBox.maxX;
+            box.maxY = paintingBox.maxY;
+            box.maxZ = paintingBox.maxZ;
+            return;
+        }
+
         double[] dimensions = getEntityDimensions(player, entity);
         double halfWidth = dimensions[0] / 2.0;
         double height = dimensions[1];

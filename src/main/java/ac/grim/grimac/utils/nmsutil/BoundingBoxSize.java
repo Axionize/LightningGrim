@@ -120,6 +120,8 @@ public final class BoundingBoxSize {
             return 0.3125f;
         } else if (EntityTypes.ARMOR_STAND.equals(type)) {
             return 0.5F;
+        } else if (EntityTypes.FALLING_BLOCK.equals(type)) {
+            return 0.98F;
         }
         return 0.6f;
     }
@@ -393,6 +395,8 @@ public final class BoundingBoxSize {
             return 0.3125f;
         } else if (EntityTypes.ARMOR_STAND.equals(type)) {
             return 1.975F;
+        } else if (EntityTypes.FALLING_BLOCK.equals(type)) {
+            return 0.98F;
         }
         return 1.95f;
     }
