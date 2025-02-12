@@ -486,20 +486,26 @@ public class CompensatedEntities {
                 ((PacketEntityGuardian) entity).isElder = (info & isElderlyBitMask) != 0;
             }
         } else if (entity instanceof PacketEntityPainting) {
-            int index;
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19)) {
+                int index;
 
-            // per usual the MC wiki is wrong on the index of the passed data
-            index = 8;
-            EntityData paintingRegistryData = WatchableIndexUtil.getIndex(watchableObjects, index);
-            if (paintingRegistryData != null) {
-                Integer paintingRegistryID = (Integer) paintingRegistryData.getValue();
-                // if this is null that means there is a mapping error, just let it error out so we can fix it
-                PaintingVariant paintingVariant = PaintingVariants.getById(player.getClientVersion(), paintingRegistryID - 1);
-
-                PacketEntityPainting packetEntityPainting = ((PacketEntityPainting) entity);
-                packetEntityPainting.paintingHitBox = packetEntityPainting.calculateBoundingBoxDimensions(paintingVariant.getWidth(), paintingVariant.getHeight());
+                // per usual the MC wiki is wrong on the index of the passed data
+                index = 8;
+                EntityData paintingRegistryData =
+                    WatchableIndexUtil.getIndex(watchableObjects, index);
+                if (paintingRegistryData != null) {
+                    Integer paintingRegistryID = (Integer) paintingRegistryData.getValue();
+                    // if this is null that means there is a mapping error, just let it error out so we can fix it
+                    PaintingVariant paintingVariant =
+                        PaintingVariants.getById(player.getClientVersion(), paintingRegistryID - 1);
+                    if (paintingVariant != null) { // TODO add handling for every client version
+                        PacketEntityPainting packetEntityPainting = ((PacketEntityPainting) entity);
+                        packetEntityPainting.paintingHitBox =
+                            packetEntityPainting.calculateBoundingBoxDimensions(
+                                paintingVariant.getWidth(), paintingVariant.getHeight());
+                    }
+                }
             }
-
         }
 
         if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9_4)) {
