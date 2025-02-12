@@ -35,7 +35,6 @@ public class PacketEntityPainting extends PacketEntity {
         this.height = height;
 
         float f = 0.46875F;
-        System.out.println("f: " + f);
 
         Vector3d trackedServerPositionVector = this.trackedServerPosition.getPos();
         Vector3i attachedBlockPos = new Vector3i(GrimMath.floor(trackedServerPositionVector.getX()),
@@ -43,38 +42,26 @@ public class PacketEntityPainting extends PacketEntity {
                 GrimMath.floor(trackedServerPositionVector.getZ()));
         Vector3d vec3d = attachedBlockPos.toVector3d().add(0.5, 0.5, 0.5);
 
-        System.out.println("Initial vec3d (center of block): " + vec3d);
-        System.out.println("Side: " + side);
-
         vec3d = offset(vec3d, side, -f);
-        System.out.println("vec3d after offset to back: " + vec3d);
 
         double d = this.getOffset(width);
         double e = this.getOffset(height);
-        System.out.println("d (horizontal offset): " + d + ", e (vertical offset): " + e);
 
         Direction direction = rotateYCounterclockwise(side);
-        System.out.println("Perpendicular direction: " + direction);
 
         Vector3d vec3d2 = offset(vec3d, direction, d);
-        System.out.println("vec3d2 after horizontal offset: " + vec3d2);
         vec3d2 = offset(vec3d2, Direction.UP, e);
-        System.out.println("vec3d2 after vertical offset: " + vec3d2);
 
         Axis axis = this.getAxis(side);
-        System.out.println("Axis: " + axis);
 
         double g = axis == Axis.X ? 0.0625 : (double) width;
         double h = (double) height;
         double i = axis == Axis.Z ? 0.0625 : (double) width;
-        System.out.println("g: " + g + ", h: " + h + ", i: " + i);
 
         SimpleCollisionBox box = new SimpleCollisionBox(
                 vec3d2.getX() - g/2, vec3d2.getY() - h/2, vec3d2.getZ() - i/2,
                 vec3d2.getX() + g/2, vec3d2.getY() + h/2, vec3d2.getZ() + i/2
         );
-        System.out.println("Final box: " + box);
-        System.out.println("--- End calculation ---");
         return box;
     }
 
