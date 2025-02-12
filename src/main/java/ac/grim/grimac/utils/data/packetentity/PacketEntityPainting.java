@@ -16,6 +16,8 @@ import java.util.UUID;
 public class PacketEntityPainting extends PacketEntity {
 
     private final Direction side;
+
+    // Make default hitbox basically a point that can never be hit; temporary hack until we can model paintings in every version
     public SimpleCollisionBox paintingHitBox = new SimpleCollisionBox(trackedServerPosition.getPos().x, trackedServerPosition.getPos().y, trackedServerPosition.getPos().z,
             trackedServerPosition.getPos().x, trackedServerPosition.getPos().y, trackedServerPosition.getPos().z);
 

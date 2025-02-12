@@ -494,10 +494,14 @@ public class CompensatedEntities {
             if (paintingRegistryData != null) {
                 Integer paintingRegistryID = (Integer) paintingRegistryData.getValue();
                 // if this is null that means there is a mapping error, just let it error out so we can fix it
-                PaintingVariant paintingVariant = PaintingVariants.getById(player.getClientVersion(), paintingRegistryID - 1);
-
-                PacketEntityPainting packetEntityPainting = ((PacketEntityPainting) entity);
-                packetEntityPainting.paintingHitBox = packetEntityPainting.calculateBoundingBoxDimensions(paintingVariant.getWidth(), paintingVariant.getHeight());
+                PaintingVariant paintingVariant =
+                    PaintingVariants.getById(player.getClientVersion(), paintingRegistryID - 1);
+                if (paintingVariant != null) { // TODO add handling for every client version
+                    PacketEntityPainting packetEntityPainting = ((PacketEntityPainting) entity);
+                    packetEntityPainting.paintingHitBox =
+                        packetEntityPainting.calculateBoundingBoxDimensions(
+                            paintingVariant.getWidth(), paintingVariant.getHeight());
+                }
             }
 
         }
