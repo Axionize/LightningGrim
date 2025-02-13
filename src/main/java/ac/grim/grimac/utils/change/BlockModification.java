@@ -9,6 +9,7 @@ public class BlockModification {
     private final Vector3i location;
     private final int tick;
     private final Cause cause;
+    private final long lastTransasction = -1;
 
     public BlockModification(WrappedBlockState oldBlockContents, WrappedBlockState newBlockContents,
                              Vector3i location, int tick, Cause cause) {
@@ -51,6 +52,7 @@ public class BlockModification {
         START_DIGGING,
         APPLY_BLOCK_CHANGES,
         HANDLE_NETTY_SYNC_TRANSACTION,
+        FINISHED_DIGGING,
         OTHER
     }
 }

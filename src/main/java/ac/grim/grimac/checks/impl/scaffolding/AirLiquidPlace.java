@@ -66,7 +66,9 @@ public class AirLiquidPlace extends BlockPlaceCheck {
         // But for such tiny differences in legitness its not worth it.
         Iterable<BlockModification> blockModifications = player.blockHistory.getRecentModifications((blockModification) -> currentTick - blockModification.tick() < 2
                 && blockPos.equals(blockModification.location())
-                && (blockModification.cause() == BlockModification.Cause.START_DIGGING || blockModification.cause() == BlockModification.Cause.HANDLE_NETTY_SYNC_TRANSACTION));
+                && (blockModification.cause() == BlockModification.Cause.START_DIGGING
+                    || blockModification.cause() == BlockModification.Cause.HANDLE_NETTY_SYNC_TRANSACTION
+                    || blockModification.cause() == BlockModification.Cause.FINISHED_DIGGING));
 
         // Check if old block from instant breaking in same tick as the current placement was valid
         // There should only be one block here for legit clients

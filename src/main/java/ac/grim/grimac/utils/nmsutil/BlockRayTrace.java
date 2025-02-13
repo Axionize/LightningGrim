@@ -302,7 +302,7 @@ public class BlockRayTrace {
     }
 
     @Nullable
-    public static HitData getNearestHitResult(GrimPlayer player, PacketEntity targetEntity, Vector eyePos, Vector lookVec, double currentDistance) {
+    public static HitData getNearestHitResult(GrimPlayer player, PacketEntity targetEntity, Vector eyePos, Vector lookVec) {
 
         double maxAttackDistance = player.compensatedEntities.self.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
         double maxBlockDistance = player.compensatedEntities.self.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
@@ -314,7 +314,7 @@ public class BlockRayTrace {
         Vector3d endPos = new Vector3d(endVec.getX(), endVec.getY(), endVec.getZ());
 
         // Get block hit
-        HitData blockHitData = getTraverseResult(player, null, startingPos, startingVec, trace, endPos, false, true, currentDistance, true);
+        HitData blockHitData = getTraverseResult(player, null, startingPos, startingVec, trace, endPos, false, true, maxBlockDistance, true);
         Vector closestHitVec = null;
         PacketEntity closestEntity = null;
         double closestDistanceSquared = blockHitData != null ? blockHitData.getBlockHitLocation().distanceSquared(startingVec) : maxAttackDistance * maxAttackDistance;
