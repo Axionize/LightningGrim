@@ -262,7 +262,9 @@ public class Reach extends Check implements PacketCheck {
         // If the entity is within range of the player (we'll flag anyway if not, so no point checking blocks in this case)
         // Ignore when could be hitting through a moving shulker, piston blocks. They are just too glitchy/uncertain to check.
         if (minDistance <= distance - extraSearchDistance && !player.compensatedWorld.isNearHardEntity(player.boundingBox.copy().expand(4))) {
-            final @Nullable Pair<Double, HitData> hitResult = didRayTraceHit(reachEntity, lookVecsAndEyeHeights, from, minDistance);
+            // we can optimize didRayTraceHit more to only rayTrace up to the maximize distance of all rays that hit to the target...
+            // I'm too lazy to do that and we don't need to optimize that much yet so...
+            final @Nullable Pair<Double, HitData> hitResult = didRayTraceHit(reachEntity, lookVecsAndEyeHeights, from);
             HitData hitData = hitResult.second();
             // If the returned hit result was NOT the target entity we flag the check
             if (hitData instanceof EntityHitData &&
@@ -343,7 +345,7 @@ public class Reach extends Check implements PacketCheck {
     // in previous parts of this check when we didn't check for any obstructions like blocks/entities
     private @NotNull Pair<@NotNull Double, @NotNull HitData> didRayTraceHit(PacketEntity targetEntity,
                                                                             List<Pair<Vector, Double>> possibleLookVecsAndEyeHeights,
-                                                                            Vector3d from, double minDistance) {
+                                                                            Vector3d from) {
         HitData firstObstruction = null;
         double firstObstructionDistanceSq = 0;
 
@@ -354,7 +356,7 @@ public class Reach extends Check implements PacketCheck {
 
             Vector eyes = new Vector(from.getX(), from.getY() + eye, from.getZ());
             // this function is completely 0.03 aware
-            final HitData hitResult = BlockRayTrace.getNearestHitResult(player, targetEntity, eyes, lookVec, minDistance);
+            final HitData hitResult = BlockRayTrace.getNearestHitResult(player, targetEntity, eyes, lookVec);
 
             // If we hit the target entity, it's a valid hit
             if (hitResult instanceof EntityHitData && ((EntityHitData) hitResult).getEntity().equals(targetEntity)) {

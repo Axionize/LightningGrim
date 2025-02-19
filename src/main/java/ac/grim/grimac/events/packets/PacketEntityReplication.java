@@ -257,7 +257,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
 
             if (slot.getWindowId() == 0) {
                 if (player.isMitigateDesyncNoSlow() && player.packetStateData.lastSlotSelected + 36 == slot.getSlot()) {
-                    BukkitNMS.resetBukkitItemUsage(player.bukkitPlayer);
+                    BukkitNMS.resetItemUsage(player.bukkitPlayer);
                 }
 
                 player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {

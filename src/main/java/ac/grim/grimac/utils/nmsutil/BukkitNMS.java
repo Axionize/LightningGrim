@@ -1,112 +1,122 @@
 package ac.grim.grimac.utils.nmsutil;
 
-import ac.grim.grimac.GrimAPI;
 import com.github.retrooper.packetevents.PacketEvents;
-import io.github.retrooper.packetevents.util.folia.FoliaScheduler;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
+import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.function.Predicate;
-
-import static com.github.retrooper.packetevents.manager.server.ServerVersion.V_1_12_2;
 
 @UtilityClass
 public class BukkitNMS {
     // resets item usage, then returns whether the player was using an item
-    private final @NotNull Predicate<@NotNull Player> resetActiveBukkitItem;
+    private final @NotNull ItemUsageReset resetItemUsage = createItemUsageResetFunction();
 
-    public void resetBukkitItemUsage(@Nullable Player player) {
-        if (player == null) return;
-
-        FoliaScheduler.getEntityScheduler().run(player, GrimAPI.INSTANCE.getPlugin(), (unused) -> {
-            if (resetActiveBukkitItem.test(player)) {
-                // only update if they were using an item to prevent certain issues
-                player.updateInventory();
-            }
-        }, null);
+    @SneakyThrows
+    public void resetItemUsage(@Nullable Player player) {
+        if (player != null) {
+            resetItemUsage.accept(player);
+        }
     }
 
-    static {
-        try {
-            Class<?> EntityLiving;
-            Method getHandle;
-            Method clearActiveItem;
-            Method getItemInUse;
-            Method isUsingItem;
-            Method isEmpty;
-            switch (PacketEvents.getAPI().getServerManager().getVersion()) {
-                case V_1_8_8:
-                    Class<?> EntityHuman = Class.forName("net.minecraft.server.v1_8_R3.EntityHuman");
-                    getHandle = Class.forName("org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer").getMethod("getHandle");
-                    clearActiveItem = EntityHuman.getMethod("bV");
-                    isUsingItem = EntityHuman.getMethod("bS");
+    @SneakyThrows
+    private @NotNull ItemUsageReset createItemUsageResetFunction() {
+        ServerVersion version = PacketEvents.getAPI().getServerManager().getVersion();
 
-                    resetActiveBukkitItem = player -> {
-                        try {
-                            Object handle = getHandle.invoke(player);
-                            clearActiveItem.invoke(handle);
-                            return (boolean) isUsingItem.invoke(handle);
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    };
-                    break;
-                case V_1_12_2:
-                    EntityLiving = Class.forName("net.minecraft.server.v1_12_R1.EntityLiving");
-                    getHandle = Class.forName("org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer").getMethod("getHandle");
-                    clearActiveItem = EntityLiving.getMethod("cN");
-                    getItemInUse = EntityLiving.getMethod("cJ");
-                    isEmpty = Class.forName("net.minecraft.server.v1_12_R1.ItemStack").getMethod("isEmpty");
-
-                    resetActiveBukkitItem = player -> {
-                        try {
-                            Object handle = getHandle.invoke(player);
-                            clearActiveItem.invoke(handle);
-                            Object item = getItemInUse.invoke(handle);
-                            return item != null && !((boolean) isEmpty.invoke(item));
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    };
-                    break;
-                case V_1_16_5:
-                    EntityLiving = Class.forName("net.minecraft.server.v1_16_R3.EntityLiving");
-                    getHandle = Class.forName("org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer").getMethod("getHandle");
-                    clearActiveItem = EntityLiving.getMethod("clearActiveItem");
-                    getItemInUse = EntityLiving.getMethod("getActiveItem");
-                    isEmpty = Class.forName("net.minecraft.server.v1_16_R3.ItemStack").getMethod("isEmpty");
-
-                    resetActiveBukkitItem = player -> {
-                        try {
-                            Object handle = getHandle.invoke(player);
-                            clearActiveItem.invoke(handle);
-                            Object item = getItemInUse.invoke(handle);
-                            return item != null && !((boolean) isEmpty.invoke(item));
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    };
-                    break;
-                default:
-                    // cause an exception if these methods don't exist
-                    clearActiveItem = Player.class.getMethod("clearActiveItem");
-                    getItemInUse = Player.class.getMethod("getItemInUse");
-                    resetActiveBukkitItem = player -> {
-                        try {
-                            clearActiveItem.invoke(player);
-                            return getItemInUse.invoke(player) != null;
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    };
-                    break;
+        if (version.isNewerThanOrEquals(ServerVersion.V_1_17)) {
+            if (version.isOlderThan(ServerVersion.V_1_19)) {
+                Method clearActiveItem = LivingEntity.class.getMethod("clearActiveItem");
+                return clearActiveItem::invoke;
             }
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
-            throw new RuntimeException("you are likely using an unsupported server software and or version!", e);
+
+            Method setLivingEntityFlag = Class.forName(version.isOlderThan(ServerVersion.V_1_20_5) ? "net.minecraft.world.entity.EntityLiving" : "net.minecraft.world.entity.LivingEntity")
+                    .getDeclaredMethod(version.isOlderThan(ServerVersion.V_1_20_5) ? "c" : "setLivingEntityFlag", int.class, boolean.class);
+            Method getHandle = (version.isOlderThan(ServerVersion.V_1_20_5)
+                    ? Class.forName("org.bukkit.craftbukkit." + getNmsPackageName() + ".entity.CraftPlayer")
+                    : Class.forName("org.bukkit.craftbukkit.entity.CraftPlayer")
+            ).getMethod("getHandle");
+
+            setLivingEntityFlag.setAccessible(true);
+            Method clearActiveItem = Player.class.getMethod("clearActiveItem");
+
+            return player -> {
+                // don't trigger gameevents
+                setLivingEntityFlag.invoke(getHandle.invoke(player), 1, false);
+                clearActiveItem.invoke(player);
+            };
         }
+
+        if (version == ServerVersion.V_1_8_8) {
+            Class<?> EntityHuman = Class.forName("net.minecraft.server.v1_8_R3.EntityHuman");
+            Method getHandle = Class.forName("org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer").getMethod("getHandle");
+            Method clearActiveItem = EntityHuman.getMethod("bV");
+            Method isUsingItem = EntityHuman.getMethod("bS");
+
+            return player -> {
+                Object handle = getHandle.invoke(player);
+                clearActiveItem.invoke(handle);
+
+                // in 1.8 we need to resync item usage manually,
+                // only do so if the player was using an item
+                if ((boolean) isUsingItem.invoke(handle)) {
+                    player.updateInventory();
+                }
+            };
+        }
+
+        String nmsPackage = getNmsPackageName();
+        String clearActiveItemMethodName;
+        switch (nmsPackage) {
+            case "v1_9_R1":
+                clearActiveItemMethodName = "cz";
+                break;
+            case "v1_9_R2":
+                clearActiveItemMethodName = "cA";
+                break;
+            case "v1_10_R1":
+                clearActiveItemMethodName = "cE";
+                break;
+            case "v1_11_R1":
+                clearActiveItemMethodName = "cF";
+                break;
+            case "v1_12_R1":
+                clearActiveItemMethodName = "cN";
+                break;
+            case "v1_13_R1":
+            case "v1_13_R2":
+                clearActiveItemMethodName = "da";
+                break;
+            case "v1_14_R1":
+                clearActiveItemMethodName = "dp";
+                break;
+            case "v1_15_R1":
+                clearActiveItemMethodName = "dH";
+                break;
+            case "v1_16_R1":
+            case "v1_16_R2":
+            case "v1_16_R3":
+                clearActiveItemMethodName = "clearActiveItem";
+                break;
+            default:
+                throw new IllegalStateException("You are using an unsupported server version! (" + version.getReleaseName() + ")");
+        }
+
+        Method getHandle = Class.forName("org.bukkit.craftbukkit." + nmsPackage + ".entity.CraftPlayer").getMethod("getHandle");
+        Method clearActiveItem = Class.forName("net.minecraft.server." + nmsPackage + ".EntityLiving").getMethod(clearActiveItemMethodName);
+
+        return player -> clearActiveItem.invoke(getHandle.invoke(player));
+    }
+
+    private interface ItemUsageReset {
+        void accept(@NotNull Player player) throws Throwable;
+    }
+
+    private static String getNmsPackageName() {
+        return Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
     }
 }

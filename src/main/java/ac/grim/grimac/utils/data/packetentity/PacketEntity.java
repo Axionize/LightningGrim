@@ -143,7 +143,6 @@ public class PacketEntity extends TypedPacketEntity {
                 }
             }
         }
-
         this.oldPacketLocation = newPacketLocation;
         this.newPacketLocation = new ReachInterpolationData(player, oldPacketLocation.getPossibleLocationCombined(), trackedServerPosition, this);
 

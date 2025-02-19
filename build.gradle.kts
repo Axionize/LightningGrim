@@ -46,6 +46,10 @@ val shadePE: Boolean = project.findProperty("shadePE")?.toString()?.toBoolean()
 
 repositories {
     mavenLocal()
+    maven {
+        name = "papermc"
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") // Spigot
     maven("https://jitpack.io/") { // Grim API
         content {
@@ -66,6 +70,7 @@ repositories {
 }
 
 dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
     // PE dependency is now conditional
     if (shadePE) {
         implementation("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")
@@ -88,7 +93,6 @@ dependencies {
 
     implementation("org.jetbrains:annotations:24.1.0")
     compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
-    compileOnly("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
     compileOnly("com.viaversion:viaversion-api:5.0.4-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly("io.netty:netty-all:4.1.85.Final")
@@ -190,6 +194,12 @@ tasks.build {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+    disableAutoTargetJvm()
+}
+
 
 publishing.publications.create<MavenPublication>("maven") {
     artifact(tasks["shadowJar"])

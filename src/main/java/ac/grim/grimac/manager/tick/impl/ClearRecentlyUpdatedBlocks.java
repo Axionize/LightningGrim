@@ -6,7 +6,7 @@ import ac.grim.grimac.player.GrimPlayer;
 
 public class ClearRecentlyUpdatedBlocks implements Tickable {
 
-    private static final int maxTickAge = 2;
+    private static final int maxTickAge = 3;
 
     @Override
     public void tick() {
