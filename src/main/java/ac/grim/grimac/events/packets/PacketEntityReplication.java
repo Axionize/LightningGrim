@@ -1,5 +1,6 @@
 package ac.grim.grimac.events.packets;
 
+import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.type.PacketCheck;
@@ -9,7 +10,6 @@ import ac.grim.grimac.utils.data.TrackerData;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
 import ac.grim.grimac.utils.data.packetentity.PacketEntityHook;
 import ac.grim.grimac.utils.data.packetentity.PacketEntityTrackXRot;
-import ac.grim.grimac.utils.nmsutil.BukkitNMS;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
@@ -256,7 +256,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
 
             if (slot.getWindowId() == 0) {
                 if (player.isMitigateDesyncNoSlow() && player.packetStateData.lastSlotSelected + 36 == slot.getSlot()) {
-                    BukkitNMS.resetItemUsage(player.bukkitPlayer);
+                    GrimAPI.INSTANCE.getItemResetHandler().resetItemUsage(player.platformPlayer);
                 }
 
                 player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {

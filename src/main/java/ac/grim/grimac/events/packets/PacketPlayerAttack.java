@@ -4,7 +4,6 @@ import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.checks.impl.badpackets.BadPacketsW;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
-import ac.grim.grimac.utils.nmsutil.BukkitNMS;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
@@ -44,7 +43,7 @@ public class PacketPlayerAttack extends PacketListenerAbstract {
 
             if (interact.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
                 if (player.isMitigateAutoblock()) {
-                    BukkitNMS.resetItemUsage(player.bukkitPlayer);
+                    GrimAPI.INSTANCE.getItemResetHandler().resetItemUsage(player.platformPlayer);
                 }
 
                 ItemStack heldItem = player.getInventory().getHeldItem();
