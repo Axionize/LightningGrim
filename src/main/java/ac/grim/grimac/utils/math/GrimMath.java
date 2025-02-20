@@ -138,4 +138,8 @@ public class GrimMath {
     public static float radians(float degrees) {
         return degrees * DEGREES_TO_RADIANS;
     }
+
+    public static double square(double num) {
+        return num * num;
+    }
 }

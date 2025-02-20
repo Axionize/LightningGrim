@@ -11,6 +11,7 @@ import ac.grim.grimac.utils.data.packetentity.PacketEntityStrider;
 import ac.grim.grimac.utils.math.GrimMath;
 import ac.grim.grimac.utils.nmsutil.*;
 import ac.grim.grimac.utils.team.EntityTeam;
+import ac.grim.grimac.world.Vector3dm;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import ac.grim.grimac.utils.team.EntityPredicates;
 import ac.grim.grimac.utils.team.TeamHandler;
@@ -26,7 +27,6 @@ import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.viaversion.viaversion.api.Via;
 import io.github.retrooper.packetevents.util.viaversion.ViaVersionUtil;
-import org.bukkit.util.Vector;
 
 public class MovementTicker {
     public final GrimPlayer player;
@@ -87,9 +87,9 @@ public class MovementTicker {
         player.uncertaintyHandler.collidingEntities.add(possibleCollidingEntities);
     }
 
-    public void move(Vector inputVel, Vector collide) {
+    public void move(Vector3dm inputVel, Vector3dm collide) {
         if (player.stuckSpeedMultiplier.getX() < 0.99) {
-            player.clientVelocity = new Vector();
+            player.clientVelocity = new Vector3dm();
         }
 
         if (inputVel.getX() != collide.getX()) {
@@ -185,21 +185,21 @@ public class MovementTicker {
         if (collide.lengthSquared() < 1e-7
                 // New condition added in 1.21.2
                 && (player.getClientVersion().isOlderThan(ClientVersion.V_1_21_2) || inputVel.lengthSquared() - collide.lengthSquared() >= 1e-7)) {
-            collide = new Vector();
+            collide = new Vector3dm();
         }
 
         // This is where vanilla moves the bounding box and sets it
         player.predictedVelocity = new VectorData(collide.clone(), player.predictedVelocity.lastVector, player.predictedVelocity.vectorType);
 
         float f = BlockProperties.getBlockSpeedFactor(player, player.mainSupportingBlockData, new Vector3d(player.x, player.y, player.z));
-        player.clientVelocity.multiply(new Vector(f, 1, f));
+        player.clientVelocity.multiply(new Vector3dm(f, 1, f));
 
         // Reset stuck speed so it can update
         if (player.stuckSpeedMultiplier.getX() < 0.99) {
             player.uncertaintyHandler.lastStuckSpeedMultiplier.reset();
         }
 
-        player.stuckSpeedMultiplier = new Vector(1, 1, 1);
+        player.stuckSpeedMultiplier = new Vector3dm(1, 1, 1);
 
         // 1.15 and older clients use the handleInsideBlocks method for lava
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_16))
@@ -214,7 +214,7 @@ public class MovementTicker {
 
         // Flying players are not affected by cobwebs/sweet berry bushes
         if (player.isFlying) {
-            player.stuckSpeedMultiplier = new Vector(1, 1, 1);
+            player.stuckSpeedMultiplier = new Vector3dm(1, 1, 1);
         }
     }
 
@@ -401,14 +401,14 @@ public class MovementTicker {
 
                 // Lava movement changed in 1.16
                 if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16) && player.slightlyTouchingLava) {
-                    player.clientVelocity = player.clientVelocity.multiply(new Vector(0.5D, 0.800000011920929D, 0.5D));
+                    player.clientVelocity = player.clientVelocity.multiply(new Vector3dm(0.5D, 0.800000011920929D, 0.5D));
                     player.clientVelocity = FluidFallingAdjustedMovement.getFluidFallingAdjustedMovement(player, playerGravity, isFalling, player.clientVelocity);
                 } else {
                     player.clientVelocity.multiply(0.5D);
                 }
 
                 if (player.hasGravity)
-                    player.clientVelocity.add(new Vector(0.0D, -playerGravity / 4.0D, 0.0D));
+                    player.clientVelocity.add(new Vector3dm(0.0D, -playerGravity / 4.0D, 0.0D));
 
             } else if (player.isGliding) {
                 player.friction = 0.99F; // Not vanilla, just useful for other grim stuff
