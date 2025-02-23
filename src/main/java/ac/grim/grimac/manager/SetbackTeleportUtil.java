@@ -30,7 +30,6 @@ import com.github.retrooper.packetevents.wrapper.play.server.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Location;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -247,7 +246,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
             data.getTeleportData().setTransaction(player.lastTransactionSent.get());
 
             // Use provided transaction ID to make sure it can never desync, although there's no reason to do this
-            addSentTeleport(new Location(null, position.getX(), y, position.getZ(), player.xRot % 360, player.yRot % 360), data.getTeleportData().getTransaction(), new RelativeFlag(0b11000), false, teleportId);
+            addSentTeleport(new Vector3d(position.getX(), y, position.getZ()), data.getTeleportData().getTransaction(), new RelativeFlag(0b11000), false, teleportId);
             // This must be done after setting the sent teleport, otherwise we lose velocity data
             requiredSetBack = data;
             // Send after tracking to fix race condition
@@ -383,7 +382,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
                 !player.getSetbackTeleportUtil().hasAcceptedSpawnTeleport);
     }
 
-    public void addSentTeleport(Location position, int transaction, RelativeFlag flags, boolean plugin, int teleportId) {
+    public void addSentTeleport(Vector3d position, int transaction, RelativeFlag flags, boolean plugin, int teleportId) {
         TeleportData data = new TeleportData(new Vector3d(position.getX(), position.getY(), position.getZ()), flags, transaction, teleportId);
         pendingTeleports.add(data);
 

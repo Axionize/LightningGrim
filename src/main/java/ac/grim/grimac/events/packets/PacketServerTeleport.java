@@ -14,7 +14,6 @@ import com.github.retrooper.packetevents.protocol.teleport.RelativeFlag;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerPositionAndLook;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerVehicleMove;
-import org.bukkit.Location;
 
 public class PacketServerTeleport extends PacketListenerAbstract {
 
@@ -91,7 +90,7 @@ public class PacketServerTeleport extends PacketListenerAbstract {
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_8))
                 pos = pos.withY(pos.getY() - 1.62);
 
-            Location target = new Location(null, pos.getX(), pos.getY(), pos.getZ());
+            Vector3d target = new Vector3d(pos.getX(), pos.getY(), pos.getZ());
             player.getSetbackTeleportUtil().addSentTeleport(target, lastTransactionSent, teleport.getRelativeFlags(), true, teleport.getTeleportId());
         }
 
