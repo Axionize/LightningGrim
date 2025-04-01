@@ -313,6 +313,37 @@ public class UncertaintyHandler {
 
         return Math.max(0, offset);
     }
+    public double reduceOffset(double offset,double boatoffset) {
+        // Boats are too glitchy to check.
+        // Yes, they have caused an insane amount of uncertainty!
+        // Even 1 block offset reduction isn't enough... damn it mojang
+        if (player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3)) {
+            offset -= boatoffset;
+        }
+
+        if (player.uncertaintyHandler.isOrWasNearGlitchyBlock) {
+            offset -= 0.25;
+        }
+
+        // This is a section where I hack around current issues with Grim itself...
+        if (player.uncertaintyHandler.wasAffectedByStuckSpeed() && (!player.isPointThree() || player.inVehicle())) {
+            offset -= 0.01;
+        }
+
+        if (player.uncertaintyHandler.influencedByBouncyBlock() && (!player.isPointThree() || player.inVehicle())) {
+            offset -= 0.03;
+        }
+        // This is the end of that section.
+
+        // I can't figure out how the client exactly tracks boost time
+        if (player.compensatedEntities.self.getRiding() instanceof PacketEntityRideable) {
+            PacketEntityRideable vehicle = (PacketEntityRideable) player.compensatedEntities.self.getRiding();
+            if (vehicle.currentBoostTime < vehicle.boostTimeMax + 20)
+                offset -= 0.01;
+        }
+
+        return Math.max(0, offset);
+    }
 
     public void checkForHardCollision() {
         // Look for boats the player could collide with

@@ -47,6 +47,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
     public static double predictionNanos = 0.3 * 1e6;
     // Averaged over 20000 predictions
     public static double longPredictionNanos = 0.3 * 1e6;
+    private double boatoffsetreduce;
 
     public MovementCheckRunner(GrimPlayer player) {
         super(player);
@@ -505,7 +506,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         // No, don't comment about the sqrt call.  It doesn't matter unless you run sqrt thousands of times a second.
         double offset = player.predictedVelocity.vector.distance(player.actualMovement);
-        offset = player.uncertaintyHandler.reduceOffset(offset);
+        offset = player.uncertaintyHandler.reduceOffset(offset,boatoffsetreduce);
 
         if (player.packetStateData.tryingToRiptide != clientClaimsRiptide) {
             player.getSetbackTeleportUtil().executeForceResync(); // Could technically be lag due to packet timings.
@@ -643,5 +644,6 @@ public class MovementCheckRunner extends Check implements PositionCheck {
     @Override
     public void onReload(ConfigManager config) {
         allowSprintJumpingWithElytra = config.getBooleanElse("exploit.allow-sprint-jumping-when-using-elytra", true);
+        boatoffsetreduce = config.getDoubleElse("exploit.boatfixvalue", 1.2);
     }
 }
