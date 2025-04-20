@@ -6,24 +6,20 @@ import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.util.Vector3d;
 import net.kyori.adventure.text.Component;
 
-public interface PlatformPlayer extends GrimEntity {
+public interface PlatformPlayer extends GrimEntity, OfflinePlatformPlayer {
     void kickPlayer(String textReason);
-
-    boolean hasPermission(String s);
-
-    boolean hasPermission(String s, boolean defaultIfUnset);
 
     boolean isSneaking();
 
     void setSneaking(boolean b);
 
+    boolean hasPermission(String s);
+
+    boolean hasPermission(String s, boolean defaultIfUnset);
+
     void sendMessage(String message);
 
     void sendMessage(Component message);
-
-    boolean isOnline();
-
-    String getName();
 
     void updateInventory();
 

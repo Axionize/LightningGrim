@@ -39,6 +39,7 @@ dependencies {
     api(libs.fastutil)
     api(libs.adventure.text.minimessage)
     api(libs.jetbrains.annotations)
+    api("com.zaxxer:HikariCP:4.0.3")
 
     // Used for local testing:
     // api("ac.grim.grimac:GrimAPI:1.0")
