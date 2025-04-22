@@ -22,8 +22,7 @@ import com.github.retrooper.packetevents.protocol.potion.PotionType;
 import com.github.retrooper.packetevents.protocol.potion.PotionTypes;
 import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.protocol.world.Direction;
-import com.github.retrooper.packetevents.protocol.world.painting.PaintingVariant;
-import com.github.retrooper.packetevents.protocol.world.painting.PaintingVariants;
+import com.github.retrooper.packetevents.protocol.world.painting.StaticPaintingVariant;
 import com.github.retrooper.packetevents.resources.ResourceLocation;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes;
@@ -496,16 +495,9 @@ public class CompensatedEntities {
                 index = 8;
                 EntityData<?> paintingRegistryData = WatchableIndexUtil.getIndex(watchableObjects, index);
                 if (paintingRegistryData != null) {
-                    Integer paintingRegistryID = (Integer) paintingRegistryData.getValue();
-                    // if this is null that means there is a mapping error, just let it error out so we can fix it
-                    PaintingVariant paintingVariant =
-                        PaintingVariants.getById(player.getClientVersion(), paintingRegistryID - 1);
-                    if (paintingVariant != null) { // TODO add handling for every client version
-                        PacketEntityPainting packetEntityPainting = ((PacketEntityPainting) entity);
-                        packetEntityPainting.paintingHitBox =
-                            packetEntityPainting.calculateBoundingBoxDimensions(
-                                paintingVariant.getWidth(), paintingVariant.getHeight());
-                    }
+                    StaticPaintingVariant paintingVariant = (StaticPaintingVariant) paintingRegistryData.getValue();
+                    PacketEntityPainting packetEntityPainting = ((PacketEntityPainting) entity);
+                    packetEntityPainting.paintingHitBox = packetEntityPainting.calculateBoundingBoxDimensions(paintingVariant.getWidth(), paintingVariant.getHeight());
                 }
             }
         }
