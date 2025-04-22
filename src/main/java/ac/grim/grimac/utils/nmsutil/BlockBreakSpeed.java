@@ -176,7 +176,7 @@ public class BlockBreakSpeed {
 
         float damage = speedMultiplier / blockHardness;
 
-        boolean canHarvest = !block.getType().isRequiresCorrectTool() || isCorrectToolForDrop || block.getType() == StateTypes.TRIAL_SPAWNER;
+        boolean canHarvest = !block.getType().isRequiresCorrectTool() || isCorrectToolForDrop;
         if (canHarvest) {
             damage /= 30F;
         } else {

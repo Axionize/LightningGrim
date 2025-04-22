@@ -26,7 +26,7 @@ spotless {
 }
 
 group = "ac.grim.grimac"
-version = "2.3.71"
+version = "2.3.72"
 description = "Libre simulation anticheat designed for 1.21 with 1.8-1.21 support, powered by PacketEvents 2.0."
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 java.targetCompatibility = JavaVersion.VERSION_1_8
@@ -73,9 +73,9 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
     // PE dependency is now conditional
     if (shadePE) {
-        implementation("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")
+        implementation("com.github.retrooper:packetevents-spigot:2.8.0-SNAPSHOT")
     } else {
-        compileOnly("com.github.retrooper:packetevents-spigot:2.7.1-SNAPSHOT")
+        compileOnly("com.github.retrooper:packetevents-spigot:2.8.0-SNAPSHOT")
     }
     implementation("co.aikar:acf-paper:0.5.1-SNAPSHOT")
     implementation("club.minnced:discord-webhooks:0.8.0") // Newer versions include kotlin-stdlib, which leads to incompatibility with plugins that use Kotlin
@@ -88,7 +88,7 @@ dependencies {
     //implementation("ac.grim.grimac:GrimAPI:1.0")
     implementation("com.github.grimanticheat:grimapi:05e31d62f2")
 
-    implementation("net.kyori:adventure-text-minimessage:4.17.0")
+    implementation("net.kyori:adventure-text-minimessage:4.20.0")
     implementation("net.kyori:adventure-platform-bukkit:4.3.4")
 
     implementation("org.jetbrains:annotations:24.1.0")
