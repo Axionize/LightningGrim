@@ -407,22 +407,7 @@ public class CompensatedEntities {
                 }
             }
         }
-
-        if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9_4)) {
-            EntityData<?> gravity = WatchableIndexUtil.getIndex(watchableObjects, 5);
-
-            if (gravity != null) {
-                Object gravityObject = gravity.getValue();
-
-                if (gravityObject instanceof Boolean) {
-                    // Vanilla uses hasNoGravity, which is a bad name IMO
-                    // hasGravity > hasNoGravity
-                    entity.hasGravity = !((Boolean) gravityObject);
-                }
-            }
-        }
-
-        if (entity.getType() == EntityTypes.FIREWORK_ROCKET) {
+        else if (entity.getType() == EntityTypes.FIREWORK_ROCKET) {
             int offset = 0;
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_12_2)) {
                 offset = 2;
@@ -477,7 +462,7 @@ public class CompensatedEntities {
                 index = 15;
             }
 
-            EntityData armorStandByte = WatchableIndexUtil.getIndex(watchableObjects, index);
+            EntityData<?> armorStandByte = WatchableIndexUtil.getIndex(watchableObjects, index);
             if (armorStandByte != null) {
                 byte info = (Byte) armorStandByte.getValue();
 
@@ -498,7 +483,7 @@ public class CompensatedEntities {
                 isElderlyBitMask = 0x04;
             }
 
-            EntityData guardianByte = WatchableIndexUtil.getIndex(watchableObjects, index);
+            EntityData<?> guardianByte = WatchableIndexUtil.getIndex(watchableObjects, index);
             if (guardianByte != null) {
                 int info = (Integer) guardianByte.getValue(); // wiki says this is a byte but testing on 1.8 shows its an integer
                 ((PacketEntityGuardian) entity).isElder = (info & isElderlyBitMask) != 0;
@@ -509,8 +494,7 @@ public class CompensatedEntities {
 
                 // per usual the MC wiki is wrong on the index of the passed data
                 index = 8;
-                EntityData paintingRegistryData =
-                    WatchableIndexUtil.getIndex(watchableObjects, index);
+                EntityData<?> paintingRegistryData = WatchableIndexUtil.getIndex(watchableObjects, index);
                 if (paintingRegistryData != null) {
                     Integer paintingRegistryID = (Integer) paintingRegistryData.getValue();
                     // if this is null that means there is a mapping error, just let it error out so we can fix it
@@ -527,7 +511,7 @@ public class CompensatedEntities {
         }
 
         if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9_4)) {
-            EntityData gravity = WatchableIndexUtil.getIndex(watchableObjects, 5);
+            EntityData<?> gravity = WatchableIndexUtil.getIndex(watchableObjects, 5);
 
             if (gravity != null) {
                 Object gravityObject = gravity.getValue();
