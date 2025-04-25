@@ -16,7 +16,6 @@ import ac.grim.grimac.checks.impl.breaking.PositionBreakA;
 import ac.grim.grimac.checks.impl.breaking.PositionBreakB;
 import ac.grim.grimac.checks.impl.breaking.RotationBreak;
 import ac.grim.grimac.checks.impl.breaking.WrongBreak;
-import ac.grim.grimac.checks.impl.combat.Hitboxes;
 import ac.grim.grimac.checks.impl.combat.MultiInteractA;
 import ac.grim.grimac.checks.impl.combat.MultiInteractB;
 import ac.grim.grimac.checks.impl.combat.Reach;
@@ -41,6 +40,7 @@ import ac.grim.grimac.checks.impl.exploit.ExploitA;
 import ac.grim.grimac.checks.impl.exploit.ExploitB;
 import ac.grim.grimac.checks.impl.exploit.ExploitC;
 import ac.grim.grimac.checks.impl.groundspoof.NoFall;
+import ac.grim.grimac.checks.impl.inventory.*;
 import ac.grim.grimac.checks.impl.misc.ClientBrand;
 import ac.grim.grimac.checks.impl.misc.GhostBlockMitigation;
 import ac.grim.grimac.checks.impl.misc.TransactionOrder;
@@ -136,7 +136,6 @@ public class CheckManager {
     public CheckManager(GrimPlayer player) {
         // Include post checks in the packet check too
         packetChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
-                .put(Hitboxes.class, new Hitboxes(player))
                 .put(PacketOrderProcessor.class, player.packetOrderProcessor)
                 .put(Reach.class, new Reach(player))
                 .put(PacketEntityReplication.class, new PacketEntityReplication(player))
@@ -150,7 +149,6 @@ public class CheckManager {
                 .put(NoFall.class, new NoFall(player))
                 .put(BadPacketsO.class, new BadPacketsO(player))
                 .put(BadPacketsA.class, new BadPacketsA(player))
-                .put(BadPacketsB.class, new BadPacketsB(player))
                 .put(BadPacketsC.class, new BadPacketsC(player))
                 .put(BadPacketsD.class, new BadPacketsD(player))
                 .put(BadPacketsE.class, new BadPacketsE(player))
@@ -169,15 +167,20 @@ public class CheckManager {
                 .put(BadPacketsV.class, new BadPacketsV(player))
                 .put(BadPacketsW.class, new BadPacketsW(player))
                 .put(BadPacketsY.class, new BadPacketsY(player))
+                .put(InventoryA.class, new InventoryA(player))
+                .put(InventoryB.class, new InventoryB(player))
+                .put(InventoryE.class, new InventoryE(player))
+                .put(InventoryF.class, new InventoryF(player))
+                .put(InventoryG.class, new InventoryG(player))
                 .put(MultiActionsA.class, new MultiActionsA(player))
                 .put(MultiActionsB.class, new MultiActionsB(player))
                 .put(MultiActionsC.class, new MultiActionsC(player))
                 .put(MultiActionsD.class, new MultiActionsD(player))
                 .put(MultiActionsE.class, new MultiActionsE(player))
-                .put(TransactionOrder.class, new TransactionOrder(player))
-                .put(PacketOrderB.class, new PacketOrderB(player))
                 .put(PacketOrderC.class, new PacketOrderC(player))
                 .put(PacketOrderD.class, new PacketOrderD(player))
+                .put(PacketOrderO.class, new PacketOrderO(player))
+                .put(TransactionOrder.class, new TransactionOrder(player))
                 .put(SprintA.class, new SprintA(player))
                 .put(VehicleA.class, new VehicleA(player))
                 .put(VehicleB.class, new VehicleB(player))
@@ -204,6 +207,7 @@ public class CheckManager {
                 .put(ExplosionHandler.class, new ExplosionHandler(player))
                 .put(KnockbackHandler.class, new KnockbackHandler(player))
                 .put(GhostBlockDetector.class, new GhostBlockDetector(player))
+                .put(InventoryD.class, new InventoryD(player))
                 .put(Phase.class, new Phase(player))
                 .put(Post.class, new Post(player))
                 .put(PacketOrderA.class, new PacketOrderA(player))
@@ -245,6 +249,7 @@ public class CheckManager {
                 .build();
 
         blockPlaceCheck = new ImmutableClassToInstanceMap.Builder<BlockPlaceCheck>()
+                .put(InventoryC.class, new InventoryC(player))
                 .put(InvalidPlaceA.class, new InvalidPlaceA(player))
                 .put(InvalidPlaceB.class, new InvalidPlaceB(player))
                 .put(AirLiquidPlace.class, new AirLiquidPlace(player))
