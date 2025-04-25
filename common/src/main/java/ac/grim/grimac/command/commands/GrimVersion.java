@@ -74,9 +74,9 @@ public class GrimVersion implements BuildableCommand {
             Status status = compareVersions(current, latest);
             Component msg = switch (status) {
                 case AHEAD ->
-                        Component.text("You are using a development version of GrimAC").color(NamedTextColor.LIGHT_PURPLE);
+                        Component.text("You are using a development version of GrimAC (Custom Fork)").color(NamedTextColor.LIGHT_PURPLE);
                 case UPDATED ->
-                        Component.text("You are using the latest version of GrimAC").color(NamedTextColor.GREEN);
+                        Component.text("You are using the latest version of GrimAC (Custom Fork)").color(NamedTextColor.GREEN);
                 case OUTDATED -> Component.text()
                         .append(Component.text("New GrimAC version found!").color(NamedTextColor.AQUA))
                         .append(Component.text(" Version ").color(NamedTextColor.GRAY))
