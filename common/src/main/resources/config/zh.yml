@@ -146,6 +146,10 @@ TimerVehicle:
     # 实体1.0005 检查
     setbackvl: 10
 
+PacketOrderI:
+    # enable if players are getting flagged for using 1.7 animations mods
+    exempt-placing-while-digging: false
+
 Reach:
     # 我们应该将碰撞箱扩大多少？ 0.0005 应该检测到 3.0005+ reach
     #

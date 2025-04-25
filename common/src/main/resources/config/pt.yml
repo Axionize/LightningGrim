@@ -144,6 +144,10 @@ TimerVehicle:
     # Detecta até 1.005 de timer.
     setbackvl: 10
 
+PacketOrderI:
+    # enable if players are getting flagged for using 1.7 animations mods
+    exempt-placing-while-digging: false
+
 Reach:
     # Por quanto deve-se expandir as caixas de colisão? 0.0005 deve detectar 3.0005+ de alcance.
     #

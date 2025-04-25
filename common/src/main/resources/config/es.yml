@@ -146,6 +146,10 @@ TimerVehicle:
     # Target 1.005 timer
     setbackvl: 10
 
+PacketOrderI:
+    # enable if players are getting flagged for using 1.7 animations mods
+    exempt-placing-while-digging: false
+
 Reach:
     # Cuanto deberíamos expandir las hit-boxes? 0.0005 debería detectar un reach de 3.0005+
     #

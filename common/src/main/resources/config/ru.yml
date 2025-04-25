@@ -142,6 +142,10 @@ TimerVehicle:
     # Цель 1.005 таймер
     setbackvl: 10
 
+PacketOrderI:
+    # enable if players are getting flagged for using 1.7 animations mods
+    exempt-placing-while-digging: false
+
 Reach:
     # На сколько мы должны расширить хитбоксы? 0.0005 должно определять 3.0005+ дополнительное достижение
     #
