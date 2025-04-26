@@ -16,6 +16,7 @@ import ac.grim.grimac.checks.impl.breaking.PositionBreakA;
 import ac.grim.grimac.checks.impl.breaking.PositionBreakB;
 import ac.grim.grimac.checks.impl.breaking.RotationBreak;
 import ac.grim.grimac.checks.impl.breaking.WrongBreak;
+import ac.grim.grimac.checks.impl.combat.Hitboxes;
 import ac.grim.grimac.checks.impl.combat.MultiInteractA;
 import ac.grim.grimac.checks.impl.combat.MultiInteractB;
 import ac.grim.grimac.checks.impl.combat.Reach;
@@ -136,6 +137,7 @@ public class CheckManager {
     public CheckManager(GrimPlayer player) {
         // Include post checks in the packet check too
         packetChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
+                .put(Hitboxes.class, new Hitboxes(player))
                 .put(PacketOrderProcessor.class, player.packetOrderProcessor)
                 .put(Reach.class, new Reach(player))
                 .put(PacketEntityReplication.class, new PacketEntityReplication(player))
