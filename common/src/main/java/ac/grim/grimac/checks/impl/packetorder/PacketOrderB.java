@@ -1,4 +1,4 @@
-package ac.grim.grimac.checks.impl.badpackets;
+package ac.grim.grimac.checks.impl.packetorder;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
@@ -11,15 +11,15 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 
-@CheckData(name = "BadPacketsH", description = "Did not swing for attack")
-public class BadPacketsH extends Check implements PacketCheck {
+@CheckData(name = "PacketOrderB", description = "Did not swing for attack")
+public class PacketOrderB extends Check implements PacketCheck {
 
     // 1.9 packet order: INTERACT -> ANIMATION
     // 1.8 packet order: ANIMATION -> INTERACT
     // I personally think 1.8 made much more sense. You swing and THEN you hit!
     private boolean sentAnimation = player.getClientVersion().isNewerThan(ClientVersion.V_1_8);
 
-    public BadPacketsH(final GrimPlayer player) {
+    public PacketOrderB(final GrimPlayer player) {
         super(player);
     }
 
@@ -41,8 +41,7 @@ public class BadPacketsH extends Check implements PacketCheck {
             // I will simply disable this check for 1.8- clients on 1.9+ servers as I can't be bothered to find a way around this.
             // Stop supporting such old clients on modern servers!
             if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)
-                    && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9))
-                return;
+                    && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9)) return;
 
             if (!sentAnimation && flagAndAlert() && shouldModifyPackets()) {
                 event.setCancelled(true);

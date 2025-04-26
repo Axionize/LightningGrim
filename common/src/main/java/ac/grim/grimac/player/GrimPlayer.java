@@ -10,6 +10,7 @@ import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.impl.aim.processor.AimProcessor;
 import ac.grim.grimac.checks.impl.misc.ClientBrand;
 import ac.grim.grimac.checks.impl.misc.TransactionOrder;
+import ac.grim.grimac.checks.impl.packetorder.PacketOrderProcessor;
 import ac.grim.grimac.events.packets.CheckManagerListener;
 import ac.grim.grimac.manager.ActionManager;
 import ac.grim.grimac.manager.CheckManager;
@@ -34,6 +35,7 @@ import ac.grim.grimac.utils.data.packetentity.PacketEntitySelf;
 import ac.grim.grimac.utils.data.tags.SyncedTags;
 import ac.grim.grimac.utils.enums.FluidTag;
 import ac.grim.grimac.utils.enums.Pose;
+import ac.grim.grimac.utils.inventory.InventoryDesyncStatus;
 import ac.grim.grimac.utils.latency.CompensatedEntities;
 import ac.grim.grimac.utils.latency.CompensatedFireworks;
 import ac.grim.grimac.utils.latency.CompensatedInventory;
@@ -125,6 +127,7 @@ public class GrimPlayer implements GrimUser {
     // End manager like classes
     public Vector3dm clientVelocity = new Vector3dm();
     PacketTracker packetTracker;
+    public final PacketOrderProcessor packetOrderProcessor = new PacketOrderProcessor(this);
     private long transactionPing = 0;
     public long lastTransSent = 0;
     public long lastTransReceived = 0;
@@ -240,6 +243,9 @@ public class GrimPlayer implements GrimUser {
     // possibleEyeHeights[0] = Standing eye heights, [1] = Sneaking. [2] = Elytra, Swimming, and Riptide Trident which only exists in 1.9+
     public double[][] possibleEyeHeights = new double[3][];
     public int totalFlyingPacketsSent;
+    public boolean hasInventoryOpen;
+    public long lastInventoryOpen;
+    public InventoryDesyncStatus inventoryDesyncStatus;
     public Queue<BlockPlaceSnapshot> placeUseItemPackets = new LinkedBlockingQueue<>();
     public Queue<BlockBreak> queuedBreaks = new LinkedBlockingQueue<>();
     public PlayerBlockHistory blockHistory = new PlayerBlockHistory();

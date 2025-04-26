@@ -159,6 +159,10 @@ Reach:
     # 1.8 PvP odaklı bir sunucu değilseniz, bu ek paket önerilmez
     enable-post-packet: false
 
+PacketOrderI:
+    # enable if players are getting flagged for using 1.7 animations mods
+    exempt-placing-while-digging: false
+
 exploit:
     # Elytra ile sprint zıplarken yüksek hızlar kazanabilirsiniz, bu ayar false olarak ayarlandığında bu istismarı önler
     # Mojang, elytra'nın istemci tarafında başlamasını ve sunucu tarafında bitmesini sağlayarak netcode'u bozdu
@@ -211,4 +215,4 @@ history:
         username: root
         password: ""
 
-config-version: 9
+config-version: 10

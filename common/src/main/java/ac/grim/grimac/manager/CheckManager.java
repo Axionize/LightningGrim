@@ -16,7 +16,6 @@ import ac.grim.grimac.checks.impl.breaking.PositionBreakA;
 import ac.grim.grimac.checks.impl.breaking.PositionBreakB;
 import ac.grim.grimac.checks.impl.breaking.RotationBreak;
 import ac.grim.grimac.checks.impl.breaking.WrongBreak;
-import ac.grim.grimac.checks.impl.combat.Hitboxes;
 import ac.grim.grimac.checks.impl.combat.MultiInteractA;
 import ac.grim.grimac.checks.impl.combat.MultiInteractB;
 import ac.grim.grimac.checks.impl.combat.Reach;
@@ -41,6 +40,7 @@ import ac.grim.grimac.checks.impl.exploit.ExploitA;
 import ac.grim.grimac.checks.impl.exploit.ExploitB;
 import ac.grim.grimac.checks.impl.exploit.ExploitC;
 import ac.grim.grimac.checks.impl.groundspoof.NoFall;
+import ac.grim.grimac.checks.impl.inventory.*;
 import ac.grim.grimac.checks.impl.misc.ClientBrand;
 import ac.grim.grimac.checks.impl.misc.GhostBlockMitigation;
 import ac.grim.grimac.checks.impl.misc.TransactionOrder;
@@ -54,6 +54,7 @@ import ac.grim.grimac.checks.impl.multiactions.MultiActionsC;
 import ac.grim.grimac.checks.impl.multiactions.MultiActionsD;
 import ac.grim.grimac.checks.impl.multiactions.MultiActionsE;
 import ac.grim.grimac.checks.impl.multiactions.MultiActionsF;
+import ac.grim.grimac.checks.impl.packetorder.*;
 import ac.grim.grimac.checks.impl.post.Post;
 import ac.grim.grimac.checks.impl.prediction.DebugHandler;
 import ac.grim.grimac.checks.impl.prediction.GroundSpoof;
@@ -135,7 +136,7 @@ public class CheckManager {
     public CheckManager(GrimPlayer player) {
         // Include post checks in the packet check too
         packetChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
-                .put(Hitboxes.class, new Hitboxes(player))
+                .put(PacketOrderProcessor.class, player.packetOrderProcessor)
                 .put(Reach.class, new Reach(player))
                 .put(PacketEntityReplication.class, new PacketEntityReplication(player))
                 .put(PacketChangeGameState.class, new PacketChangeGameState(player))
@@ -148,17 +149,14 @@ public class CheckManager {
                 .put(NoFall.class, new NoFall(player))
                 .put(BadPacketsO.class, new BadPacketsO(player))
                 .put(BadPacketsA.class, new BadPacketsA(player))
-                .put(BadPacketsB.class, new BadPacketsB(player))
                 .put(BadPacketsC.class, new BadPacketsC(player))
                 .put(BadPacketsD.class, new BadPacketsD(player))
                 .put(BadPacketsE.class, new BadPacketsE(player))
                 .put(BadPacketsF.class, new BadPacketsF(player))
                 .put(BadPacketsG.class, new BadPacketsG(player))
-                .put(BadPacketsH.class, new BadPacketsH(player))
                 .put(BadPacketsI.class, new BadPacketsI(player))
                 .put(BadPacketsK.class, new BadPacketsK(player))
                 .put(BadPacketsL.class, new BadPacketsL(player))
-                .put(BadPacketsM.class, new BadPacketsM(player))
                 .put(BadPacketsN.class, new BadPacketsN(player))
                 .put(BadPacketsP.class, new BadPacketsP(player))
                 .put(BadPacketsQ.class, new BadPacketsQ(player))
@@ -169,11 +167,20 @@ public class CheckManager {
                 .put(BadPacketsV.class, new BadPacketsV(player))
                 .put(BadPacketsW.class, new BadPacketsW(player))
                 .put(BadPacketsY.class, new BadPacketsY(player))
+                .put(InventoryA.class, new InventoryA(player))
+                .put(InventoryB.class, new InventoryB(player))
+                .put(InventoryE.class, new InventoryE(player))
+                .put(InventoryF.class, new InventoryF(player))
+                .put(InventoryG.class, new InventoryG(player))
                 .put(MultiActionsA.class, new MultiActionsA(player))
                 .put(MultiActionsB.class, new MultiActionsB(player))
                 .put(MultiActionsC.class, new MultiActionsC(player))
                 .put(MultiActionsD.class, new MultiActionsD(player))
                 .put(MultiActionsE.class, new MultiActionsE(player))
+                .put(PacketOrderB.class, new PacketOrderB(player))
+                .put(PacketOrderC.class, new PacketOrderC(player))
+                .put(PacketOrderD.class, new PacketOrderD(player))
+                .put(PacketOrderO.class, new PacketOrderO(player))
                 .put(TransactionOrder.class, new TransactionOrder(player))
                 .put(SprintA.class, new SprintA(player))
                 .put(VehicleA.class, new VehicleA(player))
@@ -201,8 +208,19 @@ public class CheckManager {
                 .put(ExplosionHandler.class, new ExplosionHandler(player))
                 .put(KnockbackHandler.class, new KnockbackHandler(player))
                 .put(GhostBlockDetector.class, new GhostBlockDetector(player))
+                .put(InventoryD.class, new InventoryD(player))
                 .put(Phase.class, new Phase(player))
                 .put(Post.class, new Post(player))
+                .put(PacketOrderA.class, new PacketOrderA(player))
+                .put(PacketOrderE.class, new PacketOrderE(player))
+                .put(PacketOrderF.class, new PacketOrderF(player))
+                .put(PacketOrderG.class, new PacketOrderG(player))
+                .put(PacketOrderH.class, new PacketOrderH(player))
+                .put(PacketOrderI.class, new PacketOrderI(player))
+                .put(PacketOrderJ.class, new PacketOrderJ(player))
+                .put(PacketOrderK.class, new PacketOrderK(player))
+                .put(PacketOrderL.class, new PacketOrderL(player))
+                .put(PacketOrderM.class, new PacketOrderM(player))
                 .put(GroundSpoof.class, new GroundSpoof(player))
                 .put(OffsetHandler.class, new OffsetHandler(player))
                 .put(SuperDebug.class, new SuperDebug(player))
@@ -232,6 +250,7 @@ public class CheckManager {
                 .build();
 
         blockPlaceCheck = new ImmutableClassToInstanceMap.Builder<BlockPlaceCheck>()
+                .put(InventoryC.class, new InventoryC(player))
                 .put(InvalidPlaceA.class, new InvalidPlaceA(player))
                 .put(InvalidPlaceB.class, new InvalidPlaceB(player))
                 .put(AirLiquidPlace.class, new AirLiquidPlace(player))
@@ -241,6 +260,7 @@ public class CheckManager {
                 .put(FabricatedPlace.class, new FabricatedPlace(player))
                 .put(PositionPlace.class, new PositionPlace(player))
                 .put(RotationPlace.class, new RotationPlace(player))
+                .put(PacketOrderN.class, new PacketOrderN(player))
                 .put(DuplicateRotPlace.class, new DuplicateRotPlace(player))
                 .put(GhostBlockMitigation.class, new GhostBlockMitigation(player))
                 .build();
