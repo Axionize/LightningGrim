@@ -12,7 +12,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 
-@CheckData(name = "BadPacketsT")
+@CheckData(name = "BadPacketsT", description = "Impossible INTERACT_AT interaction vector outside entity hitbox bounds")
 public class BadPacketsT extends Check implements PacketCheck {
 
     private final double maxHorizontalDisplacement;
