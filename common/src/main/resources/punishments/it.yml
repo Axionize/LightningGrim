@@ -103,6 +103,7 @@ Punishments:
       - "Sprint"
       - "MultiActions"
       - "Place"
+      - "!MacroBlockPlace"
       - "Baritone"
       - "Break"
       - "TransactionOrder"
@@ -129,3 +130,12 @@ Punishments:
     commands:
       - "20:40 [alert]"
       - "20:40 [log]"
+  MacroBlockPlace:
+    remove-violations-after: 300
+    checks:
+      - "MacroBlockPlace"
+    commands:
+      - "5:3 [alert]"
+      - "5:3 [log]"
+      - "15:10 [webhook]"
+      - "15:10 [proxy]"
