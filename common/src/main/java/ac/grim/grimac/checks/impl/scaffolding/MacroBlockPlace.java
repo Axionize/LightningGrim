@@ -73,7 +73,7 @@ public class MacroBlockPlace extends Check implements PacketCheck {
 
         ItemType type = item.getType();
         if (type != ItemTypes.RESPAWN_ANCHOR && type != ItemTypes.END_CRYSTAL
-                && type != ItemTypes.GLOWSTONE && type != ItemTypes.OBSIDIAN) return;
+                && type != ItemTypes.OBSIDIAN) return;
 
         long now = System.nanoTime();
 
