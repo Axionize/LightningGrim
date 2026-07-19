@@ -119,6 +119,10 @@ public class GrimPlayer implements GrimUser {
     private final AtomicInteger transactionIDCounter = new AtomicInteger(0);
     public final AtomicInteger lastTransactionSent = new AtomicInteger(0);
     public final AtomicInteger lastTransactionReceived = new AtomicInteger(0);
+    // Some anticheats (e.g. Vulcan) treat any ping/transaction received before their own
+    // JOIN_GAME handling as an out-of-order packet. Withhold our pings/transactions until
+    // JOIN_GAME has actually been written to the client. See: Axionize/LightningGrim#127
+    public final AtomicBoolean hasSentJoinGamePacket = new AtomicBoolean(false);
     // End transaction handling stuff
     // Manager like classes
     public final CheckManager checkManager;
@@ -493,6 +497,11 @@ public class GrimPlayer implements GrimUser {
         // don't send transactions outside PLAY phase
         // Sending in non-play corrupts the pipeline, don't waste bandwidth when anticheat disabled
         if (user.getEncoderState() != ConnectionState.PLAY) return;
+
+        // Withhold pings/transactions until JOIN_GAME has been sent, otherwise other
+        // anticheats (e.g. Vulcan) that assume JOIN_GAME is the first PLAY packet will
+        // see our ping arrive first and flag it as an out-of-order/invalid confirmation.
+        if (!hasSentJoinGamePacket.get()) return;
 
         // Send a packet once every 15 seconds to avoid any memory leaks
         if (disableGrim && (System.nanoTime() - getPlayerClockAtLeast()) > 15e9) {

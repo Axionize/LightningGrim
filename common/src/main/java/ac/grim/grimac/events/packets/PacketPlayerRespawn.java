@@ -114,6 +114,10 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
             GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
             if (player == null) return;
 
+            // Only after this packet is actually written may we start sending pings/transactions.
+            // See sendTransaction() and Axionize/LightningGrim#127.
+            event.getTasksAfterSend().add(() -> player.hasSentJoinGamePacket.set(true));
+
             WrapperPlayServerJoinGame joinGame = new WrapperPlayServerJoinGame(event);
             player.gamemode = joinGame.getGameMode();
             player.entityID = joinGame.getEntityId();
