@@ -202,6 +202,7 @@ public class CompensatedEntities {
                 EntityTypes.isTypeInstanceOf(entityType, EntityTypes.ABSTRACT_ARROW)
                 || EntityTypes.FIREWORK_ROCKET.equals(entityType)
                 || EntityTypes.BLOCK_DISPLAY.equals(entityType)
+                || EntityTypes.ITEM_DISPLAY.equals(entityType)
                 || EntityTypes.TEXT_DISPLAY.equals(entityType)
                 || EntityTypes.LIGHTNING_BOLT.equals(entityType)
                 || EntityTypes.EXPERIENCE_BOTTLE.equals(entityType)
