@@ -1,6 +1,10 @@
 package ac.grim.grimac.utils.nmsutil;
 
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.collisions.CollisionData;
+import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
+import ac.grim.grimac.utils.collisions.datatypes.ComplexCollisionBox;
+import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.MainSupportingBlockData;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
 import ac.grim.grimac.utils.data.packetentity.PacketEntityHorse;
@@ -278,7 +282,8 @@ public class BlockProperties {
 
     public static double getVelocityAfterVerticalCollision(GrimPlayer player, double velocity, double movementY, double restitution) {
         double gravity = getEffectiveGravity(player, velocity);
-        if (player.getClientVersion().isOlderThan(ClientVersion.V_26_2) || velocity < 0.0 && -velocity < gravity) {
+        boolean correctGravity = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3) ? -velocity <= gravity : -velocity < gravity;
+        if (player.getClientVersion().isOlderThan(ClientVersion.V_26_2) || velocity < 0.0 && correctGravity) {
             return 0.0;
         }
 
@@ -304,11 +309,19 @@ public class BlockProperties {
     }
 
     public static float getBlockBounceRestitution(StateType type, GrimPlayer player) {
+        if (type == StateTypes.STRAW_BED && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+            return 0.0F;
+        }
+
+        if (type == StateTypes.SHELF_MUSHROOM && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+            return 0.75F;
+        }
+
         if (type == StateTypes.SLIME_BLOCK && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)) {
             return 1.0F;
         }
 
-        if (BlockTags.BEDS.contains(type) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_12)) {
+        if ((BlockTags.BEDS.contains(type) || (type == StateTypes.STRAW_BED && player.getClientVersion().isOlderThan(ClientVersion.V_26_3))) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_12)) {
             return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2) ? 0.75F : 0.66F;
         }
 
@@ -320,4 +333,23 @@ public class BlockProperties {
 
         return 0.0F;
     }
+
+    public static double getBlockCollisionHeight(GrimPlayer player, WrappedBlockState block) {
+        StateType type = block.getType();
+        if (type.isAir()) {
+            return 0D;
+        }
+
+        CollisionBox movementCollisionBox = CollisionData.getData(type).getMovementCollisionBox(player, player.getClientVersion(), block);
+        SimpleCollisionBox[] movementCollisionBoxes = new SimpleCollisionBox[ComplexCollisionBox.DEFAULT_MAX_COLLISION_BOX_SIZE];
+        int size = movementCollisionBox.downCast(movementCollisionBoxes);
+
+        double height = 0D;
+        for (int i = 0; i < size; i++) {
+            height = Math.max(height, movementCollisionBoxes[i].maxY);
+        }
+
+        return height;
+    }
+
 }

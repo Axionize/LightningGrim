@@ -64,6 +64,7 @@ import ac.grim.grimac.internal.storage.verbose.VerboseRegistryImpl;
 import ac.grim.grimac.manager.init.start.StartableInitable;
 import ac.grim.grimac.manager.init.stop.StoppableInitable;
 import com.mongodb.client.MongoDatabase;
+import lombok.Getter;
 import org.bson.BsonBinarySubType;
 import org.bson.Document;
 import org.bson.types.Binary;
@@ -89,6 +90,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -124,6 +126,7 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
     private OwnershipHeartbeatScheduler ownershipHeartbeatScheduler;
     private ServerOwnershipAdapter ownershipAdapter;
     private ServerOwnershipGate ownershipGate = ServerOwnershipGate.disabled();
+    private LeaseStartupLiveness startupLiveness;
     private UUID instanceId;
     private UUID startupId;
     private UUID ownershipFence;
@@ -131,7 +134,9 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
     private ScheduledExecutorService duplicateWarningExecutor;
     private ScheduledExecutorService recoverySweepExecutor;
 
+    @Getter
     private boolean enabled = true;
+    @Getter
     private boolean loaded;
 
     private final List<BackendV2> v2Backends = new ArrayList<>();
@@ -170,12 +175,12 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
             this.loaded = buildAndStart(dataFolder);
         } catch (FatalStorageStartupException e) {
             logger.log(Level.SEVERE, "[grim-datastore] fatal storage startup failure - shutting down server", e);
-            try { close(); } catch (Exception ignore) {}
+            try { close(); } catch (Exception closeEx) { logger.log(Level.FINE, "[grim-datastore] close during shutdown failed", closeEx); }
             this.enabled = false;
             shutdownServerAfterFatalStorageStartup();
         } catch (Exception | LinkageError e) {
             logger.log(Level.SEVERE, "[grim-datastore] failed to initialise storage - falling back to disabled", e);
-            try { close(); } catch (Exception ignore) {}
+            try { close(); } catch (Exception closeEx) { logger.log(Level.FINE, "[grim-datastore] close during fallback failed", closeEx); }
             this.enabled = false;
             installLocalVerboseRegistry();
         }
@@ -287,6 +292,8 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
         boolean enforceOwnership = config.ownership().enforcePersistentUuidOwnership()
                 && config.ownership().duplicatePersistentUuidAction() != DuplicatePersistentUuidAction.ALLOW_UNSAFE;
         this.ownershipGate = new ServerOwnershipGate(enforceOwnership);
+        this.startupLiveness = new LeaseStartupLiveness(enforceOwnership ? ownershipAdapter : null,
+                OWNERSHIP_STORE, this::dbNowBestEffort, config.ownership().staleStartupTtlMs());
         this.dataStore = new DataStoreImpl(router, config.writePath(), logger);
         this.dataStore.withV2Routes(routes);
         this.dataStore.withOwnershipGate(ownershipGate);
@@ -507,6 +514,7 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
             this.historyService = new HistoryServiceImpl(dataStore, checkRegistry,
                     config.history().entriesPerPage(), config.history().groupIntervalMs())
                     .withV2Startups(Categories.SERVER_STARTUP)
+                    .withStartupLiveness(startupLiveness)
                     .withVerboseRegistry(verboseRegistry);
         } else {
             logger.warning("[grim-datastore] history disabled; missing "
@@ -620,12 +628,6 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
                 metadata.grimVersion(),
                 metadata.serverVersionString(),
                 verboseManifest.get());
-
-        long recovered = recoverAfterStartupClaim(ownershipClaim, dbNow);
-        if (recovered > 0) {
-            logger.warning("[grim-datastore] recovered " + recovered
-                    + " open session(s) after claiming storage startup");
-        }
 
         if (enforceOwnership) {
             this.ownershipHeartbeatScheduler = new OwnershipHeartbeatScheduler(
@@ -745,25 +747,6 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
         }
     }
 
-    private long recoverAfterStartupClaim(
-            @Nullable OwnershipClaimResult ownershipClaim,
-            long dbNow) {
-        long closed = 0L;
-        if (ownershipClaim != null && ownershipClaim.previousOwner() != null) {
-            ServerOwnershipSnapshot previous = ownershipClaim.previousOwner();
-            if (!startupId.equals(previous.ownerStartupId())
-                    && (previous.closedAtEpochMs() != ServerOwnershipSnapshot.OPEN
-                    || previous.leaseExpiresAtEpochMs() <= dbNow)) {
-                closed += instanceRegistry.recoverStartup(previous.ownerStartupId(), "expired-ownership");
-            }
-        }
-        if (config.ownership().cleanupOtherServers()) {
-            closed += instanceRegistry.recoverStaleStartups(
-                    startupId, dbNow, config.ownership().staleStartupTtlMs());
-        }
-        return closed;
-    }
-
     private long dbNowBestEffort() {
         if (ownershipAdapter != null) {
             try {
@@ -783,31 +766,36 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
             t.setDaemon(true);
             return t;
         });
-        long intervalMs = config.ownership().recoverySweepIntervalMs();
-        recoverySweepExecutor.scheduleAtFixedRate(
-                this::runRecoverySweep,
-                intervalMs,
-                intervalMs,
-                TimeUnit.MILLISECONDS);
+        // Boot never repairs; the first sweep runs one stale TTL plus jitter later, on this thread pool only.
+        scheduleRecoverySweep(config.ownership().staleStartupTtlMs());
+    }
+
+    /** Synchronized with the stop paths so a tick never reschedules onto an executor that was just shut down. */
+    private synchronized void scheduleRecoverySweep(long baseDelayMs) {
+        if (recoverySweepExecutor == null) return;
+        long jitterMs = ThreadLocalRandom.current().nextLong(config.ownership().recoverySweepIntervalMs());
+        recoverySweepExecutor.schedule(this::runRecoverySweep, baseDelayMs + jitterMs, TimeUnit.MILLISECONDS);
     }
 
     private void runRecoverySweep() {
         V2InstanceRegistry registry = instanceRegistry;
+        LeaseStartupLiveness liveness = startupLiveness;
+        DataStoreConfig current = config;
         UUID currentStartup = startupId;
-        if (registry == null || currentStartup == null) return;
-        if (ownershipGate.enforced() && !ownershipGate.allowWrites()) return;
-        try {
-            long closed = registry.recoverStaleStartups(
-                    currentStartup,
-                    dbNowBestEffort(),
-                    config.ownership().staleStartupTtlMs());
-            if (closed > 0) {
-                logger.warning("[grim-datastore] recovery sweep closed " + closed
-                        + " open session(s) from stale startup rows");
+        if (registry == null || liveness == null || current == null || currentStartup == null) return;
+        if (ownershipGate.allowWrites()) {
+            try {
+                long closed = registry.recoverStaleStartups(currentStartup, liveness);
+                if (closed > 0) {
+                    logger.warning("[grim-datastore] recovery sweep closed " + closed
+                            + " open session(s) from stale startup rows");
+                }
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "[grim-datastore] recovery sweep failed", e);
             }
-        } catch (RuntimeException e) {
-            logger.log(Level.WARNING, "[grim-datastore] recovery sweep failed", e);
         }
+        // Fresh jitter on every tick keeps servers that booted together from sweeping in lockstep.
+        scheduleRecoverySweep(current.ownership().recoverySweepIntervalMs());
     }
 
     private void stopRecoverySweep() {
@@ -898,6 +886,7 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
         instanceRegistry = null;
         verboseRegistry = null;
         ownershipAdapter = null;
+        startupLiveness = null;
         ownershipFence = null;
         ownershipGate = ServerOwnershipGate.disabled();
         loaded = false;
@@ -1079,6 +1068,7 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
         playerToggleStore = PlayerToggleStore.NOOP;
         instanceRegistry = null;
         ownershipAdapter = null;
+        startupLiveness = null;
         ownershipFence = null;
         ownershipGate = ServerOwnershipGate.disabled();
         instanceId = null;
@@ -1108,6 +1098,9 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
             logger.warning("[grim-datastore] skipping startup/session shutdown writes because DB ownership is no longer held");
             return;
         }
+        // Session events still queued in the ring must land before the set-based close, or they reopen the row.
+        int queued = dataStore.drain(config.writePath().shutdownDrainTimeoutMs());
+        if (queued > 0) logger.warning("[grim-datastore] " + queued + " queued write(s) did not land before the session close");
         long now = dbNowBestEffort();
         try {
             long closed = instanceRegistry.closeCurrentStartup(startupId, now);
@@ -1140,9 +1133,6 @@ public final class DataStoreLifecycle implements StartableInitable, StoppableIni
             violationSink = null;
         }
     }
-
-    public boolean isEnabled() { return enabled; }
-    public boolean isLoaded() { return loaded; }
 
     public @Nullable DataStore dataStore() { return loaded ? dataStore : null; }
     public @Nullable HistoryService historyService() { return historyService; }

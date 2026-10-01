@@ -183,7 +183,7 @@ public class WorldRayTrace {
 
             if (entity.equals(targetEntity)) {
                 box = entity.getPossibleCollisionBoxes();
-                box.expand(player.checkManager.getPacketCheck(Reach.class).threshold);
+                box.expand(player.checkManager.get(Reach.class).threshold);
                 // This is better than adding to the reach, as 0.03 can cause a player to miss their target
                 // Adds some more than 0.03 uncertainty in some cases, but a good trade off for simplicity
                 //
@@ -199,7 +199,7 @@ public class WorldRayTrace {
                     continue;
                 }
                 box = (SimpleCollisionBox) b;
-                box.expand(-player.checkManager.getPacketCheck(Reach.class).threshold);
+                box.expand(-player.checkManager.get(Reach.class).threshold);
                 // todo, shrink by reachThreshold as well for non-target entities?
                 if (!player.packetStateData.didLastLastMovementIncludePosition || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9))
                     box.expand(-player.getMovementThreshold());

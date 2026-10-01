@@ -107,8 +107,6 @@ public class CompensatedWorld implements PacketWorld {
             if (iter.getKey() <= prediction) {
                 applyBlockChanges(iter.getValue());
                 it.remove();
-            } else {
-                break;
             }
         }
     }
@@ -212,6 +210,14 @@ public class CompensatedWorld implements PacketWorld {
                 player.runSafely(() -> applyBlockChanges(toApplyBlocks));
             });
         }
+    }
+
+    public void clearPredictions() {
+        originalServerBlocks.clear();
+        currentlyChangedBlocks = new LinkedList<>();
+        serverIsCurrentlyProcessingThesePredictions.clear();
+        unackedActions.clear();
+        isCurrentlyPredicting = false;
     }
 
     public static long chunkPositionToLong(int x, int z) {
@@ -696,10 +702,6 @@ public class CompensatedWorld implements PacketWorld {
 
     public boolean containsLava(SimpleCollisionBox box) {
         return Collisions.hasMaterial(player, box, (block, x, y, z) -> block.getType() == StateTypes.LAVA);
-    }
-
-    public boolean containsNetherPortal(SimpleCollisionBox box) {
-        return Collisions.hasMaterial(player, box, (block, x, y, z) -> block.getType() == StateTypes.NETHER_PORTAL);
     }
 
     public float getWaterFluidLevelAt(double x, double y, double z) {

@@ -122,7 +122,7 @@ public class GrimDebug implements BuildableCommand {
         }
 
         // Get the HitboxDebugHandler check instance and toggle the listener
-        HitboxDebugHandler hitboxHandler = targetGrimPlayer.checkManager.getCheck(HitboxDebugHandler.class);
+        HitboxDebugHandler hitboxHandler = targetGrimPlayer.checkManager.get(HitboxDebugHandler.class);
         if (hitboxHandler == null) {
             sender.sendMessage(Component.text("HitboxDebugHandler check not found for target player.", NamedTextColor.RED));
             return;

@@ -21,6 +21,7 @@ import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.debug.HitboxDebugHandler;
 import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.PacketReceiveListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.NoCollisionBox;
@@ -66,7 +67,7 @@ import java.util.*;
 
 // You may not copy the check unless you are licensed under GPL
 @CheckData(name = "Reach", stableKey = "grim.combat.reach", description = "Attacked an entity from too far away", setback = 10)
-public class Reach extends Check implements PacketCheck {
+public class Reach extends Check implements PacketCheck, PacketReceiveListener {
     private static final Verbose V = Verbose.of("{f64:%.5f} blocks, type={entity}");
 
     private static final List<EntityType> blacklisted = Arrays.asList(
@@ -270,15 +271,15 @@ public class Reach extends Check implements PacketCheck {
                     if (reachEntity instanceof PacketEntitySizeable sizeable) {
                         added += ", size=" + sizeable.size;
                     }
-                    player.checkManager.getCheck(Hitboxes.class).flag(result.verbose() + added);
+                    player.checkManager.get(Hitboxes.class).flag(result.verbose() + added);
                 }
                 case WALL_HIT -> {
                     String added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
-                    player.checkManager.getCheck(WallHit.class).flag(result.verbose() + added);
+                    player.checkManager.get(WallHit.class).flag(result.verbose() + added);
                 }
                 case ENTITY_PIERCE -> {
                     String added = reachEntity.getType() == EntityTypes.PLAYER ? "" : "type=" + reachEntity.getType().getName().getKey();
-                    player.checkManager.getCheck(EntityPierce.class).flag(result.verbose() + added);
+                    player.checkManager.get(EntityPierce.class).flag(result.verbose() + added);
                 }
             }
         }
@@ -469,7 +470,7 @@ public class Reach extends Check implements PacketCheck {
     }
 
     private boolean hitboxDebuggingEnabled() {
-        return player.checkManager.getCheck(HitboxDebugHandler.class).isEnabled();
+        return player.checkManager.get(HitboxDebugHandler.class).isEnabled();
     }
 
     private void sendHitboxDebugData(PacketEntity reachEntity, double x, double y, double z, List<Pair<Vector3dm, Double>> lookVecsAndEyeHeights, boolean isPrediction) {
@@ -516,7 +517,7 @@ public class Reach extends Check implements PacketCheck {
             hitboxes.put(entry.getIntKey(), box);
         }
 
-        player.checkManager.getCheck(HitboxDebugHandler.class).sendHitboxData(hitboxes,
+        player.checkManager.get(HitboxDebugHandler.class).sendHitboxData(hitboxes,
                 Collections.singleton(player.compensatedEntities.getPacketEntityID(reachEntity)),
                 lookVecsAndEyeHeights,
                 x, y, z,

@@ -9,6 +9,7 @@ import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.VectorData;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
 import ac.grim.grimac.utils.data.packetentity.PacketEntityStrider;
+import ac.grim.grimac.utils.data.tags.SyncedTags;
 import ac.grim.grimac.utils.enums.FluidTag;
 import ac.grim.grimac.utils.math.GrimMath;
 import ac.grim.grimac.utils.math.Vector3dm;
@@ -18,6 +19,7 @@ import ac.grim.grimac.utils.nmsutil.EntityTypeTags;
 import ac.grim.grimac.utils.nmsutil.FluidFallingAdjustedMovement;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
 import ac.grim.grimac.utils.nmsutil.MainSupportingBlockPosFinder;
+import ac.grim.grimac.utils.nmsutil.StuckSpeed;
 import ac.grim.grimac.utils.team.EntityPredicates;
 import ac.grim.grimac.utils.team.EntityTeam;
 import ac.grim.grimac.utils.team.TeamHandler;
@@ -34,6 +36,9 @@ import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.viaversion.viaversion.api.Via;
 import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.Set;
 
 @RequiredArgsConstructor
 public class MovementTicker {
@@ -58,7 +63,7 @@ public class MovementTicker {
             playerBox.encompass(GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.x, player.y, player.z, 0.6f, 1.8f).expand(player.getMovementThreshold()));
             playerBox.expand(0.2);
 
-            final TeamHandler teamHandler = player.checkManager.getPacketCheck(TeamHandler.class);
+            final TeamHandler teamHandler = player.checkManager.get(TeamHandler.class);
             final EntityTeam playerTeam = teamHandler != null ? teamHandler.getPlayerTeam() : null;
             for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
                 // TODO actually handle entity collisions instead of this awfulness
@@ -95,12 +100,40 @@ public class MovementTicker {
         double horizontalLengthSquared = collide.getX() * collide.getX() + collide.getZ() * collide.getZ();
         if (horizontalLengthSquared < 1E-5F) return false;
 
-        float xxa = (float) player.predictedVelocity.input.getX();
-        float zza = (float) player.predictedVelocity.input.getZ();
-
         float yawInRadians = player.yaw * (float) (Math.PI / 180.0);
         double sin = player.trigHandler.sin(yawInRadians);
         double cos = player.trigHandler.cos(yawInRadians);
+
+        Vector3dm input = player.predictedVelocity.input;
+        if (input != null) {
+            return isHorizontalCollisionSoft(collide, horizontalLengthSquared, sin, cos, (float) input.getX(), (float) input.getZ());
+        } else { // elytra
+            ArrayList<VectorData> results = new ArrayList<>();
+            new PredictionEngine().loopVectors(
+                    player,
+                    Set.of(new VectorData(new Vector3dm(), VectorData.VectorType.Normal)),
+                    0,
+                    results,
+                    false
+            );
+
+            for (VectorData data : results) {
+                if (isHorizontalCollisionSoft(
+                        collide, horizontalLengthSquared,
+                        sin, cos,
+                        (float) data.input.getX(), (float) data.input.getZ())) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private boolean isHorizontalCollisionSoft(
+            Vector3dm collide, double horizontalLengthSquared,
+            double sin, double cos,
+            float xxa, float zza) {
         double g = xxa * cos - zza * sin;
         double h = zza * cos + xxa * sin;
         double i = g * g + h * h;
@@ -113,30 +146,18 @@ public class MovementTicker {
         }
 
         double deltaX = player.clientVelocity.getX(), deltaY = player.clientVelocity.getY(), deltaZ = player.clientVelocity.getZ();
+        final boolean xAxis;
+        final boolean zAxis;
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_18_2)) {
-            boolean xAxis = !GrimMath.equal(inputVel.getX(), collide.getX());
-            boolean zAxis = !GrimMath.equal(inputVel.getZ(), collide.getZ());
-
-            if (xAxis) {
-                player.clientVelocity.setX(BlockProperties.getVelocityAfterHorizontalCollision(player, player.clientVelocity.getX()));
-            }
-
-            if (zAxis) {
-                player.clientVelocity.setZ(BlockProperties.getVelocityAfterHorizontalCollision(player, player.clientVelocity.getZ()));
-            }
+            xAxis = !GrimMath.equal(inputVel.getX(), collide.getX());
+            zAxis = !GrimMath.equal(inputVel.getZ(), collide.getZ());
 
             player.horizontalCollision = xAxis || zAxis;
             player.softHorizontalCollision = player.horizontalCollision && isHorizontalCollisionSoft(collide);
         } else {
-            if (inputVel.getX() != collide.getX()) {
-                player.clientVelocity.setX(BlockProperties.getVelocityAfterHorizontalCollision(player, player.clientVelocity.getX()));
-            }
-
-            if (inputVel.getZ() != collide.getZ()) {
-                player.clientVelocity.setZ(BlockProperties.getVelocityAfterHorizontalCollision(player, player.clientVelocity.getZ()));
-            }
-
-            player.horizontalCollision = inputVel.getX() != collide.getX() || inputVel.getZ() != collide.getZ();
+            xAxis = inputVel.getX() != collide.getX();
+            zAxis = inputVel.getZ() != collide.getZ();
+            player.horizontalCollision = xAxis || zAxis;
         }
 
         player.verticalCollision = inputVel.getY() != collide.getY();
@@ -189,6 +210,9 @@ public class MovementTicker {
             player.vehicleData.lastYd = collide.getY();
         }
 
+        if (xAxis) player.clientVelocity.setX(BlockProperties.getVelocityAfterHorizontalCollision(player, player.clientVelocity.getX()));
+        if (zAxis) player.clientVelocity.setZ(BlockProperties.getVelocityAfterHorizontalCollision(player, player.clientVelocity.getZ()));
+
         // Striders call the method for inside blocks AGAIN!
         if (riding instanceof PacketEntityStrider) {
             Collisions.handleInsideBlocks(player);
@@ -237,7 +261,7 @@ public class MovementTicker {
             player.uncertaintyHandler.lastStuckSpeedMultiplier.reset();
         }
 
-        player.stuckSpeedMultiplier = GrimPlayer.DEFAULT_STUCK_SPEED;
+        player.resetStuckSpeedMultiplier();
 
         // 1.15 and older clients use the handleInsideBlocks method for lava
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_16))
@@ -252,7 +276,7 @@ public class MovementTicker {
 
         // Flying players are not affected by cobwebs/sweet berry bushes
         if (player.isFlying) {
-            player.stuckSpeedMultiplier = GrimPlayer.DEFAULT_STUCK_SPEED;
+            player.stuckSpeedMultiplier = StuckSpeed.NONE;
         }
     }
 
@@ -457,7 +481,7 @@ public class MovementTicker {
                 player.lastWasClimbing = FluidFallingAdjustedMovement.getFluidFallingAdjustedMovement(player, playerGravity, isFalling, player.clientVelocity.clone().setY(0.2D * 0.8F)).getY();
             }
 
-            floatInWaterWhileRidden();
+            floatInLiquidWhileRidden();
         } else {
             player.canFloatWhileRidden = false;
             if (player.wasTouchingLava && !player.isFlying && !(lavaLevel > 0 && canStandOnLava())) {
@@ -476,6 +500,9 @@ public class MovementTicker {
                 if (player.hasGravity)
                     player.clientVelocity.add(0.0D, -playerGravity / 4.0D, 0.0D);
 
+                if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+                    floatInLiquidWhileRidden();
+                }
             } else if (player.isGliding) {
                 if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5) && Collisions.onClimbable(player, player.lastX, player.lastY, player.lastZ)) {
                     float blockFriction = BlockProperties.getFriction(player, player.mainSupportingBlockData, new Vector3d(player.lastX, player.lastY, player.lastZ));
@@ -512,11 +539,13 @@ public class MovementTicker {
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_21_11) || !player.inVehicle()) return false;
 
         PacketEntity vehicle = player.getVehicle();
-        double fluidHeight = player.getFluidHeight(FluidTag.WATER);
+        double fluidHeight = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)
+                ? player.fluidInteraction.getFluidHeight(player.tagManager.fluid(SyncedTags.ENTITY_FLOATABLE))
+                : player.getFluidHeight(FluidTag.WATER);
         return EntityTypeTags.CAN_FLOAT_WHILE_RIDDEN.anyOf(vehicle.getType()) && fluidHeight > 0.4;
     }
 
-    private void floatInWaterWhileRidden() {
+    private void floatInLiquidWhileRidden() {
         player.canFloatWhileRidden = canFloatWhileRidden();
         if (player.canFloatWhileRidden) {
             player.clientVelocity.add(0.0, 0.03999999910593033, 0.0);

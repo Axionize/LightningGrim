@@ -2,6 +2,8 @@ package ac.grim.grimac.utils.data;
 
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.math.Vector3dm;
+import ac.grim.grimac.utils.data.IndexedVector3d;
+import ac.grim.grimac.utils.nmsutil.StuckSpeed;
 import lombok.Getter;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
@@ -38,6 +40,7 @@ public class VectorData {
     public VectorData preUncertainty;
     public Vector3dm vector;
     public @MonotonicNonNull Vector3dm input;
+    public IndexedVector3d stuckSpeedMultiplier = StuckSpeed.NONE;
 
     @Getter
     private boolean isKnockback, firstBreadKb, isExplosion, firstBreadExplosion, isTrident, isZeroPointZeroThree, isSwimHop, isFlipSneaking, isFlipItem, isJump, isAttackSlow = false, isWithInput = false;
@@ -63,6 +66,7 @@ public class VectorData {
             isAttackSlow = lastVector.isAttackSlow;
             input = lastVector.input;
             isWithInput = lastVector.isWithInput;
+            stuckSpeedMultiplier = lastVector.stuckSpeedMultiplier;
         }
 
         addVectorType(vectorType);

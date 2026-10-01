@@ -3,9 +3,9 @@ package ac.grim.grimac.manager;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.event.events.GrimPlayerSetbackEvent;
 import ac.grim.grimac.api.event.events.GrimTeleportEvent;
-import ac.grim.grimac.checks.Check;
+import ac.grim.grimac.checks.GrimProcessor;
 import ac.grim.grimac.checks.impl.badpackets.BadPacketsN;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.PostPredictionListener;
 import ac.grim.grimac.platform.api.entity.GrimEntity;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.predictions.PredictionEngine;
@@ -45,7 +45,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
+public class SetbackTeleportUtil extends GrimProcessor implements PostPredictionListener {
     // Sync to netty
     public final ConcurrentLinkedQueue<TeleportData> pendingTeleports = new ConcurrentLinkedQueue<>();
     private final Random random = new Random();
@@ -306,6 +306,10 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
      * @return - Whether the player has completed a teleport by being at this position
      */
     public TeleportAcceptData checkTeleportQueue(double x, double y, double z, float yaw, float pitch) {
+        return checkTeleportQueue(x, y, z, yaw, pitch, null);
+    }
+
+    public TeleportAcceptData checkTeleportQueue(double x, double y, double z, float yaw, float pitch, @Nullable Integer teleportId) {
         // Support teleports without teleport confirmations
         // If the player is in a vehicle when teleported, they will exit their vehicle
         TeleportAcceptData teleportData = new TeleportAcceptData();
@@ -324,7 +328,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
             boolean correctRotations = (yaw == teleportPos.getYaw() || teleportPos.isRelativeYaw())
                     && (pitch == teleportPos.getPitch() || teleportPos.isRelativePitch());
 
-            if (player.lastTransactionReceived.get() == teleportPos.getTransaction() && Math.abs(clamped.getX() - x) <= threshold && closeEnoughY && Math.abs(clamped.getZ() - z) <= threshold && correctRotations) {
+            if ((teleportId == null || teleportId.equals(teleportPos.getTeleportId())) && player.lastTransactionReceived.get() == teleportPos.getTransaction() && Math.abs(clamped.getX() - x) <= threshold && closeEnoughY && Math.abs(clamped.getZ() - z) <= threshold && correctRotations) {
                 pendingTeleports.poll();
                 hasAcceptedSpawnTeleport = true;
                 blockOffsets = false;
@@ -341,7 +345,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
                 break;
             } else if (player.lastTransactionReceived.get() > teleportPos.getTransaction()) {
                 // The player ignored the teleport (and this teleport matters), resynchronize
-                player.checkManager.getCheck(BadPacketsN.class).flag();
+                player.checkManager.get(BadPacketsN.class).flag();
                 pendingTeleports.poll();
                 requiredSetBack.setPlugin(false);
                 if (pendingTeleports.isEmpty()) {

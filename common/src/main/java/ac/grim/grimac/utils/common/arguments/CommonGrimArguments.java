@@ -26,7 +26,7 @@ public class CommonGrimArguments {
      * <b>TRADE-OFF:</b> This completely bypasses the platform's event system (e.g., Bukkit's chat events).
      * Other plugins will NOT be able to see, format, or cancel these messages.
      * <p>
-     * This setting is opt-in (default: false) and requires a server restart to change.
+     * This setting is opt-out (default: true) and requires a server restart to change.
      */
     public final static SystemArgument<Boolean> USE_CHAT_FAST_BYPASS = FACTORY.create(string("ChatFastBypass", true));
 
@@ -36,5 +36,15 @@ public class CommonGrimArguments {
      * This setting is opt-out (default: true) and requires a server restart to change.
      */
     public final static SystemArgument<Boolean> KICK_ON_VIA_PROXY = FACTORY.create(string("KickOnViaProxy", true));
+
+    /**
+     * If true, a warning is logged whenever a player connects through a proxy running ViaVersion.
+     * <p>
+     * The warning repeats for every player who joins, so a server that has read it and decided to
+     * keep ViaVersion on its proxy has nothing further to learn from it.
+     * <p>
+     * This setting is opt-out (default: true) and requires a server restart to change.
+     */
+    public final static SystemArgument<Boolean> WARN_ON_VIA_PROXY = FACTORY.create(string("WarnOnViaProxy", true));
 
 }

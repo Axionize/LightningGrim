@@ -1,6 +1,7 @@
 package ac.grim.grimac.checks.type;
 
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -8,7 +9,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientCl
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerCloseWindow;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
-public class InventoryCheck extends BlockPlaceCheck implements PacketCheck {
+public class InventoryCheck extends BlockPlaceCheck implements PacketCheck, PacketReceiveListener, PostPredictionListener {
     // Impossible transaction ID
     protected static final long NONE = Long.MAX_VALUE;
 
@@ -17,6 +18,10 @@ public class InventoryCheck extends BlockPlaceCheck implements PacketCheck {
 
     public InventoryCheck(GrimPlayer player) {
         super(player);
+    }
+
+    @Override
+    public void onPredictionComplete(PredictionComplete predictionComplete) {
     }
 
     @Override

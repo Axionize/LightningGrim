@@ -63,6 +63,15 @@ public class BlockBreakSpeed {
 
     record ToolSpeedData(float speedMultiplier, boolean isCorrectToolForDrop) {}
 
+    public static boolean couldInstantlyBreakBlock(GrimPlayer player, StateType block) {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = player.inventory.inventory.getHotbar(i);
+            if (getBlockDamage(player, stack, block) >= 1) return true;
+        }
+
+        return false;
+    }
+
     public static double getBlockDamage(GrimPlayer player, WrappedBlockState block) {
         ItemStack tool = player.inventory.getHeldItem();
         return getBlockDamage(player, tool, block.getType());
@@ -141,7 +150,9 @@ public class BlockBreakSpeed {
 
         OptionalInt miningFatigue = player.compensatedEntities.getPotionLevelForSelfPlayer(PotionTypes.MINING_FATIGUE);
 
-        if (miningFatigue.isPresent()) {
+        if (miningFatigue.isPresent() && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+            speedMultiplier *= (float) Math.pow(0.3, miningFatigue.getAsInt() + 1);
+        } else if (miningFatigue.isPresent()) {
             switch (miningFatigue.getAsInt()) {
                 case 0:
                     speedMultiplier *= 0.3f;
