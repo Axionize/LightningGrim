@@ -55,7 +55,7 @@ public class SimpleCollisionBox implements CollisionBox {
     }
 
     public SimpleCollisionBox(Vector3i pos) {
-        this(pos.getX(), pos.getY(), pos.getZ());
+        this(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
     }
 
     // If you want to set a full block from a point

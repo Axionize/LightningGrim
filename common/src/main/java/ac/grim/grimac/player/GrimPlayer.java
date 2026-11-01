@@ -347,7 +347,11 @@ public class GrimPlayer implements GrimUser {
         Set<VectorData> set = new HashSet<>();
 
         if (firstBreadKB != null) {
-            set.add(new VectorData(firstBreadKB.vector.clone(), VectorData.VectorType.Knockback).returnNewModified(VectorData.VectorType.FirstBreadKnockback));
+            // Its own root, on 2.0 the Knockback parent shared this vector so the fireworks box in
+            // handleStartingVelocityUncertainty saw the fluid push, attack slow and 0.003 done to it
+            VectorData firstBread = new VectorData(firstBreadKB.vector.clone(), VectorData.VectorType.FirstBreadKnockback);
+            firstBread.addVectorType(VectorData.VectorType.Knockback);
+            set.add(firstBread);
         }
 
         if (likelyKB != null) {

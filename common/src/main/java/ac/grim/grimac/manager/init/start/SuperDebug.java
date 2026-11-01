@@ -302,16 +302,20 @@ public final class SuperDebug extends GrimProcessor implements PostPredictionLis
         }
 
         sb.append("\nClient input:    ");
-        sb.append(clientMovement);
-        sb.append(" length: ");
-        sb.append(clientMovement.length());
+        appendInput(sb, clientMovement);
         sb.append("\nSimulated input: ");
-        sb.append(simulatedMovement);
-        sb.append(" length: ");
-        sb.append(simulatedMovement.length());
+        appendInput(sb, simulatedMovement);
 
 
         sb.append("\n\n");
+    }
+
+    // x, 0, z and a double length like 2.0 printed, Vec2's own toString is Vec2[x=.., y=..] with a float length
+    private static void appendInput(StringBuilder sb, Vec2 input) {
+        double x = input.x(), z = input.y();
+        sb.append(MessageUtil.toUnlabeledString(x, 0, z));
+        sb.append(" length: ");
+        sb.append(Math.sqrt(x * x + z * z));
     }
 
     private Vec2 getPlayerMathMovement(GrimPlayer player, double x, double z, float f2) {
