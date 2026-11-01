@@ -107,6 +107,7 @@ public class PredictionEngineWater extends PredictionEngine {
 
         for (VectorData vector : player.getPossibleVelocitiesMinusKnockback()) {
             staticVectorEndOfTick(player, vector, swimmingFriction, playerGravity, isFalling);
+            copyBackToClientVelocity(player, vector);
         }
     }
 

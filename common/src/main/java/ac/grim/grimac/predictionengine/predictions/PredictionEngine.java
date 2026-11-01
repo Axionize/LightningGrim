@@ -326,6 +326,12 @@ public class PredictionEngine {
     public Set<VectorData> fetchPossibleStartTickVectors(GrimPlayer player) {
         // Swim hop, riptide bounce, climbing, slime block bounces, knockback
         Set<VectorData> velocities = player.getPossibleVelocities();
+        // The Normal vector is clientVelocity. It used to be the same object, so the in place changes below changed
+        // clientVelocity too and the rest of the tick reads that. Now it's a copy, so they get copied back by hand
+        VectorData clientVelocityData = null;
+        for (VectorData data : velocities) {
+            if (data.vectorType == VectorData.VectorType.Normal) clientVelocityData = data;
+        }
         // Packet stuff is done first
         addExplosionToPossibilities(player, velocities);
 
@@ -338,14 +344,27 @@ public class PredictionEngine {
         addFluidPushingToStartingVectors(player, velocities);
         // Inputs are done AFTER fluid pushing, https://github.com/MWHunter/Grim/issues/660
         addAttackSlowToPossibilities(player, velocities);
+        copyBackToClientVelocity(player, clientVelocityData);
         // Non-effective AI for vehicles is done AFTER fluid pushing but BEFORE 0.003
         addNonEffectiveAI(player, velocities);
         // Attack slowing is done BEFORE 0.003! Moving this before 0.003 will cause falses!
         applyMovementThreshold(player, velocities);
         // Jumps are done after 0.003, for sure.
         addJumpsToPossibilities(player, velocities);
+        // Non-effective AI used to replace the vector with a new one, so after it clientVelocity stopped following
+        if (!player.inVehicle() || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)) {
+            copyBackToClientVelocity(player, clientVelocityData);
+        }
 
         return velocities;
+    }
+
+    // VectorData holds a copy of clientVelocity instead of the vector itself, so whatever is done to the
+    // Normal vector has to be put back into clientVelocity where it used to land on its own
+    protected static void copyBackToClientVelocity(GrimPlayer player, VectorData vector) {
+        if (vector != null && vector.vectorType == VectorData.VectorType.Normal) {
+            player.clientVelocity.setX(vector.vectorX).setY(vector.vectorY).setZ(vector.vectorZ);
+        }
     }
 
     private void addNonEffectiveAI(GrimPlayer player, Set<VectorData> data) {

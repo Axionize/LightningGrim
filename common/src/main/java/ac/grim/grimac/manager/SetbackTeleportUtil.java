@@ -234,12 +234,13 @@ public class SetbackTeleportUtil extends GrimProcessor implements PostPrediction
             vector[2] *= player.stuckSpeedMultiplier.getZ();
 
             // stop 1.8 players from stepping onto 1.25 high blocks, because why not?
-            new PredictionEngine().applyMovementThreshold(player, new HashSet<>(Collections.singletonList(new VectorData(vector[0], vector[1], vector[2], VectorData.VectorType.BestVelPicked))));
+            VectorData thresholdVector = new VectorData(vector[0], vector[1], vector[2], VectorData.VectorType.BestVelPicked);
+            new PredictionEngine().applyMovementThreshold(player, new HashSet<>(Collections.singletonList(thresholdVector)));
             // END SIMULATING FRICTION
 
-            clientVelX = vector[0];
-            clientVelY = vector[1];
-            clientVelZ = vector[2];
+            clientVelX = thresholdVector.vectorX;
+            clientVelY = thresholdVector.vectorY;
+            clientVelZ = thresholdVector.vectorZ;
         }
 
         player.boundingBox = oldBB; // reset back to the new bounding box

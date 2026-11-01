@@ -212,6 +212,7 @@ public class PredictionEngineBoat extends PredictionEngine {
 
         for (VectorData data : vectors) {
             floatBoat(player, data);
+            copyBackToClientVelocity(player, data);
         }
 
         return vectors;

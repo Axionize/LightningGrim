@@ -103,6 +103,7 @@ public class PredictionEngineNormal extends PredictionEngine {
 
         for (VectorData vector : player.getPossibleVelocitiesMinusKnockback()) {
             staticVectorEndOfTick(player, vector);
+            copyBackToClientVelocity(player, vector);
         }
     }
 

@@ -38,6 +38,7 @@ public class PredictionEngineWaterLegacy extends PredictionEngine {
 
             // Gravity
             vector.vectorY -= 0.02D;
+            copyBackToClientVelocity(player, vector);
         }
     }
 }

@@ -20,6 +20,7 @@ public class PredictionEngineHappyGhast extends PredictionEngineNormal {
             vector.vectorX *= multiplier;
             vector.vectorY *= multiplier;
             vector.vectorZ *= multiplier;
+            copyBackToClientVelocity(player, vector);
         }
     }
 

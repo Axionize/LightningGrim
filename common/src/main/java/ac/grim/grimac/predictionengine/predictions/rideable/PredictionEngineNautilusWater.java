@@ -20,6 +20,7 @@ public class PredictionEngineNautilusWater extends PredictionEngine {
             vector.vectorX *= multiplier;
             vector.vectorY *= multiplier;
             vector.vectorZ *= multiplier;
+            copyBackToClientVelocity(player, vector);
         }
     }
 
