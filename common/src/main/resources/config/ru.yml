@@ -25,7 +25,8 @@ client-brand:
     ignored-clients:
         - "^vanilla$"
         - "^fabric$"
-        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4}$"
+        - "^quilt$"
+        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4},(?:fabric|forge)$"
         - "^Feather Fabric$"
         - "^labymod$"
     # Grim will blacklist specific Forge versions which include built-in Reach hacks (Forge 1.18.2 to 1.19.3).
@@ -46,6 +47,13 @@ max-transaction-time: 60
 # This may improve compatibility with other anticheats. It may cause issues with packet limiters.
 # Do not enable this if you are not sure what you are doing.
 disable-pong-cancelling: false
+
+# Нужно ли отключить стандартный обработчик рассинхронизации блоков?
+# По умолчанию Grim считывает блоки из мира сервера и отправляет их клиенту для исправления рассинхронизации.
+# Если вы используете плагины, создающие фейковые блоки через пакеты (которых нет в мире сервера),
+# вам следует установить значение true, чтобы Grim не перезаписывал их воздухом или реальными блоками.
+# Это принудительно включает использование обработчика "NoOp" (бездействия), если через API не предоставлен свой.
+disable-default-resync-handler: false
 
 # Should the duplicate movement packet be cancelled?
 # Mojang has fixed this issue in 1.21. This was their attempt to fix the "bucket desync". https://bugs.mojang.com/browse/MC-12363
@@ -187,6 +195,9 @@ debug-pipeline-on-join: false
 # Включает экспериментальные проверки
 experimental-checks: false
 
+# Совместное использование одинаковых секций чанков между игроками для экономии памяти (копирование при записи).
+experimental-chunk-sharing: false
+
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true
 reset-item-usage-on-slot-change: true
@@ -207,20 +218,24 @@ max-ping-out-of-flying: 1000
 # Это предотвращает возможность для игроков с большим пингом бесконечно использовать один фейерверк‑буст с элитрой.
 max-ping-firework-boost: 1000
 
-history:
-    enabled: true
-    # Сколько записей показывать на странице команды /grim history <player>
-    entries-per-page: 15
-    # Какое имя сервера вставлять для команды history? Полезно при использовании одной базы для нескольких серверов
-    server-name: Prison
-    database:
-        # Используйте SQLITE для локального хранения или MYSQL для внешней MySQL‑БД. Изменения применяются после перезапуска сервера
-        type: SQLITE
-        # Параметры подключения MySQL
-        host: localhost
-        port: 3306
-        database: grim
-        username: root
-        password: ""
+# Маркеры схемы — менять только если понимаете, что делаете.
+#   config-flavor:  V2 = сборка Grim 2.x, V3 = Grim 3.x. Плагин отказывается
+#                   загружать конфиг, чей flavor не совпадает с его собственной
+#                   сборкой: V3-конфиг, открытый V2-jar, немедленно падает с
+#                   ошибкой вместо того чтобы молча слиться в неверные ключи.
+#   config-version: увеличивается при каждом несовместимом изменении формата.
+#                   Старые конфиги при следующем запуске автоматически
+#                   мигрирует встроенный updater.
+# Grim всегда обновляет кэшированные права, когда игрок заходит и когда Grim
+# перезагружается, независимо от того, установлен ли LuckPerms.
+# Хуки событий LuckPerms в обычных конфигурациях также сразу обновляют
+# кэшированные права Grim.
+# Этот периодический резервный механизм нужен только для изменений прав онлайн,
+# которые не покрываются этими событиями, например для пользовательского контекста
+# LuckPerms, который не вызывает signalContextUpdate, пробелов в контекстах Fabric
+# или провайдера прав не LuckPerms, который меняет права в реальном времени.
+# Установите -1, чтобы отключить опрос. Положительное значение обновляет каждые X тиков.
+update-permission-ticks: -1
 
-config-version: 9
+config-flavor: V2
+config-version: 11

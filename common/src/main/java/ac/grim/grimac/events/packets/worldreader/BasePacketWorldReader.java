@@ -2,6 +2,7 @@ package ac.grim.grimac.events.packets.worldreader;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.chunks.ChunkSectionCache;
 import ac.grim.grimac.utils.chunks.Column;
 import ac.grim.grimac.utils.data.TeleportData;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
@@ -9,6 +10,7 @@ import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.world.chunk.BaseChunk;
+import com.github.retrooper.packetevents.protocol.world.chunk.TileEntity;
 import com.github.retrooper.packetevents.util.Vector3i;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerAcknowledgeBlockChanges;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerAcknowledgePlayerDigging;
@@ -106,17 +108,17 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
         // Only exists in 1.7 and 1.8
         WrapperPlayServerChunkDataBulk chunkData = new WrapperPlayServerChunkDataBulk(event);
         for (int i = 0; i < chunkData.getChunks().length; i++) {
-            addChunkToCache(event, player, chunkData.getChunks()[i], true, chunkData.getX()[i], chunkData.getZ()[i]);
+            addChunkToCache(event, player, chunkData.getChunks()[i], true, chunkData.getX()[i], chunkData.getZ()[i], null);
         }
     }
 
     public void handleMapChunk(GrimPlayer player, PacketSendEvent event) {
         WrapperPlayServerChunkData chunkData = new WrapperPlayServerChunkData(event);
-        addChunkToCache(event, player, chunkData.getColumn().getChunks(), chunkData.getColumn().isFullChunk(), chunkData.getColumn().getX(), chunkData.getColumn().getZ());
+        addChunkToCache(event, player, chunkData.getColumn().getChunks(), chunkData.getColumn().isFullChunk(), chunkData.getColumn().getX(), chunkData.getColumn().getZ(), null);
         event.setLastUsedWrapper(null);
     }
 
-    public void addChunkToCache(PacketSendEvent event, GrimPlayer player, BaseChunk[] chunks, boolean isGroundUp, int chunkX, int chunkZ) {
+    public void addChunkToCache(PacketSendEvent event, GrimPlayer player, BaseChunk[] chunks, boolean isGroundUp, int chunkX, int chunkZ, TileEntity[] tileEntities) {
         double chunkCenterX = (chunkX << 4) + 8;
         double chunkCenterZ = (chunkZ << 4) + 8;
         boolean shouldPostTrans = Math.abs(player.x - chunkCenterX) < 16 && Math.abs(player.z - chunkCenterZ) < 16;
@@ -132,20 +134,11 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
             event.getTasksAfterSend().add(player::sendTransaction); // Player is in this unloaded chunk
         }
         if (isGroundUp) {
-            Column column = new Column(chunkX, chunkZ, chunks, player.lastTransactionSent.get());
-            player.compensatedWorld.addToCache(column, chunkX, chunkZ);
+            Column column = new Column(chunkX, chunkZ, chunks, new long[chunks.length], player.lastTransactionSent.get());
+            player.compensatedWorld.addToCache(column, chunkX, chunkZ, tileEntities);
         } else {
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
-                Column existingColumn = player.compensatedWorld.getChunk(chunkX, chunkZ);
-                if (existingColumn == null) {
-                    // Corrupting the player's empty chunk is actually quite meaningless
-                    // You are able to set blocks inside it, and they do apply, it just always returns air despite what its data says
-                    // So go ahead, corrupt the player's empty chunk and make it no longer all air, it doesn't matter
-                    //
-                    // LogUtil.warn("Invalid non-ground up continuous sent for empty chunk " + chunkX + " " + chunkZ + " for " + player.user.getProfile().getName() + "! This corrupts the player's empty chunk!");
-                    return;
-                }
-                existingColumn.mergeChunks(chunks);
+                ChunkSectionCache.mergeIncomingSections(player.compensatedWorld, chunkX, chunkZ, chunks);
             });
         }
     }
@@ -173,7 +166,7 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
 
         int range = 16;
 
-        final var blocks = multiBlockChange.getBlocks();
+        final WrapperPlayServerMultiBlockChange.EncodedBlock[] blocks = multiBlockChange.getBlocks();
         for (WrapperPlayServerMultiBlockChange.EncodedBlock blockChange : blocks) {
             // Don't send a transaction unless it's within 16 blocks of the player
             if (Math.abs(blockChange.getX() - player.x) < range && Math.abs(blockChange.getY() - player.y) < range && Math.abs(blockChange.getZ() - player.z) < range && player.lastTransSent + 2 < System.currentTimeMillis()) {

@@ -22,7 +22,6 @@ public class SimpleCollisionBox implements CollisionBox {
     public static final double COLLISION_EPSILON = 1.0E-7;
 
     public double minX, minY, minZ, maxX, maxY, maxZ;
-    private final SimpleCollisionBox[] boxes = new SimpleCollisionBox[ComplexCollisionBox.DEFAULT_MAX_COLLISION_BOX_SIZE];
     private boolean isFullBlock = false;
 
     public SimpleCollisionBox() {
@@ -181,6 +180,16 @@ public class SimpleCollisionBox implements CollisionBox {
         return this;
     }
 
+    public SimpleCollisionBox encompass(double x, double y, double z) {
+        this.minX = Math.min(this.minX, x);
+        this.minY = Math.min(this.minY, y);
+        this.minZ = Math.min(this.minZ, z);
+        this.maxX = Math.max(this.maxX, x);
+        this.maxY = Math.max(this.maxY, y);
+        this.maxZ = Math.max(this.maxZ, z);
+        return this;
+    }
+
     public SimpleCollisionBox expandToAbsoluteCoordinates(double x, double y, double z) {
         return expandToCoordinate(x - ((minX + maxX) / 2), y - ((minY + maxY) / 2), z - ((minZ + maxZ) / 2));
     }
@@ -245,6 +254,7 @@ public class SimpleCollisionBox implements CollisionBox {
             return isIntersected((SimpleCollisionBox) other);
         }
 
+        SimpleCollisionBox[] boxes = new SimpleCollisionBox[ComplexCollisionBox.DEFAULT_MAX_COLLISION_BOX_SIZE];
         int size = other.downCast(boxes);
 
         for (int i = 0; i < size; i++) {
@@ -593,14 +603,12 @@ public class SimpleCollisionBox implements CollisionBox {
     }
 
     public static Iterable<Vector3i> betweenCornersInDirection(SimpleCollisionBox boundingBox, Vector3d directionVector) {
-        Vector3d min = boundingBox.min().toVector3d();
-        int minX = GrimMath.floor(min.x);
-        int minY = GrimMath.floor(min.y);
-        int minZ = GrimMath.floor(min.z);
-        Vector3d max = boundingBox.max().toVector3d();
-        int maxX = GrimMath.floor(max.x);
-        int maxY = GrimMath.floor(max.y);
-        int maxZ = GrimMath.floor(max.z);
+        int minX = GrimMath.floor(boundingBox.minX);
+        int minY = GrimMath.floor(boundingBox.minY);
+        int minZ = GrimMath.floor(boundingBox.minZ);
+        int maxX = GrimMath.floor(boundingBox.maxX);
+        int maxY = GrimMath.floor(boundingBox.maxY);
+        int maxZ = GrimMath.floor(boundingBox.maxZ);
         return betweenCornersInDirection(minX, minY, minZ, maxX, maxY, maxZ, directionVector);
     }
 

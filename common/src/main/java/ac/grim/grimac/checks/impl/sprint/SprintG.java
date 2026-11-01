@@ -2,13 +2,14 @@ package ac.grim.grimac.checks.impl.sprint;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.PostPredictionListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
+import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 
-@CheckData(name = "SprintG", description = "Sprinting while in water", experimental = true)
-public class SprintG extends Check implements PostPredictionCheck {
+@CheckData(name = "SprintG", stableKey = "grim.sprint.water", description = "Sprinting while in water", experimental = true)
+public class SprintG extends Check implements PostPredictionListener {
     public SprintG(GrimPlayer player) {
         super(player);
     }
@@ -17,9 +18,11 @@ public class SprintG extends Check implements PostPredictionCheck {
     public void onPredictionComplete(final PredictionComplete predictionComplete) {
         if (player.wasTouchingWater && (player.wasWasTouchingWater || player.getClientVersion() == ClientVersion.V_1_21_4)
                 && !player.wasEyeInWater && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13)
-                && player.wasLastPredictionCompleteChecked && predictionComplete.isChecked()) {
-            if (player.isSprinting && !player.isSwimming) {
-                flagAndAlertWithSetback();
+                && player.wasLastPredictionCompleteChecked && predictionComplete.isChecked()
+                && !EntityTypes.isTypeInstanceOf(player.getVehicleType(), EntityTypes.CAMEL)
+                && !player.isSwimming) {
+            if (player.isSprinting) {
+                flagWithSetback();
             } else {
                 reward();
             }

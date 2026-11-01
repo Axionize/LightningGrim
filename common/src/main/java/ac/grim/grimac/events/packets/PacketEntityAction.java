@@ -3,9 +3,15 @@ package ac.grim.grimac.events.packets;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.checks.impl.elytra.ElytraA;
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.data.IntToObjectPair;
+import ac.grim.grimac.utils.data.SprintingState;
+import ac.grim.grimac.utils.data.packetentity.JumpableEntity;
+import ac.grim.grimac.utils.data.packetentity.PacketEntity;
+import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
@@ -30,34 +36,32 @@ public class PacketEntityAction extends PacketListenerAbstract {
             if (player == null) return;
 
             switch (action.getAction()) {
-                case START_SPRINTING:
+                case START_SPRINTING -> {
                     player.isSprinting = true;
-                    break;
-                case STOP_SPRINTING:
+                    player.vehicleData.camelSprintingState = SprintingState.STARTED;
+                }
+                case STOP_SPRINTING -> {
                     player.isSprinting = false;
-                    break;
-                case START_SNEAKING:
-                    player.isSneaking = true;
-                    break;
-                case STOP_SNEAKING:
-                    player.isSneaking = false;
-                    break;
-                case START_FLYING_WITH_ELYTRA:
+                    player.vehicleData.camelSprintingState = SprintingState.STOPPED;
+                }
+                case START_SNEAKING -> player.isSneaking = true;
+                case STOP_SNEAKING -> player.isSneaking = false;
+                case START_FLYING_WITH_ELYTRA -> {
+                    if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9))
+                        return;
+
                     if (player.onGround || player.lastOnGround) {
-                        player.getSetbackTeleportUtil().executeForceResync();
-
-                        if (player.platformPlayer != null) {
-                            // Client ignores sneaking, use it to resync
-                            player.platformPlayer.setSneaking(!player.platformPlayer.isSneaking());
-                        }
-
+                        player.getSetbackTeleportUtil().executeNonSimulatingForceResync();
+                        player.resyncGlidingState();
                         event.setCancelled(true);
                         player.onPacketCancel();
-                        break;
+                        return;
                     }
+
+                    player.checkManager.get(ElytraA.class).onStartGliding(event);
+
                     // Starting fall flying is server sided on 1.14 and below
                     if (player.getClientVersion().isOlderThan(ClientVersion.V_1_15)) return;
-                    player.checkManager.getPostPredictionCheck(ElytraA.class).onStartGliding(event);
 
                     // This shouldn't be needed with latency compensated inventories
                     // TODO: Remove this?
@@ -66,24 +70,19 @@ public class PacketEntityAction extends PacketListenerAbstract {
                         player.pointThreeEstimator.updatePlayerGliding();
                     } else {
                         // A client is flying with a ghost elytra, resync
-                        player.getSetbackTeleportUtil().executeForceResync();
-                        if (player.platformPlayer != null) {
-                            // Client ignores sneaking, use it to resync
-                            player.platformPlayer.setSneaking(!player.platformPlayer.isSneaking());
-                        }
+                        player.getSetbackTeleportUtil().executeNonSimulatingForceResync();
+                        player.resyncGlidingState();
                         event.setCancelled(true);
                         player.onPacketCancel();
                     }
-                    break;
-                case START_JUMPING_WITH_HORSE:
-                    int jumpBoost = action.getJumpBoost();
-                    if (jumpBoost < 0) jumpBoost = 0;
-                    if (jumpBoost >= 90) {
-                        player.vehicleData.nextHorseJump = 1;
-                    } else {
-                        player.vehicleData.nextHorseJump = 0.4F + 0.4F * jumpBoost / 90.0F;
+                }
+                case START_JUMPING_WITH_HORSE -> {
+                    PacketEntity riding = player.compensatedEntities.self.getRiding();
+                    if (riding instanceof JumpableEntity jumpable) {
+                        if (player.vehicleData.pendingJumps.size() >= 20) return; // discard
+                        player.vehicleData.pendingJumps.add(new IntToObjectPair<>(action.getJumpBoost(), jumpable));
                     }
-                    break;
+                }
             }
         }
     }

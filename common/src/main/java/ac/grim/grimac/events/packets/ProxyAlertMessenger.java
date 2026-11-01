@@ -13,14 +13,16 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import github.scarsz.configuralize.DynamicConfig;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
+import java.util.Map;
 
 // TODO (Cross-Platform) ensure this is correct, and modify to only check appropriate files for each platform
 public class ProxyAlertMessenger extends PacketListenerAbstract {
-    private static boolean usingProxy;
+    @Getter private static boolean usingProxy;
 
     public ProxyAlertMessenger() {
         usingProxy = ProxyAlertMessenger.getBooleanFromFile("spigot.yml", "settings.bungeecord")
@@ -69,11 +71,15 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
         File file = new File(pathToFile);
         if (!file.exists()) return false;
 
-        DynamicConfig config = new DynamicConfig();
-        config.addSource(ProxyAlertMessenger.class, "temp", file);
-        try {
-            config.loadAll();
-            return config.getBoolean(pathToValue);
+        try (InputStream in = new FileInputStream(file)) {
+            Object current = new Yaml().load(in);
+
+            for (String part : pathToValue.split("\\.")) {
+                if (!(current instanceof Map map)) return false;
+                current = map.get(part);
+            }
+
+            return Boolean.TRUE.equals(current);
         } catch (Exception e) {
             return false;
         }

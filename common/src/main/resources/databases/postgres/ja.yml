@@ -1,0 +1,53 @@
+# ===========================================================================
+#  Postgres バックエンド設定
+#
+#  Postgres はマルチサーバー構成（複数の Grim インスタンスから 1 つの
+#  中央 DB への書き込み）に対応します。実行時に Postgres JDBC ドライバが
+#  必要で、ドライバが見つからない場合は起動時に自己無効化し、これを
+#  参照していたルーティングはフォールバックに切り替わります。
+# ===========================================================================
+
+# すべてのキーは `postgres:` の下に置きます。これにより、Configuralize が
+# すべてを 1 つのグローバル名前空間にマージしても、兄弟のバックエンド
+# ファイルと keyspace が衝突しません。
+postgres:
+  host: "localhost"
+  port: 5432
+  database: "grim"
+  user: "postgres"
+  password: ""
+
+  # HikariCP connection pool settings. These only apply to SQL backends
+  # that use Hikari internally.
+  pool-settings:
+    # Maximum physical database connections this Grim instance can keep open.
+    maximum-pool-size: 5
+    # Minimum idle connections kept warm. Keep equal to maximum-pool-size
+    # for a fixed-size pool, or lower it if your database has tight limits.
+    minimum-idle: 5
+    # Retire connections after this many milliseconds. 1800000 is Hikari's
+    # default 30 minutes; use 0 only if your database/proxy handles lifetime.
+    maximum-lifetime-ms: 1800000
+    # Periodically ping idle connections. 0 disables keepalive.
+    keepalive-time-ms: 0
+    # Maximum time to wait for a connection from the pool before failing.
+    connection-timeout-ms: 5000
+
+  # `?` の後ろに追加される URL パラメータです。特に必要が無ければ空の
+  # まま。
+  extra-jdbc-params: ""
+
+  batch-flush-cap: 256
+
+  # テーブル名の上書き。デフォルト値は以下の通り。
+  tables:
+    meta: grim_meta
+    checks: grim_checks
+    players: grim_players
+    sessions: grim_sessions
+    violations: grim_violations
+    settings: grim_settings
+
+# スキーマ用マーカー — config.yml のヘッダーコメントを参照。
+config-flavor: V2
+config-version: 2

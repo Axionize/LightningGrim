@@ -3,6 +3,7 @@ package ac.grim.grimac.command.commands;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.command.BuildableCommand;
 import ac.grim.grimac.manager.init.start.SuperDebug;
+import ac.grim.grimac.platform.api.manager.cloud.CloudPlatformCommandArguments;
 import ac.grim.grimac.platform.api.sender.Sender;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import ac.grim.grimac.utils.anticheat.MessageUtil;
@@ -44,6 +45,8 @@ public class GrimLog implements BuildableCommand {
         try {
             urlConn.setDoOutput(true);
             urlConn.setRequestMethod("POST");
+            urlConn.setConnectTimeout(CommonGrimArguments.URL_TIMEOUT.value());
+            urlConn.setReadTimeout(CommonGrimArguments.URL_TIMEOUT.value());
             urlConn.addRequestProperty("User-Agent", "GrimAC/" + GrimAPI.INSTANCE.getExternalAPI().getGrimVersion());
             urlConn.addRequestProperty("Content-Type", type); // Not really yaml, but looks nicer than plaintext
             urlConn.setRequestProperty("Content-Length", Integer.toString(log.length()));
@@ -68,7 +71,7 @@ public class GrimLog implements BuildableCommand {
     }
 
     @Override
-    public void register(CommandManager<Sender> commandManager) {
+    public void register(CommandManager<Sender> commandManager, CloudPlatformCommandArguments arguments) {
         Command<Sender> command = commandManager.commandBuilder("grim", "grimac")
                 .literal("log", "logs")
                 .permission("grim.log")

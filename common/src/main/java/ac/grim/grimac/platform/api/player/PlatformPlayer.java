@@ -10,9 +10,7 @@ import org.jetbrains.annotations.Nullable;
 public interface PlatformPlayer extends GrimEntity, OfflinePlatformPlayer {
     void kickPlayer(String textReason);
 
-    boolean isSneaking();
-
-    void setSneaking(boolean b);
+    void resyncSharedFlags();
 
     boolean hasPermission(String s);
 
@@ -45,4 +43,6 @@ public interface PlatformPlayer extends GrimEntity, OfflinePlatformPlayer {
      * Vanilla MC replaces ServerPlayerEntity references on respawn and dimension change
      */
     default void replaceNativePlayer(Object nativePlayerObject) {}
+
+    BlockTranslator getBlockTranslator();
 }

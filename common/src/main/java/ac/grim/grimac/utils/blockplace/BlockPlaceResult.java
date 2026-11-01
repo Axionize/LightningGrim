@@ -31,7 +31,7 @@ public enum BlockPlaceResult {
     // If the block only has directional data
     ANVIL((player, place) -> {
         WrappedBlockState data = place.material.createBlockState(CompensatedWorld.blockVersion);
-        data.setFacing(BlockFaceHelper.getClockWise(place.getPlayerFacing()));
+        data.setFacing(place.getPlayerFacing().getCW());
         place.set(data);
     }, ItemTags.ANVIL),
 
@@ -133,6 +133,17 @@ public enum BlockPlaceResult {
             }
         }
     }, ItemTypes.LADDER),
+
+    SHELF_MUSHROOM((player, place) -> {
+        for (BlockFace face : place.getNearestPlacingDirections()) {
+            if (BlockFaceHelper.isFaceHorizontal(face) && place.isFullFace(face)) {
+                WrappedBlockState mushroom = place.material.createBlockState(CompensatedWorld.blockVersion);
+                mushroom.setFacing(face.getOppositeFace());
+                place.set(mushroom);
+                return;
+            }
+        }
+    }, ItemTypes.SHELF_MUSHROOM),
 
     FARM_BLOCK((player, place) -> {
         // What we also need to check:
@@ -249,18 +260,9 @@ public enum BlockPlaceResult {
         BlockFace face = place.getFace();
 
         switch (face) {
-            case EAST:
-            case WEST:
-                chain.setAxis(Axis.X);
-                break;
-            case NORTH:
-            case SOUTH:
-                chain.setAxis(Axis.Z);
-                break;
-            case UP:
-            case DOWN:
-                chain.setAxis(Axis.Y);
-                break;
+            case EAST, WEST -> chain.setAxis(Axis.X);
+            case NORTH, SOUTH -> chain.setAxis(Axis.Z);
+            case UP, DOWN -> chain.setAxis(Axis.Y);
         }
 
         place.set(chain);
@@ -336,7 +338,7 @@ public enum BlockPlaceResult {
         // No valid locations
         if (!primaryValid) return;
 
-        WrappedBlockState toPlace = StateTypes.POINTED_DRIPSTONE.createBlockState(CompensatedWorld.blockVersion);
+        WrappedBlockState toPlace = place.getMaterial().createBlockState(CompensatedWorld.blockVersion);
         toPlace.setVerticalDirection(VerticalDirection.valueOf(primaryDir.name())); // This block is facing UPWARDS as placed on the top face
 
         // We then have to calculate the thickness of the dripstone
@@ -351,7 +353,7 @@ public enum BlockPlaceResult {
         Dripstone.update(player, toPlace, placedPos.getX(), placedPos.getY(), placedPos.getZ(), place.isSecondaryUse());
 
         place.set(toPlace);
-    }, ItemTypes.POINTED_DRIPSTONE),
+    }, ItemTypes.POINTED_DRIPSTONE, ItemTypes.SULFUR_SPIKE),
 
     CACTUS((player, place) -> {
         for (BlockFace face : BlockPlace.BY_2D) {
@@ -792,7 +794,7 @@ public enum BlockPlaceResult {
             }
         }
 
-        if (below != StateTypes.MAGMA_BLOCK && (place.isFullFace(BlockFace.DOWN) || below == StateTypes.KELP || below == StateTypes.KELP_PLANT) && fluidLevel >= 8 / 9d) {
+        if (below != StateTypes.MAGMA_BLOCK && (place.isFullFace(BlockFace.DOWN) || below == StateTypes.KELP || below == StateTypes.KELP_PLANT) && fluidLevel >= 8 / 9f) {
             place.set(place.material);
         }
     }, ItemTypes.KELP),
@@ -904,7 +906,7 @@ public enum BlockPlaceResult {
             // Get the hinge
             BlockFace playerFacing = place.getPlayerFacing();
 
-            BlockFace ccw = BlockFaceHelper.getCounterClockwise(playerFacing);
+            BlockFace ccw = playerFacing.getCCW();
             WrappedBlockState ccwState = place.getDirectionalState(ccw);
             CollisionBox ccwBox = CollisionData.getData(ccwState.getType()).getMovementCollisionBox(player, player.getClientVersion(), ccwState);
 
@@ -912,7 +914,7 @@ public enum BlockPlaceResult {
             WrappedBlockState aboveCCWState = player.compensatedWorld.getBlock(aboveCCWPos);
             CollisionBox aboveCCWBox = CollisionData.getData(aboveCCWState.getType()).getMovementCollisionBox(player, player.getClientVersion(), aboveCCWState);
 
-            BlockFace cw = BlockFaceHelper.getPEClockWise(playerFacing);
+            BlockFace cw = playerFacing.getCW();
             WrappedBlockState cwState = place.getDirectionalState(cw);
             CollisionBox cwBox = CollisionData.getData(cwState.getType()).getMovementCollisionBox(player, player.getClientVersion(), cwState);
 

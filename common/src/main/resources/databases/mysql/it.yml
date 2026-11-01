@@ -1,0 +1,63 @@
+# ===========================================================================
+#  Impostazioni del backend MySQL.
+#
+#  MySQL supporta deployment multi-server (più istanze Grim che scrivono
+#  in un DB centrale). Richiede il driver MySQL Connector/J a runtime; se
+#  manca, il backend si disabilita all'avvio, logga un errore chiaro, e il
+#  routing che puntava qui ricade su ciò che è configurato altrove.
+# ===========================================================================
+
+# Tutte le chiavi vivono sotto `mysql:` così il keyspace di questo file
+# non collide con i file fratelli per backend (sqlite:, postgres:, mongo:,
+# redis:) quando Configuralize li unisce in un namespace globale.
+mysql:
+  # Destinazione della connessione.
+  host: "localhost"
+  port: 3306
+  database: "grim"
+  user: "root"
+  password: ""
+
+  # HikariCP connection pool settings. These only apply to SQL backends
+  # that use Hikari internally.
+  pool-settings:
+    # Maximum physical database connections this Grim instance can keep open.
+    maximum-pool-size: 10
+    # Minimum idle connections kept warm. Keep equal to maximum-pool-size
+    # for a fixed-size pool, or lower it if your database has tight limits.
+    minimum-idle: 10
+    # Retire connections after this many milliseconds. 1800000 is Hikari's
+    # default 30 minutes; use 0 only if your database/proxy handles lifetime.
+    maximum-lifetime-ms: 1800000
+    # Periodically ping idle connections. 0 disables keepalive.
+    keepalive-time-ms: 0
+    # Maximum time to wait for a connection from the pool before failing.
+    connection-timeout-ms: 5000
+
+  # Parametri URL extra appesi dopo il set fisso
+  # (useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true).
+  # Lascia vuoto se non hai bisogno di qualcosa di specifico — i default
+  # sono quelli giusti per un'installazione locale di sviluppo.
+  extra-jdbc-params: ""
+
+  # Tetto di flush per handler per batch. Ogni handler di ring accumula
+  # eventi in un batch PreparedStatement e fa commit su endOfBatch OPPURE
+  # quando il batch raggiunge questo tetto, a seconda di quale arrivi
+  # prima. Valori più alti scambiano latenza per throughput sotto burst
+  # sostenuti.
+  batch-flush-cap: 256
+
+  # Override dei nomi tabella. Rinomina uno qualsiasi dei sei store logici
+  # così più istanze Grim possono condividere lo stesso DB MySQL, o per
+  # combaciare con uno schema di naming aziendale. Default sotto.
+  tables:
+    meta: grim_meta
+    checks: grim_checks
+    players: grim_players
+    sessions: grim_sessions
+    violations: grim_violations
+    settings: grim_settings
+
+# Marcatori di schema — vedi il commento di intestazione in config.yml.
+config-flavor: V2
+config-version: 2

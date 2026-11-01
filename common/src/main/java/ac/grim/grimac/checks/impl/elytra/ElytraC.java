@@ -2,17 +2,17 @@ package ac.grim.grimac.checks.impl.elytra;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.PacketReceiveListener;
+import ac.grim.grimac.checks.type.PostPredictionListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
-import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
 
-@CheckData(name = "ElytraC", description = "Started gliding too frequently")
-public class ElytraC extends Check implements PostPredictionCheck {
+@CheckData(name = "ElytraC", stableKey = "grim.elytra.too_frequent", description = "Started gliding too frequently")
+public class ElytraC extends Check implements PacketReceiveListener, PostPredictionListener {
     private boolean glideThisTick, glideLastTick, setback;
     private int flags;
     public boolean exempt;
@@ -22,12 +22,13 @@ public class ElytraC extends Check implements PostPredictionCheck {
     }
 
     @Override
-    public void onPacketReceive(PacketReceiveEvent event) {
-        if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_8)) {
-            return;
-        }
+    public boolean isApplicable() {
+        return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9);
+    }
 
-        if (player.gamemode == GameMode.SPECTATOR) {
+    @Override
+    public void onPacketReceive(PacketReceiveEvent event) {
+        if (!player.cameraEntity.isSelf()) {
             glideThisTick = glideLastTick = false;
         }
 
@@ -35,14 +36,12 @@ public class ElytraC extends Check implements PostPredictionCheck {
             if (glideThisTick || glideLastTick) {
                 if (player.canSkipTicks()) {
                     flags++;
-                } else {
-                    if (flagAndAlert()) {
-                        setback = true;
-                        if (shouldModifyPackets()) {
-                            event.setCancelled(true);
-                            player.onPacketCancel();
-                            player.resyncPose();
-                        }
+                } else if (flag()) {
+                    setback = true;
+                    if (shouldModifyPackets()) {
+                        event.setCancelled(true);
+                        player.onPacketCancel();
+                        player.resyncGlidingState();
                     }
                 }
             }
@@ -61,7 +60,7 @@ public class ElytraC extends Check implements PostPredictionCheck {
         if (player.canSkipTicks()) {
             if (player.isTickingReliablyFor(3)) {
                 for (; flags > 0; flags--) {
-                    flagAndAlert();
+                    flag();
                 }
             }
 

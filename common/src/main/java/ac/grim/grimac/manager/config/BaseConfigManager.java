@@ -23,6 +23,14 @@ public class BaseConfigManager {
     @Getter
     private String prefix = "&bGrim &8»";
     @Getter
+    private String webhookNotEnabled;
+    @Getter
+    private String webhookTestMessage;
+    @Getter
+    private String webhookTestSucceeded;
+    @Getter
+    private String webhookTestFailed;
+    @Getter
     private String disconnectTimeout;
     @Getter
     private String disconnectClosed;
@@ -32,9 +40,10 @@ public class BaseConfigManager {
     private String disconnectBlacklistedForge;
     @Getter
     private boolean blockBlacklistedForgeClients;
-
     @Getter
     private boolean disablePongCancelling;
+    @Getter
+    private int updatePermissionTicks = -1;
 
     // initialize the config
     public void load(ConfigManager config) {
@@ -46,30 +55,37 @@ public class BaseConfigManager {
         }
 
         ignoredClientPatterns.clear();
-        for (String string : config.getStringList("client-brand.ignored-clients")) {
-            try {
-                ignoredClientPatterns.add(Pattern.compile(string));
-            } catch (PatternSyntaxException e) {
-                throw new RuntimeException("Failed to compile client pattern", e);
+        List<String> ignoredClients = config.getStringList("client-brand.ignored-clients");
+        if (ignoredClients != null) {
+            for (String string : ignoredClients) {
+                try {
+                    ignoredClientPatterns.add(Pattern.compile(string));
+                } catch (PatternSyntaxException e) {
+                    throw new RuntimeException("Failed to compile client pattern", e);
+                }
             }
         }
 
         printAlertsToConsole = config.getBooleanElse("alerts.print-to-console", true);
         prefix = config.getStringElse("prefix", "&bGrim &8»");
 
+        webhookNotEnabled = config.getStringElse("webhook-not-enabled", "Discord webhooks are not enabled!");
+        webhookTestMessage = config.getStringElse("webhook-test-message", "test message");
+        webhookTestSucceeded = config.getStringElse("webhook-test-succeeded", "Discord webhook test succeeded!");
+        webhookTestFailed = config.getStringElse("webhook-test-failed", "Discord webhook test failed!");
         disconnectTimeout = config.getStringElse("disconnect.timeout", "<lang:disconnect.timeout>");
         disconnectClosed = config.getStringElse("disconnect.closed", "<lang:disconnect.timeout>");
         disconnectPacketError = config.getStringElse("disconnect.error", "<red>An error occurred whilst processing packets. Please contact the administrators.");
         blockBlacklistedForgeClients = config.getBooleanElse("client-brand.disconnect-blacklisted-forge-versions", true);
         disconnectBlacklistedForge = config.getStringElse("disconnect.blacklisted-forge",
                 "<red>Your forge version is blacklisted due to inbuilt reach hacks.<newline><gold>Versions affected: 1.18.2-1.19.3<newline><newline><red>Please see https://github.com/MinecraftForge/MinecraftForge/issues/9309.");
-
         disablePongCancelling = config.getBooleanElse("disable-pong-cancelling", false);
+        int configuredUpdatePermissionTicks = config.getIntElse("update-permission-ticks", -1);
+        updatePermissionTicks = configuredUpdatePermissionTicks <= 0 ? -1 : configuredUpdatePermissionTicks;
     }
 
     // ran on start, can be used to handle things that can't be done while loading
-    public void start() {
-    }
+    public void start() {}
 
     public boolean isIgnoredClient(String brand) {
         for (Pattern pattern : ignoredClientPatterns) {

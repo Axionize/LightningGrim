@@ -25,7 +25,8 @@ client-brand:
     ignored-clients:
         - "^vanilla$"
         - "^fabric$"
-        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4}$"
+        - "^quilt$"
+        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4},(?:fabric|forge)$"
         - "^Feather Fabric$"
         - "^labymod$"
     # Grim will blacklist specific Forge versions which include built-in Reach hacks (Forge 1.18.2 to 1.19.3).
@@ -46,6 +47,13 @@ max-transaction-time: 60
 # This may improve compatibility with other anticheats. It may cause issues with packet limiters.
 # Do not enable this if you are not sure what you are doing.
 disable-pong-cancelling: false
+
+# Should the default block resynchronization handler be disabled?
+# By default, Grim reads blocks from the server world and sends them to the client to fix desync.
+# If you use plugins that create fake packet-based blocks (which don't exist in the server world),
+# you should set this to true to prevent Grim from overwriting them with air/real blocks.
+# This forces the use of a "NoOp" (No Operation) handler unless a custom one is provided via API.
+disable-default-resync-handler: false
 
 # Should the duplicate movement packet be cancelled?
 # Mojang has fixed this issue in 1.21. This was their attempt to fix the "bucket desync". https://bugs.mojang.com/browse/MC-12363
@@ -191,6 +199,9 @@ debug-pipeline-on-join: false
 # Enables experimental checks
 experimental-checks: false
 
+# Shares identical chunk sections between players to save memory (copy-on-write on edit).
+experimental-chunk-sharing: false
+
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true
 reset-item-usage-on-slot-change: true
@@ -211,20 +222,21 @@ max-ping-out-of-flying: 1000
 # This prevents high latency players from being able to use 1 firework boost with an elytra forever.
 max-ping-firework-boost: 1000
 
-history:
-    enabled: true
-    # How many entries should be shown for each page with /grim history <player>
-    entries-per-page: 15
-    # What should the inserted server name be for the history command? This is useful if you use the same database for multiple servers
-    server-name: Prison
-    database:
-        # Use SQLITE for local storage, use MYSQL if you have an external MySQL database. This is only updated on server restart
-        type: SQLITE
-        # MySQL connection details
-        host: localhost
-        port: 3306
-        database: grim
-        username: root
-        password: ""
+# Grim always refreshes cached permissions when a player joins and when Grim reloads,
+# whether or not LuckPerms is installed.
+# LuckPerms event hooks also refresh cached Grim permissions immediately in normal setups.
+# This periodic fallback is only needed for online permission changes not covered by
+# those events, such as a custom LuckPerms context that does not call signalContextUpdate,
+# Fabric context gaps, or a non-LuckPerms permission provider that changes live.
+# Set to -1 to disable polling. Set to a positive value to refresh every X ticks.
+update-permission-ticks: -1
 
-config-version: 9
+# Schema markers — touch only if you know what you're doing.
+#   config-flavor:  V2 = Grim 2.x build, V3 = Grim 3.x. The plugin refuses
+#                   to load a config whose flavor doesn't match its own
+#                   build, so a V3 config opened by a V2 jar fails fast
+#                   instead of silently flat-merging into the wrong keys.
+#   config-version: bumped on every breaking shape change. Old configs
+#                   auto-migrate up via the bundled updater on next start.
+config-flavor: V2
+config-version: 11

@@ -25,7 +25,8 @@ client-brand:
     ignored-clients:
         - "^vanilla$"
         - "^fabric$"
-        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4}$"
+        - "^quilt$"
+        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4},(?:fabric|forge)$"
         - "^Feather Fabric$"
         - "^labymod$"
     # Grim will blacklist specific Forge versions which include built-in Reach hacks (Forge 1.18.2 to 1.19.3).
@@ -46,6 +47,13 @@ max-transaction-time: 60
 # This may improve compatibility with other anticheats. It may cause issues with packet limiters.
 # Do not enable this if you are not sure what you are doing.
 disable-pong-cancelling: false
+
+# Moet de standaard block resynchronization handler worden uitgeschakeld?
+# Standaard leest Grim blokken van de serverwereld en stuurt ze naar de client om desync op te lossen.
+# Als je plugins gebruikt die neppe packet-based blokken maken (die niet in de serverwereld bestaan),
+# moet je dit op true zetten om te voorkomen dat Grim ze overschrijft met lucht/echte blokken.
+# Dit forceert het gebruik van een "NoOp" (No Operation) handler tenzij er een aangepaste via de API wordt geleverd.
+disable-default-resync-handler: false
 
 # Moet het dubbele bewegingspakket worden geannuleerd?
 # Mojang heeft dit probleem opgelost in 1.21. Dit was hun poging om de "bucket desync" op te lossen. https://bugs.mojang.com/browse/MC-12363
@@ -191,6 +199,9 @@ debug-pipeline-on-join: false
 # Experimentele controles inschakelen
 experimental-checks: false
 
+# Deelt identieke chunksecties tussen spelers om geheugen te besparen (kopie bij schrijven).
+experimental-chunk-sharing: false
+
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true
 reset-item-usage-on-slot-change: true
@@ -211,20 +222,24 @@ max-ping-out-of-flying: 1000
 # Dit voorkomt dat spelers met hoge latency oneindig één vuurwerkboost met een elytra kunnen gebruiken.
 max-ping-firework-boost: 1000
 
-history:
-    enabled: true
-    # Hoeveel items worden per pagina weergegeven met /grim history <player>
-    entries-per-page: 15
-    # Welke servernaam moet voor het history‑commando worden ingevoerd? Handig als je dezelfde database voor meerdere servers gebruikt
-    server-name: Prison
-    database:
-        # Gebruik SQLITE voor lokale opslag, MYSQL voor een externe MySQL‑database. Alleen bijgewerkt na een serverherstart
-        type: SQLITE
-        # MySQL‑verbindingsgegevens
-        host: localhost
-        port: 3306
-        database: grim
-        username: root
-        password: ""
+# Schemamarkers — alleen aanpassen als je weet wat je doet.
+#   config-flavor:  V2 = Grim 2.x-build, V3 = Grim 3.x. De plugin weigert een
+#                   config te laden waarvan de flavor niet overeenkomt met de
+#                   eigen build: een V3-config die door een V2-jar wordt
+#                   geopend, faalt direct in plaats van stilletjes te mergen
+#                   met de verkeerde sleutels.
+#   config-version: wordt verhoogd bij elke incompatibele vormwijziging. Oude
+#                   configs worden bij de volgende start automatisch
+#                   gemigreerd door de meegeleverde updater.
+# Grim vernieuwt gecachete permissies altijd wanneer een speler joint en wanneer
+# Grim wordt herladen, ongeacht of LuckPerms is geïnstalleerd.
+# LuckPerms-eventhooks vernieuwen gecachete Grim-permissies in normale setups ook meteen.
+# Deze periodieke fallback is alleen nodig voor online permissiewijzigingen die niet
+# door die events worden gedekt, zoals een aangepaste LuckPerms-context die
+# signalContextUpdate niet aanroept, ontbrekende Fabric-contextupdates of een
+# permissieprovider anders dan LuckPerms die live permissies wijzigt.
+# Zet op -1 om polling uit te schakelen. Zet op een positieve waarde om elke X ticks te vernieuwen.
+update-permission-ticks: -1
 
-config-version: 9
+config-flavor: V2
+config-version: 11

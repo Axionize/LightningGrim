@@ -3,19 +3,25 @@ package ac.grim.grimac.predictionengine.predictions;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.SneakingEstimator;
 import ac.grim.grimac.predictionengine.movementtick.MovementTickerPlayer;
-import ac.grim.grimac.utils.math.Vec2;
+import ac.grim.grimac.predictionengine.predictions.input.DoubleInput;
+import ac.grim.grimac.predictionengine.predictions.input.FloatInput;
+import ac.grim.grimac.predictionengine.predictions.input.Input;
+import ac.grim.grimac.predictionengine.predictions.input.InputTransformer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
+import ac.grim.grimac.utils.data.IndexedVector3d;
 import ac.grim.grimac.utils.data.KnownInput;
-import ac.grim.grimac.utils.data.Pair;
+import ac.grim.grimac.utils.data.Triple;
 import ac.grim.grimac.utils.data.VectorData;
 import ac.grim.grimac.utils.math.GrimMath;
 import ac.grim.grimac.utils.math.Vec2d;
 import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.math.VectorUtils;
+import ac.grim.grimac.utils.nmsutil.BlockProperties;
 import ac.grim.grimac.utils.nmsutil.Collisions;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
 import ac.grim.grimac.utils.nmsutil.JumpPower;
 import ac.grim.grimac.utils.nmsutil.Riptide;
+import ac.grim.grimac.utils.nmsutil.StuckSpeed;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 
@@ -23,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class PredictionEngine {
@@ -30,84 +37,6 @@ public class PredictionEngine {
     public static Vector3dm clampMovementToHardBorder(GrimPlayer player, Vector3dm outputVel) {
         // TODO: Reimplement
         return outputVel;
-    }
-
-    public static Vec2d transformInputsToVector(GrimPlayer player, int strafe, int forward) {
-        if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)) {
-            Vec2 moveVector = new Vec2((float) strafe, (float) forward).normalized();
-            Vec2 input = modifyInput(player, moveVector);
-            return new Vec2d(input.x(), input.y());
-        }
-        float bestPossibleX;
-        float bestPossibleZ;
-
-        // Slow movement was determined by the previous pose
-        if (player.isSlowMovement) {
-            bestPossibleX = (float) (strafe * player.sneakingSpeedMultiplier);
-            bestPossibleZ = (float) (forward * player.sneakingSpeedMultiplier);
-        } else {
-            bestPossibleX = Math.min(Math.max(-1f, strafe), 1f);
-            bestPossibleZ = Math.min(Math.max(-1f, forward), 1f);
-        }
-
-        if (player.packetStateData.isSlowedByUsingItem()) {
-            bestPossibleX *= 0.2F;
-            bestPossibleZ *= 0.2F;
-        }
-
-        double inputVectorX = bestPossibleX;
-        double inputVectorZ = bestPossibleZ;
-        inputVectorX *= 0.98F;
-        inputVectorZ *= 0.98F;
-
-        // Simulate float rounding imprecision
-        inputVectorX = (float) inputVectorX;
-        inputVectorZ = (float) inputVectorZ;
-
-        double lengthSquared = GrimMath.lengthSquared(inputVectorX, inputVectorZ);
-        if (lengthSquared > 1) {
-            double d0 = Math.sqrt(lengthSquared);
-            inputVectorX = inputVectorX / d0;
-            inputVectorZ = inputVectorZ / d0;
-        }
-
-        return new Vec2d(inputVectorX, inputVectorZ);
-    }
-
-    public static Vec2 modifyInput(GrimPlayer player, Vec2 moveVector) {
-        if (moveVector.lengthSquared() == 0.0F) {
-            return moveVector;
-        } else {
-            Vec2 input = moveVector.scale(0.98F);
-            if (player.packetStateData.isSlowedByUsingItem() && !player.inVehicle()) {
-                input = input.scale(0.2F);
-            }
-
-            if (player.isSlowMovement) {
-                input = input.scale(player.sneakingSpeedMultiplier);
-            }
-
-            return modifyInputSpeedForSquareMovement(input);
-        }
-    }
-
-    private static Vec2 modifyInputSpeedForSquareMovement(Vec2 input) {
-        float length = input.length();
-        if (length <= 0.0F) {
-            return input;
-        } else {
-            Vec2 multiplied = input.scale(1.0F / length);
-            float distance = distanceToUnitSquare(multiplied);
-            float min = Math.min(length * distance, 1.0F);
-            return multiplied.scale(min);
-        }
-    }
-
-    private static float distanceToUnitSquare(Vec2 input) {
-        float x = Math.abs(input.x());
-        float z = Math.abs(input.y());
-        float additional = z > x ? x / z : z / x;
-        return GrimMath.sqrt(1.0F + GrimMath.square(additional));
     }
 
     public void guessBestMovement(float speed, GrimPlayer player) {
@@ -142,24 +71,25 @@ public class PredictionEngine {
         }
 
         // Finally, this was not 0.03 or small movements, so we can attempt to predict it.
-        doPredictions(player, possibleVelocities, speed);
+        Vector3dm beforeCollisionMovement = doPredictions(player, possibleVelocities, speed);
 
         // Client velocity - before collision and carried into the next tick
         // Predicted velocity - after collision and not carried into the next tick
-        new MovementTickerPlayer(player).move(player.clientVelocity.clone(), player.predictedVelocity.vectorX, player.predictedVelocity.vectorY, player.predictedVelocity.vectorZ);
+        new MovementTickerPlayer(player).move(beforeCollisionMovement, player.predictedVelocity.vectorX, player.predictedVelocity.vectorY, player.predictedVelocity.vectorZ);
         endOfTick(player, player.gravity);
     }
 
-    private void doPredictions(GrimPlayer player, List<VectorData> possibleVelocities, float speed) {
+    private Vector3dm doPredictions(GrimPlayer player, List<VectorData> possibleVelocities, float speed) {
         // Computers are actually really fast at sorting, I don't see sorting as a problem
         possibleVelocities.sort((a, b) -> sortVectorData(a, b, player));
 
-        player.checkManager.getPostPredictionCheck(SneakingEstimator.class).storePossibleVelocities(possibleVelocities);
+        player.checkManager.get(SneakingEstimator.class).storePossibleVelocities(possibleVelocities);
 
         double bestInput = Double.MAX_VALUE;
 
         VectorData bestCollisionVel = null;
         Vector3dm beforeCollisionMovement = null;
+        Vector3dm realBeforeCollisionMovement = null;
         Vector3dm originalClientVel = player.clientVelocity.clone();
 
         SimpleCollisionBox originalBB = player.boundingBox;
@@ -188,8 +118,9 @@ public class PredictionEngine {
             }
 
             // Returns pair of primary push movement, and then outputvel
-            Pair<Vector3dm, Vector3dm> output = doSeekingWallCollisions(player, primaryPushMovement, originalClientVel, clientVelAfterInput);
+            Triple<Vector3dm, Vector3dm, Vector3dm> output = doSeekingWallCollisions(player, primaryPushMovement, originalClientVel, clientVelAfterInput);
             primaryPushMovement = output.first();
+            Vector3dm realPrimaryPushMovement = output.third();
             Vector3dm outputVel = clampMovementToHardBorder(player, output.second());
 
             double resultAccuracy = outputVel.distanceSquared(player.actualMovement);
@@ -238,6 +169,7 @@ public class PredictionEngine {
                 bestCollisionVel = clientVelAfterInput.returnNewModified(outputVel, VectorData.VectorType.BestVelPicked);
                 bestCollisionVel.preUncertainty = clientVelAfterInput;
                 beforeCollisionMovement = primaryPushMovement;
+                realBeforeCollisionMovement = realPrimaryPushMovement;
 
                 // We basically want to avoid falsing ground spoof, try to find a vector that works
                 if (player.wouldCollisionResultFlagGroundSpoof(primaryPushMovement.getY(), bestCollisionVel.vectorY))
@@ -252,51 +184,57 @@ public class PredictionEngine {
             }
         }
 
-        assert beforeCollisionMovement != null;
+        Objects.requireNonNull(bestCollisionVel, "bestCollisionVel");
+        Objects.requireNonNull(beforeCollisionMovement, "beforeCollisionMovement");
+        Objects.requireNonNull(realBeforeCollisionMovement, "realBeforeCollisionMovement");
 
-        player.clientVelocity = beforeCollisionMovement.clone();
+        player.clientVelocity = realBeforeCollisionMovement.clone();
         player.predictedVelocity = bestCollisionVel; // Set predicted vel to get the vector types later in the move method
+        player.stuckSpeedMultiplier = bestCollisionVel.stuckSpeedMultiplier;
         player.boundingBox = originalBB;
 
         // If the closest vector is 0.03, consider it 0.03.
         if (player.predictedVelocity.isZeroPointZeroThree()) {
             player.skippedTickInActualMovement = true;
         }
+
+        return beforeCollisionMovement;
     }
 
-    private Pair<Vector3dm, Vector3dm> doSeekingWallCollisions(GrimPlayer player, Vector3dm primaryPushMovement, Vector3dm originalClientVel, VectorData clientVelAfterInput) {
+    private Triple<Vector3dm, Vector3dm, Vector3dm> doSeekingWallCollisions(GrimPlayer player, Vector3dm primaryPushMovement, Vector3dm originalClientVel, VectorData clientVelAfterInput) {
         boolean vehicleKB = player.inVehicle() && clientVelAfterInput.isKnockback() && clientVelAfterInput.vectorY == 0;
         // Extra collision epsilon required for vehicles to be accurate
         double xAdditional = Math.signum(primaryPushMovement.getX()) * SimpleCollisionBox.COLLISION_EPSILON;
         // The server likes sending y=0 kb "lifting" the player off the ground.
         // The client doesn't send the vehicles onGround status, so we can't check for ground like normal.
-        double yAdditional = vehicleKB ? 0 : (primaryPushMovement.getY() > 0 ? 1 : -1) * SimpleCollisionBox.COLLISION_EPSILON;
+        double yAdditional = vehicleKB ? 0 : (player.inVehicle() ? Math.signum(primaryPushMovement.getY()) : (primaryPushMovement.getY() > 0 ? 1 : -1))
+                * SimpleCollisionBox.COLLISION_EPSILON;
         double zAdditional = Math.signum(primaryPushMovement.getZ()) * SimpleCollisionBox.COLLISION_EPSILON;
 
         // Expand by the collision epsilon to test if the player collided with a block (as this resets the velocity in that direction)
         double testX = primaryPushMovement.getX() + xAdditional;
         double testY = primaryPushMovement.getY() + yAdditional;
         double testZ = primaryPushMovement.getZ() + zAdditional;
-        primaryPushMovement = new Vector3dm(testX, testY, testZ);
+        Vector3dm testPrimaryPushMovement = new Vector3dm(testX, testY, testZ);
 
-        Vector3dm outputVel = Collisions.collide(player, primaryPushMovement.getX(), primaryPushMovement.getY(), primaryPushMovement.getZ(), originalClientVel.getY(), clientVelAfterInput);
+        Vector3dm outputVel = Collisions.collide(player, testPrimaryPushMovement.getX(), testPrimaryPushMovement.getY(), testPrimaryPushMovement.getZ(), originalClientVel.getY(), clientVelAfterInput);
 
         if (testX == outputVel.getX()) { // the player didn't have X collision, don't ruin offset by collision epsilon
-            primaryPushMovement.setX(primaryPushMovement.getX() - xAdditional);
+            testPrimaryPushMovement.setX(testPrimaryPushMovement.getX() - xAdditional);
             outputVel.setX(outputVel.getX() - xAdditional);
         }
 
         if (testY == outputVel.getY()) { // the player didn't have Y collision, don't ruin offset by collision epsilon
-            primaryPushMovement.setY(primaryPushMovement.getY() - yAdditional);
+            testPrimaryPushMovement.setY(testPrimaryPushMovement.getY() - yAdditional);
             outputVel.setY(outputVel.getY() - yAdditional);
         }
 
         if (testZ == outputVel.getZ()) { // the player didn't have Z collision, don't ruin offset by collision epsilon
-            primaryPushMovement.setZ(primaryPushMovement.getZ() - zAdditional);
+            testPrimaryPushMovement.setZ(testPrimaryPushMovement.getZ() - zAdditional);
             outputVel.setZ(outputVel.getZ() - zAdditional);
         }
 
-        return new Pair<>(primaryPushMovement, outputVel);
+        return new Triple<>(testPrimaryPushMovement, outputVel, primaryPushMovement);
     }
 
     // 0.03 has some quite bad interactions with velocity + explosions (one extremely stupid line of code... thanks mojang)
@@ -354,7 +292,7 @@ public class PredictionEngine {
 
     public List<VectorData> applyInputsToVelocityPossibilities(GrimPlayer player, Set<VectorData> possibleVectors, float speed) {
         List<VectorData> returnVectors = new ArrayList<>();
-        loopVectors(player, possibleVectors, speed, returnVectors);
+        loopVectors(player, possibleVectors, speed, returnVectors, true);
         return returnVectors;
     }
 
@@ -371,7 +309,7 @@ public class PredictionEngine {
                 if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13)) {
                     Vector3dm vec3 = player.baseTickWaterPushing.clone();
                     if (Math.abs(vectorData.vectorX) < 0.003 && Math.abs(vectorData.vectorZ) < 0.003 && player.baseTickWaterPushing.length() < 0.0045000000000000005D) {
-                        vec3 = vec3.normalize().multiply(0.0045000000000000005);
+                        vec3 = VectorUtils.normalize(player, vec3).multiply(0.0045000000000000005);
                     }
                     vectorData.vectorX += vec3.getX();
                     vectorData.vectorY += vec3.getY();
@@ -412,7 +350,8 @@ public class PredictionEngine {
 
     private void addNonEffectiveAI(GrimPlayer player, Set<VectorData> data) {
         // For some reason on 1.21.5+ this no longer applies
-        if (!player.inVehicle() || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)) return;
+        if (!player.inVehicle() || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5))
+            return;
 
         for (VectorData vectorData : data) {
             vectorData.vectorX = vectorData.vectorX * 0.98;
@@ -642,8 +581,14 @@ public class PredictionEngine {
         double maxVecZ = vector.vectorZ + (maxUncertaintyZ + uncertaintyZ);
 
         // Handle the player landing within 0.03 movement, which resets Y velocity
-        if (player.uncertaintyHandler.onGroundUncertain && vector.vectorY < 0) {
-            maxVecY = 0;
+        if (player.uncertaintyHandler.onGroundUncertain && vector.vectorY < 0 && !player.uncertaintyHandler.influencedByBouncyBlock()) {
+            double movementY = Math.max(minVecY, -player.getMovementThreshold());
+            double bounceY = BlockProperties.getVelocityAfterVerticalCollision(player, minVecY, movementY);
+            if (bounceY < 0) {
+                minVecY = bounceY;
+            } else {
+                maxVecY = bounceY;
+            }
         }
 
         // Handles stuff like missing idle packet causing gravity to be missed (plus 0.03 of course)
@@ -670,7 +615,7 @@ public class PredictionEngine {
         }
 
         // Hidden slime block bounces by missing idle tick and 0.03
-        if (player.actualMovement.getY() >= 0 && player.uncertaintyHandler.influencedByBouncyBlock()) {
+        if (player.uncertaintyHandler.influencedByBouncyBlock()) {
             if (player.uncertaintyHandler.thisTickSlimeBlockUncertainty != 0 && !vector.isJump()) { // jumping overrides slime block
                 if (player.uncertaintyHandler.thisTickSlimeBlockUncertainty > maxVecY) {
                     maxVecY = player.uncertaintyHandler.thisTickSlimeBlockUncertainty;
@@ -699,7 +644,7 @@ public class PredictionEngine {
         box.combineToMinimum(box.minX, levitation, box.minZ);
 
 
-        SneakingEstimator sneaking = player.checkManager.getPostPredictionCheck(SneakingEstimator.class);
+        SneakingEstimator sneaking = player.checkManager.get(SneakingEstimator.class);
         box.minX += sneaking.getSneakingPotentialHiddenVelocity().minX;
         box.minZ += sneaking.getSneakingPotentialHiddenVelocity().minZ;
         box.maxX += sneaking.getSneakingPotentialHiddenVelocity().maxX;
@@ -727,7 +672,7 @@ public class PredictionEngine {
         // a Y velocity of 0 to 0.1.  Because 0.03 we don't know this so just give lenience here
         //
         // Stuck on edge also reduces the player's movement.  It's wrong by 0.05 so hard to implement.
-        if (player.uncertaintyHandler.stuckOnEdge.hasOccurredSince(0) || player.uncertaintyHandler.isSteppingOnSlime) {
+        if (player.uncertaintyHandler.stuckOnEdge.hasOccurredSince(0) || player.uncertaintyHandler.influencedBySlime()) {
             // Avoid changing Y axis
             box.expandToAbsoluteCoordinates(0, box.maxY, 0);
         }
@@ -771,12 +716,13 @@ public class PredictionEngine {
         // Handle missing a tick with friction in vehicles
         // TODO: Attempt to fix mojang's netcode here
         if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(1)) {
-            double trueFriction = player.lastOnGround ? player.friction * 0.91 : 0.91;
+            float airDrag = BlockProperties.getModifiedAirDrag(0.91F, player);
+            double trueFriction = player.lastOnGround ? player.friction * airDrag : airDrag;
             if (player.wasTouchingLava) trueFriction = 0.5;
             if (player.wasTouchingWater) trueFriction = 0.96;
 
-            double maxY = Math.max(box.maxY, box.maxY + ((box.maxY - player.gravity) * 0.91));
-            double minY = Math.min(box.minY, box.minY + ((box.minY - player.gravity) * 0.91));
+            double maxY = Math.max(box.maxY, box.maxY + ((box.maxY - player.gravity) * airDrag));
+            double minY = Math.min(box.minY, box.minY + ((box.minY - player.gravity) * airDrag));
             double minX = Math.min(box.minX, box.minX + (-player.speed * trueFriction));
             double minZ = Math.min(box.minZ, box.minZ + (-player.speed * trueFriction));
             double maxX = Math.max(box.maxX, box.maxX + (player.speed * trueFriction));
@@ -817,7 +763,7 @@ public class PredictionEngine {
         player.lastWasClimbing = 0;
     }
 
-    private void loopVectors(GrimPlayer player, Set<VectorData> possibleVectors, float speed, List<VectorData> returnVectors) {
+    public void loopVectors(GrimPlayer player, Set<VectorData> possibleVectors, float speed, List<VectorData> returnVectors, boolean doStuckSpeed) {
         // Stop omni-sprint
         // Optimization - Also cuts down scenarios by 2/3
         // For some reason the player sprints while swimming no matter what
@@ -828,7 +774,7 @@ public class PredictionEngine {
         int strafeMax = 1;
 
         // Calculate inputs by the players known inputs on 1.21.2+
-        if (player.supportsEndTick()) {
+        if (player.supportsEndTickPreVia()) {
             forwardMin = forwardMax = strafeMin = strafeMax = 0;
 
             final KnownInput knownInput = player.packetStateData.knownInput;
@@ -853,6 +799,7 @@ public class PredictionEngine {
             }
         }
 
+        InputTransformer<?> inputTransformer = InputTransformer.getTransformer(player);
         for (int loopSlowed = 0; loopSlowed <= 1; loopSlowed++) {
             // Loop twice for the using item status if the player is using a trident
             // (Or in the future mojang desync's with another item and we can't be sure)
@@ -866,27 +813,31 @@ public class PredictionEngine {
                         continue;
                     for (int strafe = strafeMin; strafe <= strafeMax; strafe++) {
                         for (int forward = forwardMin; forward <= forwardMax; forward++) {
-                            for (int applyStuckSpeed = 1; applyStuckSpeed >= 0; applyStuckSpeed--) {
-                                if (applyStuckSpeed == 0 && player.isForceStuckSpeed()) break;
+                            Input input = inputTransformer.transformInputsToVector(player, strafe, 0, forward);
+                            Vector3dm movementResultFromInput = inputTransformer.getMovementResultFromInput(player, input, speed, player.yaw);
+                            VectorData result = new VectorData(possibleLastTickOutput.vectorX + movementResultFromInput.getX(),
+                                    possibleLastTickOutput.vectorY + movementResultFromInput.getY(),
+                                    possibleLastTickOutput.vectorZ + movementResultFromInput.getZ(),
+                                    possibleLastTickOutput, VectorData.VectorType.InputResult);
+                            result.input = toVec2d(input);
 
-                                Vec2d input = transformInputsToVector(player, strafe, forward);
-                                Vector3dm movementResultFromInput = getMovementResultFromInput(player, input.x(), 0, input.z(), speed, player.yaw);
-                                VectorData result = new VectorData(possibleLastTickOutput.vectorX + movementResultFromInput.getX(),
-                                        possibleLastTickOutput.vectorY + movementResultFromInput.getY(),
-                                        possibleLastTickOutput.vectorZ + movementResultFromInput.getZ(),
-                                        possibleLastTickOutput, VectorData.VectorType.InputResult);
-                                result.input = input;
-                                if (applyStuckSpeed != 0) {
-                                    result = result.returnNewModified(result.vectorX * player.stuckSpeedMultiplier.getX(),
-                                            result.vectorY * player.stuckSpeedMultiplier.getY(),
-                                            result.vectorZ * player.stuckSpeedMultiplier.getZ(),
-                                            VectorData.VectorType.StuckMultiplier);
-                                }
-                                result = result.returnNewModified(handleOnClimbable(result.vectorX, result.vectorY, result.vectorZ, player), VectorData.VectorType.Climbable);
-                                // Signal that we need to flip sneaking bounding box
-                                if (loopUsingItem == 1)
-                                    result = result.returnNewModified(VectorData.VectorType.Flip_Use_Item);
+                            if (!doStuckSpeed) {
                                 returnVectors.add(result);
+                                continue;
+                            }
+
+                            if (player.uncertaintyHandler.shouldSimulateStuckSpeed) {
+                                // only simulate no stuck speed if player is leaving
+                                if (player.uncertaintyHandler.stuckSpeedMultiplierMask == 0 || !player.isForceStuckSpeed())
+                                    addStuckSpeedResult(player, returnVectors, result, null, loopUsingItem == 1);
+                                addStuckSpeedResult(player, returnVectors, result, player.stuckSpeedMultiplier, loopUsingItem == 1);
+                                addPossibleStuckSpeedResults(player, returnVectors, result, loopUsingItem == 1);
+                            } else {
+                                for (int applyStuckSpeed = 1; applyStuckSpeed >= 0; applyStuckSpeed--) {
+                                    if (applyStuckSpeed == 0 && player.isForceStuckSpeed()) break;
+
+                                    addStuckSpeedResult(player, returnVectors, result, applyStuckSpeed != 0 ? player.stuckSpeedMultiplier : null, loopUsingItem == 1);
+                                }
                             }
                         }
                     }
@@ -899,6 +850,38 @@ public class PredictionEngine {
             // Who would notice a tick of non-slow movement when netcode is so terrible that it just looks normal
             player.isSlowMovement = !player.isSlowMovement;
         }
+    }
+
+    // Same values 2.0 stored via input.vector() (x = sideways, z = forward), without the intermediate Vector3dm
+    private static Vec2d toVec2d(Input input) {
+        if (input instanceof DoubleInput doubleInput) return new Vec2d(doubleInput.sideways(), doubleInput.forward());
+        if (input instanceof FloatInput floatInput) return new Vec2d(floatInput.sideways(), floatInput.forward());
+        Vector3dm vector = input.vector();
+        return new Vec2d(vector.getX(), vector.getZ());
+    }
+
+    private void addPossibleStuckSpeedResults(GrimPlayer player, List<VectorData> returnVectors, VectorData result, boolean flipUsingItem) {
+        int possibleStuckSpeedMultipliers = player.uncertaintyHandler.stuckSpeedMultiplierMask;
+        for (IndexedVector3d stuckSpeedMultiplier : StuckSpeed.POSSIBILITIES) {
+            if ((possibleStuckSpeedMultipliers & stuckSpeedMultiplier.getIndex()) != 0 && stuckSpeedMultiplier.getIndex() != player.stuckSpeedMultiplier.getIndex()) {
+                addStuckSpeedResult(player, returnVectors, result, stuckSpeedMultiplier, flipUsingItem);
+            }
+        }
+    }
+
+    private void addStuckSpeedResult(GrimPlayer player, List<VectorData> returnVectors, VectorData result, IndexedVector3d stuckSpeedMultiplier, boolean flipUsingItem) {
+        if (stuckSpeedMultiplier != null) {
+            result = result.returnNewModified(result.vectorX * stuckSpeedMultiplier.getX(),
+                    result.vectorY * stuckSpeedMultiplier.getY(),
+                    result.vectorZ * stuckSpeedMultiplier.getZ(),
+                    VectorData.VectorType.StuckMultiplier);
+        }
+        result.stuckSpeedMultiplier = stuckSpeedMultiplier == null ? StuckSpeed.NONE : stuckSpeedMultiplier;
+
+        result = result.returnNewModified(handleOnClimbable(result.vectorX, result.vectorY, result.vectorZ, player), VectorData.VectorType.Climbable);
+        if (flipUsingItem)
+            result = result.returnNewModified(VectorData.VectorType.Flip_Use_Item);
+        returnVectors.add(result);
     }
 
     public boolean canSwimHop(GrimPlayer player) {
@@ -944,19 +927,6 @@ public class PredictionEngine {
                 GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.x, player.y, player.z, 0.6f, 1.8f);
 
         return player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3) || !Collisions.isEmpty(player, newBox.expand(player.clientVelocity.getX(), -1 * pointThreeToGround, player.clientVelocity.getZ()).expand(0.5, 0.03, 0.5));
-    }
-
-    // This is just the vanilla equation, which accepts invalid inputs greater than 1
-    // We need it because of collision support when a player is using speed
-    public Vector3dm getMovementResultFromInput(GrimPlayer player, double x, double y, double z, float speed, float yaw) {
-        float f2InRadians = GrimMath.radians(yaw);
-        float f3 = player.trigHandler.sin(f2InRadians);
-        float f4 = player.trigHandler.cos(f2InRadians);
-
-        double xResult = x * f4 - z * f3;
-        double zResult = z * f4 + x * f3;
-
-        return new Vector3dm(xResult * speed, 0, zResult * speed);
     }
 
     public Vector3dm handleOnClimbable(double x, double y, double z, GrimPlayer player) {

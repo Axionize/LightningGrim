@@ -2,12 +2,12 @@ package ac.grim.grimac.events.packets;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.player.GrimPlayer;
-import ac.grim.grimac.predictionengine.predictions.PredictionEngine;
-import ac.grim.grimac.utils.math.Vec2;
+import ac.grim.grimac.predictionengine.predictions.input.InputTransformer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.KnownInput;
+import ac.grim.grimac.utils.data.packetentity.JumpableEntity;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
-import ac.grim.grimac.utils.data.packetentity.PacketEntityHorse;
+import ac.grim.grimac.utils.math.Vec2;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
@@ -31,6 +31,7 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
+        if (event.isCancelled()) return;
         if (event.getPacketType() == PacketType.Play.Client.STEER_VEHICLE) {
             GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
             if (player == null) return;
@@ -39,6 +40,8 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
 
             float forwards = steer.getForward();
             float sideways = steer.getSideways();
+
+            if (!Float.isFinite(forwards) || !Float.isFinite(sideways)) return;
 
             player.vehicleData.nextVehicleForward = forwards;
             player.vehicleData.nextVehicleHorizontal = sideways;
@@ -68,7 +71,7 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
             }
 
             Vec2 inputVector = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)
-                    ? PredictionEngine.modifyInput(player, new Vec2(forward, sideways).normalized())
+                    ? InputTransformer.MODERN_INPUT_TRANSFORMER.modifyInput(player, new Vec2(forward, sideways).normalized())
                     : new Vec2(forward * 0.98f, sideways * 0.98f);
 
             player.vehicleData.nextVehicleForward = inputVector.x();
@@ -98,7 +101,7 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
         if (player.packetStateData.receivedSteerVehicle && riding != null) {
             // Horse and boat have first passenger in control
             // If the player is the first passenger, disregard this attempt to have the server control the entity
-            if ((riding.isBoat || riding.isHappyGhast || (riding instanceof PacketEntityHorse horse && horse.hasSaddle())) &&
+            if ((riding.isBoat || riding.isHappyGhast || (riding instanceof JumpableEntity jumpable && jumpable.hasSaddle())) &&
                     riding.passengers.get(0) == player.compensatedEntities.self &&
                     // Although if the player has server controlled entities
                     player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) &&
@@ -110,6 +113,7 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
             // Tick update
             player.compensatedWorld.tickPlayerInPistonPushingArea();
             player.compensatedEntities.tick();
+            player.dashableEntities.tick();
 
             // Note for the movement check
             player.vehicleData.lastDummy = true;
@@ -152,6 +156,11 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
                 player.compensatedEntities.hasSprintingAttributeEnabled = player.isSprinting;
             }
             player.lastSprinting = player.isSprinting;
+
+            // 1.21.5+ sprint desync
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)) {
+                player.compensatedEntities.hasSprintingAttributeEnabled = false;
+            }
         }
 
         player.packetStateData.receivedSteerVehicle = true;

@@ -1,24 +1,29 @@
 package ac.grim.grimac.checks.impl.breaking;
 
+import ac.grim.grimac.api.storage.verbose.Verbose;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.BlockBreakCheck;
+import ac.grim.grimac.checks.impl.verbose.VerboseCodecs;
+import ac.grim.grimac.checks.type.BlockBreakListener;
+import ac.grim.grimac.checks.type.PostPredictionListener;
+import ac.grim.grimac.checks.type.PreViaPacketReceiveListener;
 import ac.grim.grimac.player.GrimPlayer;
-import ac.grim.grimac.utils.anticheat.MessageUtil;
 import ac.grim.grimac.utils.anticheat.update.BlockBreak;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
-import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.util.Vector3i;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@CheckData(name = "MultiBreak", experimental = true)
-public class MultiBreak extends Check implements BlockBreakCheck {
-    private final List<String> flags = new ArrayList<>();
+@CheckData(name = "MultiBreak", stableKey = "grim.breaking.multi_break", description = "Tried to break multiple different blocks in the same movement tick", experimental = true)
+public class MultiBreak extends Check implements BlockBreakListener, PreViaPacketReceiveListener, PostPredictionListener {
+    private static final Verbose V =
+            Verbose.of("face={face}, lastFace={face}, pos={mcpos}, lastPos={mcpos}");
+
+    private final List<FlagData> flags = new ArrayList<>();
     private boolean hasBroken;
     private BlockFace lastFace;
     private int lastX;
@@ -43,20 +48,17 @@ public class MultiBreak extends Check implements BlockBreakCheck {
                 currentX != lastX ||
                 currentY != lastY ||
                 currentZ != lastZ)) {
-
-            final String currentPosString = MessageUtil.toUnlabeledString(currentX, currentY, currentZ);
-            final String lastPosString = MessageUtil.toUnlabeledString(lastX, lastY, lastZ);
-
-            final String verbose = "face=" + blockBreak.face + ", lastFace=" + lastFace
-                    + ", pos=" + currentPosString
-                    + ", lastPos=" + lastPosString;
-
+            final int face = VerboseCodecs.enumId(blockBreak.face);
+            final int previousFace = VerboseCodecs.enumId(lastFace);
             if (!player.canSkipTicks()) {
-                if (flagAndAlert(verbose) && shouldModifyPackets()) {
+                var buf = V.write(verbose()).uint(face).uint(previousFace)
+                        .mcPos(currentX, currentY, currentZ)
+                        .mcPos(lastX, lastY, lastZ);
+                if (flag(buf) && shouldModifyPackets()) {
                     blockBreak.cancel();
                 }
             } else {
-                flags.add(verbose);
+                flags.add(new FlagData(face, previousFace, currentX, currentY, currentZ, lastX, lastY, lastZ));
             }
         }
 
@@ -68,8 +70,8 @@ public class MultiBreak extends Check implements BlockBreakCheck {
     }
 
     @Override
-    public void onPacketReceive(PacketReceiveEvent event) {
-        if (player.gamemode == GameMode.SPECTATOR || isTickPacket(event.getPacketType())) {
+    public void onPreViaPacketReceive(PacketReceiveEvent event) {
+        if (!player.cameraEntity.isSelf() || isTickPacket(event.getPacketType())) {
             hasBroken = false;
         }
     }
@@ -79,11 +81,15 @@ public class MultiBreak extends Check implements BlockBreakCheck {
         if (!player.canSkipTicks()) return;
 
         if (player.isTickingReliablyFor(3)) {
-            for (String verbose : flags) {
-                flagAndAlert(verbose);
+            for (FlagData data : flags) {
+                flag(V.write(verbose()).uint(data.face()).uint(data.previousFace())
+                        .mcPos(data.x(), data.y(), data.z())
+                        .mcPos(data.previousX(), data.previousY(), data.previousZ()));
             }
         }
 
         flags.clear();
     }
+
+    private record FlagData(int face, int previousFace, int x, int y, int z, int previousX, int previousY, int previousZ) {}
 }

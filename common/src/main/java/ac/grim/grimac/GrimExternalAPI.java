@@ -6,25 +6,36 @@ import ac.grim.grimac.api.alerts.AlertManager;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.api.event.EventBus;
 import ac.grim.grimac.api.event.events.GrimReloadEvent;
+import ac.grim.grimac.api.plugin.GrimPlugin;
+import ac.grim.grimac.api.storage.backend.BackendRegistry;
 import ac.grim.grimac.manager.config.ConfigManagerFileImpl;
 import ac.grim.grimac.manager.init.start.StartableInitable;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import ac.grim.grimac.utils.anticheat.MessageUtil;
 import ac.grim.grimac.utils.common.ConfigReloadObserver;
+import ac.grim.grimac.utils.common.PropertiesUtil;
 import lombok.Getter;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-//This is used for grim's external API. It has its own class just for organization.
-
+// This is used for grim's external API. It has its own class just for organization.
 public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, StartableInitable {
+
+    // Holder class — GrimExternalAPI is constructed inside GrimAPI's ctor,
+    // so a plain static-final would see a null GrimAPI.INSTANCE. Holder
+    // init runs on first fire, after GrimAPI is fully built.
+    private static final class Channels {
+        static final GrimReloadEvent.Channel RELOAD = GrimAPI.INSTANCE.getEventBus().get(GrimReloadEvent.class);
+    }
 
     private final GrimAPI api;
     @Getter
@@ -33,16 +44,24 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
     private final Map<String, String> staticReplacements = new ConcurrentHashMap<>();
     private final Map<String, Function<Object, Object>> functions = new ConcurrentHashMap<>();
     private final ConfigManagerFileImpl configManagerFile = new ConfigManagerFileImpl();
+    private final String grimVersion;
     private ConfigManager configManager = null;
     private boolean started = false;
 
     public GrimExternalAPI(GrimAPI api) {
         this.api = api;
+        this.grimVersion = resolveGrimVersion(api);
     }
 
     @Override
     public @NotNull EventBus getEventBus() {
         return api.getEventBus();
+    }
+
+    @Deprecated
+    @Override
+    public @Nullable GrimUser getGrimUser(Player player) {
+        return getGrimUser(player.getUniqueId());
     }
 
     @Override
@@ -70,7 +89,24 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
 
     @Override
     public String getGrimVersion() {
-        return api.getGrimPlugin().getDescription().getVersion();
+        return grimVersion;
+    }
+
+    private static String resolveGrimVersion(GrimAPI api) {
+        try {
+            Properties properties = PropertiesUtil.readProperties(GrimExternalAPI.class, "grimac.properties");
+            String buildVersion = properties.getProperty("build.version");
+            if (buildVersion != null && !buildVersion.isBlank() && !buildVersion.startsWith("${")) {
+                return buildVersion;
+            }
+        } catch (RuntimeException ignored) {
+        }
+
+        try {
+            return api.getGrimPlugin().getDescription().getVersion();
+        } catch (RuntimeException e) {
+            return "unknown";
+        }
     }
 
     @Override
@@ -105,6 +141,16 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
     @Override
     public int getCurrentTick() {
         return GrimAPI.INSTANCE.getTickManager().currentTick;
+    }
+
+    @Override
+    public @NotNull GrimPlugin getGrimPlugin(@NotNull Object o) {
+        return this.api.getExtensionManager().getPlugin(o);
+    }
+
+    @Override
+    public @NotNull BackendRegistry getBackendRegistry() {
+        return api.getBackendRegistry();
     }
 
     // on load, load the config & register the service
@@ -153,14 +199,14 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
             onReload(config);
             if (started)
                 GrimAPI.INSTANCE.getScheduler().getAsyncScheduler().runNow(GrimAPI.INSTANCE.getGrimPlugin(),
-                        () -> GrimAPI.INSTANCE.getEventBus().post(new GrimReloadEvent(true)));
+                        () -> Channels.RELOAD.fire(true));
             return true;
         } catch (Exception e) {
             LogUtil.error("Failed to reload config", e);
         }
         if (started)
             GrimAPI.INSTANCE.getScheduler().getAsyncScheduler().runNow(GrimAPI.INSTANCE.getGrimPlugin(),
-                    () -> GrimAPI.INSTANCE.getEventBus().post(new GrimReloadEvent(false)));
+                    () -> Channels.RELOAD.fire(false));
         return false;
     }
 
@@ -178,9 +224,12 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
         GrimAPI.INSTANCE.getAlertManager().reload(configManager);
         GrimAPI.INSTANCE.getDiscordManager().reload();
         GrimAPI.INSTANCE.getSpectateManager().reload();
-        GrimAPI.INSTANCE.getViolationDatabaseManager().reload();
-        // Don't reload players if the plugin hasn't started yet
+        // First-load guard: load() calls reload() before start() runs, so this fires once with started=false before the datastore exists. Subsequent /grim reload calls see started=true and proceed (including disabled→enabled flips — DataStoreLifecycle.reload() re-evaluates builder.enabled() each time).
         if (!started) return;
+        // Hot-reload picks up backend swaps + routing + connection-pool edits without a server restart. Drains in-flight writes for shutdown-drain-timeout-ms then drops; brief mid-reload unavailability is the tradeoff.
+        if (GrimAPI.INSTANCE.getDataStoreLifecycle() != null) {
+            GrimAPI.INSTANCE.getDataStoreLifecycle().reload();
+        }
         // Reload checks for all players
         for (GrimPlayer player : GrimAPI.INSTANCE.getPlayerDataManager().getEntries()) {
             player.runSafely(() -> player.reload(configManager));

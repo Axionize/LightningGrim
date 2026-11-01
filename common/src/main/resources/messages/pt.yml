@@ -29,6 +29,10 @@ disconnect:
     blacklisted-forge: "<red>Your forge version is blacklisted due to inbuilt reach hacks.<newline><gold>Versions affected: 1.18.2-1.19.3<newline><newline><red>Please see https://github.com/MinecraftForge/MinecraftForge/issues/9309."
 run-as-player: "%prefix% &cEste comando só pode ser usado por jogadores!"
 run-as-player-or-console: "%prefix% &cEste comando só pode ser usado por jogadores ou pelo console!"
+webhook-not-enabled: "Discord webhooks are not enabled!"
+webhook-test-message: "test message"
+webhook-test-succeeded: "Discord webhook test succeeded!"
+webhook-test-failed: "Discord webhook test failed!"
 
 # Placeholders válidos:
 # %prefix%
@@ -37,8 +41,8 @@ run-as-player-or-console: "%prefix% &cEste comando só pode ser usado por jogado
 # %experimental%
 # %vl% - violações
 # %verbose% - Informação extra da verificação, como os desalinhamentos, nem todas as verifiações terão essa informação.
-alerts-format: "%prefix% &f%player% &bfalhou em &f%check_name%%experimental% &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bfalhou em &f%check_name%%experimental% &f(x&c%vl%&f) &7%verbose%"
+alerts-format: "%prefix% &f%player% &bfalhou em <hover:show_text:\"&b%check_name%%experimental%\n&8Descrição: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bfalhou em <hover:show_text:\"&b%check_name%%experimental%\n&8Descrição: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 profile:
     - "&7======================"
@@ -62,12 +66,69 @@ help:
     - "/grim spectate <player> &f- &7Especta um jogador."
     - "/grim verbose &f- &7Esconde as informações extra."
     - "/grim log [0-255] &f- &7Envia o registro da simulação."
-    - "/grim history <player> [página] &f- &7Mostra alertas anteriores do jogador"
+    - "/grim history <player> &f- &7Lista de sessões (mais recentes primeiro)"
+    - "/grim history <player> page <N> &f- &7Pular para a página N da lista de sessões"
+    - "/grim history <player> session <N|latest> [-d] [-v] &f- &7Detalhe da sessão (violações mais recentes primeiro)"
+    - "/grim history <player> session <N|latest> page <N> [-d] [-v] &f- &7Detalhe da sessão, página N de violações"
     - "&7======================"
+
+# === /grim history ===
+# UI de histórico baseada em sessões. Todas as linhas abaixo são modelos
+# MiniMessage configuráveis. Os hovers padrão ficam nas tags inline
+# <hover:show_text:'...'> e nas chaves de fragmento de hover abaixo; remova
+# o hover inline para usar o fallback do renderer.
 
 grim-history-load-failure: "%prefix% &cO subsistema de histórico falhou ao carregar! Verifique o console do servidor por erros."
 grim-history-disabled: "%prefix% &cO subsistema de histórico está desativado!"
-# Valid placeholders: %prefix% %player% %page% %maxPages%
-grim-history-header: "%prefix% &bMostrando logs de &f%player% (&f%page%&b/&f%maxPages%&f)"
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: "%prefix% &8[&f%server%&8] &bFalhou &f%check% (x&c%vl%&f) &7%verbose% (&bhá %timeago%&7)"
+grim-history-failed: "%prefix% &cFalha ao carregar o histórico: &7%error%"
+grim-history-unknown-player: "%prefix% &cJogador desconhecido: &f%player%"
+grim-history-no-sessions: "%prefix% &7Sem histórico de sessões para &f%player%&7."
+grim-history-session-not-found: "%prefix% &cSessão &f%ordinal%&c não encontrada para &f%player%&c."
+
+# Lista de sessões — placeholders válidos: %prefix% %player% %page% %max_pages%
+grim-history-header: "%prefix% &bMostrando histórico de sessões de &f%player% &8[&f%page%&7/&f%max_pages%&8]"
+# Linha de resumo de sessão — placeholders válidos:
+#   %prefix% %player% %ordinal% %grim_version% %server_name%
+#   %client_version% %client_brand% %duration% %timeago%
+#   %violations% %unique_checks% %crashed_marker% %session_uuid% %detail_command%
+# %crashed_marker% expande para grim-history-crashed-marker em sessões cuja
+# conexão caiu sem fechamento limpo (queda do servidor, kill -9, RST de canal
+# que não disparou UserDisconnectEvent). String vazia para sessões em curso
+# ou encerradas normalmente.
+grim-history-session: "<hover:show_text:'&bSessão &7%session_uuid%<newline>&7Clique ou execute &e%detail_command%<newline>&7para ver os detalhes da sessão.'>%prefix% &8[&b%grim_version%&8] &8[&b%server_name%&8] &8[&b%client_version%&8] &bSessão &f%ordinal%&b, duração &f%duration%&b, com &c%violations%&b violações &8[&c%unique_checks%&8]%crashed_marker% &8(&7há %timeago%&8)</hover>"
+
+# Marcador inline substituído em %crashed_marker% para sessões cujo
+# closed_at == last_activity (ou seja, marcadas pelo varrimento de queda no
+# próximo arranque, não pelo caminho de desconexão). Inclui um espaço inicial
+# para que o marcador leia naturalmente quando presente e desapareça
+# limpamente quando vazio.
+grim-history-crashed-marker: " &8(&cqueda&8)"
+
+# Detalhe de sessão — placeholders válidos:
+#   %prefix% %player% %ordinal% %grim_version% %server_name%
+#   %client_version% %client_brand% %duration% %timeago%
+#   %violations% %unique_checks% %bucket_size%
+grim-history-detail-header: "%prefix% &bDetalhe da sessão &f%ordinal% &bde &f%player%&b:"
+grim-history-detail-meta1: "%prefix% &bGrim: &f%grim_version%&b, Servidor: &f%server_name%&b, Duração: &f%duration%&b, Data: &7há %timeago%"
+grim-history-detail-meta2: "%prefix% &bCliente: &f%client_version%&b, Marca: &f%client_brand%"
+grim-history-detail-violations-header: "%prefix% &bViolações: &8(%violations% no total, %unique_checks% únicas)"
+grim-history-detail-empty: "%prefix% &7- (nenhuma)"
+# Linha agrupada (padrão) — placeholders válidos: %prefix% %offset% %checks_list%
+#   %bucket_start% %bucket_end% %bucket_hover_entries%
+#   %checks_list% é construída unindo entradas grim-history-check-count com ", "
+grim-history-detail-group: "<hover:show_text:'&bViolações em &f%bucket_start%–%bucket_end%&b:%bucket_hover_entries%'>%prefix% &7- %checks_list% &8(&b%offset%&8)</hover>"
+grim-history-detail-group-hover: "&bViolações em &f%bucket_start%–%bucket_end%&b:%bucket_hover_entries%"
+grim-history-detail-group-hover-entry: "<newline>&8  %offset% &b%check%%description%%verbose%"
+grim-history-hover-description: " — &f%description%"
+grim-history-detail-group-hover-verbose: " — &7%verbose%"
+# Linha de violação bruta (--detailed) — placeholders válidos:
+#   %prefix% %offset% %check% %description% %vl% %verbose%
+grim-history-detail-entry: "%prefix% &7- &f%check% &8(&b%offset%&8)&7 %verbose%"
+grim-history-detail-entry-hover: "&b%check%%description%<newline>&8@ %offset% — vl %vl%%verbose%"
+grim-history-detail-entry-hover-verbose: "<newline>&7%verbose%"
+# Formato interno por check em %checks_list% — placeholders válidos: %check_name% %count%
+grim-history-check-count: "&f%check_name%&7 x&c%count%"
+
+# Marcadores de esquema — ver o comentário do cabeçalho em config.yml.
+config-flavor: V2
+config-version: 2

@@ -11,6 +11,7 @@ import ac.grim.grimac.utils.lists.EvictingQueue;
 import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.nmsutil.BoundingBoxSize;
 import ac.grim.grimac.utils.nmsutil.ReachUtils;
+import ac.grim.grimac.utils.nmsutil.StuckSpeed;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.world.BlockFace;
@@ -48,6 +49,7 @@ public class UncertaintyHandler {
     // Marks previous didGroundStatusChangeWithoutPositionPacket from last tick
     public boolean lastPacketWasGroundPacket = false;
     // Slime sucks in terms of bouncing and stuff.  Trust client onGround when on slime
+    public boolean wasSteppingOnSlime = false;
     public boolean isSteppingOnSlime = false;
     public boolean isSteppingOnIce = false;
     public boolean isSteppingOnHoney = false;
@@ -58,8 +60,6 @@ public class UncertaintyHandler {
     public boolean isSteppingNearShulker = false;
     public boolean isNearGlitchyBlock = false;
     public boolean isOrWasNearGlitchyBlock = false;
-    // Did the player claim to leave stuck speed? (0.03 messes these calculations up badly)
-    public boolean claimingLeftStuckSpeed = false;
     // Give horizontal lenience if the previous movement was 0.03 because their velocity is unknown
     public boolean lastMovementWasZeroPointZeroThree = false;
     // Give horizontal lenience if the last movement reset velocity because 0.03 becomes unknown then
@@ -74,6 +74,8 @@ public class UncertaintyHandler {
     public final List<Integer> fishingRodPulls = new ArrayList<>();
     public SimpleCollisionBox fireworksBox = null;
     public SimpleCollisionBox fishingRodPullBox = null;
+    public boolean shouldSimulateStuckSpeed = false;
+    public int stuckSpeedMultiplierMask = StuckSpeed.NONE.getIndex();
 
     public final LastInstance lastFlyingTicks;
     public final LastInstance lastFlyingStatusChange;
@@ -121,6 +123,7 @@ public class UncertaintyHandler {
         isStepMovement = false;
 
         isSteppingNearShulker = false;
+        wasSteppingOnSlime = isSteppingOnSlime;
         wasSteppingOnBouncyBlock = isSteppingOnBouncyBlock;
         isSteppingOnSlime = false;
         isSteppingOnBouncyBlock = false;
@@ -211,7 +214,7 @@ public class UncertaintyHandler {
     public double getOffsetHorizontal(VectorData data) {
         double threshold = player.getMovementThreshold();
 
-        boolean newVectorPointThree = player.couldSkipTick && data.isKnockback();
+        boolean newVectorPointThree = player.couldSkipTick && data.isKnockback() && !data.isSetbackKb(player);
         boolean explicit003 = data.isZeroPointZeroThree() || lastMovementWasZeroPointZeroThree;
         boolean either003 = newVectorPointThree || explicit003;
 
@@ -243,10 +246,6 @@ public class UncertaintyHandler {
             pointThree = (0.99 * (threshold * 2)) + threshold;
         }
 
-        if (player.uncertaintyHandler.claimingLeftStuckSpeed)
-            pointThree = 0.15;
-
-
         return pointThree;
     }
 
@@ -254,11 +253,11 @@ public class UncertaintyHandler {
         return isSteppingOnBouncyBlock || wasSteppingOnBouncyBlock;
     }
 
+    public boolean influencedBySlime() {
+        return isSteppingOnSlime || wasSteppingOnSlime;
+    }
+
     public double getVerticalOffset(VectorData data) {
-
-        if (player.uncertaintyHandler.claimingLeftStuckSpeed)
-            return 0.06;
-
         // We don't know if the player was pressing jump or not
         if (player.uncertaintyHandler.wasSteppingOnBouncyBlock && (player.wasTouchingWater || player.wasTouchingLava))
             return 0.06;
@@ -302,10 +301,6 @@ public class UncertaintyHandler {
         }
 
         // This is a section where I hack around current issues with Grim itself...
-        if (player.uncertaintyHandler.wasAffectedByStuckSpeed() && (!player.isPointThree() || player.inVehicle())) {
-            offset -= 0.01;
-        }
-
         if (player.uncertaintyHandler.influencedByBouncyBlock() && (!player.isPointThree() || player.inVehicle())) {
             offset -= 0.03;
         }
@@ -335,7 +330,9 @@ public class UncertaintyHandler {
     private boolean regularHardCollision(SimpleCollisionBox expandedBB) {
         final PacketEntity riding = player.compensatedEntities.self.getRiding();
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-            if ((entity.isBoat || entity.type == EntityTypes.SHULKER || entity.isHappyGhast) && entity != riding
+            // Passengers of our own vehicle move with it and can't be collided with, don't give them lenience
+            if ((entity.isBoat || entity.getType() == EntityTypes.SHULKER || entity.isHappyGhast) && entity != riding
+                    && (riding == null || !riding.hasPassenger(entity))
                     && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
                 return true;
             }
@@ -348,7 +345,7 @@ public class UncertaintyHandler {
         // Stiders can walk on top of other striders
         if (player.compensatedEntities.self.getRiding() instanceof PacketEntityStrider) {
             for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-                if (entity.type == EntityTypes.STRIDER && entity != player.compensatedEntities.self.getRiding()
+                if (entity.getType() == EntityTypes.STRIDER && entity != player.compensatedEntities.self.getRiding()
                         && !entity.hasPassenger(entity) && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
                     return true;
                 }

@@ -10,6 +10,7 @@ import ac.grim.grimac.utils.data.VelocityData;
 import ac.grim.grimac.utils.data.tags.SyncedTags;
 import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.nmsutil.Collisions;
+import ac.grim.grimac.utils.nmsutil.BlockProperties;
 import ac.grim.grimac.utils.nmsutil.FluidTypeFlowing;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
 import ac.grim.grimac.utils.nmsutil.Materials;
@@ -99,7 +100,7 @@ public class PointThreeEstimator {
     // If a player places a ladder in a worldguard region etc.
     @Getter
     private boolean isNearClimbable = false;
-    // If a player stops and star gliding all within 0.03
+    // If a player stops and start gliding all within 0.03
     private boolean isGliding = false;
     // If the player's gravity has changed
     private boolean gravityChanged = false;
@@ -156,7 +157,7 @@ public class PointThreeEstimator {
             isNearFluid = true;
         }
 
-        if (pointThreeBox.isIntersected(new SimpleCollisionBox(x, y, z))) {
+        if (pointThreeBox.isIntersected(new SimpleCollisionBox(x, y, z)) && !data.isNull()) {
             // https://github.com/MWHunter/Grim/issues/613
             int controllingEntityId = player.inVehicle() ? player.getRidingVehicleId() : player.entityID;
 
@@ -232,7 +233,7 @@ public class PointThreeEstimator {
 
     public void endOfTickTick() {
         double movementThreshold = player.getMovementThreshold();
-        float collisionBoxThreshold = player.isPointThree() ? 0.06f : 0.0004f;
+        float collisionBoxThreshold = (float) (movementThreshold * 2.f);
         SimpleCollisionBox pointThreeBox = GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.x, player.y - movementThreshold, player.z, 0.6f + collisionBoxThreshold, 1.8f + collisionBoxThreshold);
 
         // Determine the head hitter using the current Y position
@@ -268,22 +269,31 @@ public class PointThreeEstimator {
         isNearFluid = false;
 
         // Check for flowing water
-        Collisions.hasMaterial(player, pointThreeBox, (state, x, y, z) -> {
-            final StateType stateType = state.getType();
+        Collisions.hasMaterial(player, pointThreeBox, (block, x, y, z) -> {
+            final StateType stateType = block.getType();
             if (player.tagManager.block(SyncedTags.CLIMBABLE).contains(stateType) || (stateType == StateTypes.POWDER_SNOW && !player.inVehicle() && player.inventory.getBoots().getType() == ItemTypes.LEATHER_BOOTS)) {
                 isNearClimbable = true;
             }
 
             if (BlockTags.TRAPDOORS.contains(stateType)) {
-                isNearClimbable = isNearClimbable || Collisions.trapdoorUsableAsLadder(player, x, y, z, state);
+                isNearClimbable = isNearClimbable || Collisions.trapdoorUsableAsLadder(player, x, y, z, block);
             }
 
             if (stateType == StateTypes.BUBBLE_COLUMN && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13)) {
                 isNearBubbleColumn = true;
             }
 
-            if (Materials.isWater(player.getClientVersion(), state) || state.getType() == StateTypes.LAVA) {
+            if (Materials.isWater(player.getClientVersion(), block) || block.getType() == StateTypes.LAVA) {
                 isNearFluid = true;
+            }
+
+            Vector3dm fluidVector = FluidTypeFlowing.getFlow(player, x, y, z);
+            if (fluidVector.getX() != 0 || fluidVector.getZ() != 0) {
+                isNearHorizontalFlowingLiquid = true;
+            }
+
+            if (fluidVector.getY() != 0) {
+                isNearVerticalFlowingLiquid = true;
             }
 
             return false;
@@ -349,7 +359,7 @@ public class PointThreeEstimator {
             return false;
         }
 
-        if (isNearClimbable() || isPushing || player.uncertaintyHandler.wasAffectedByStuckSpeed() || player.fireworks.getMaxFireworksAppliedPossible() > 0) {
+        if (isNearClimbable() || isPushing || player.fireworks.getMaxFireworksAppliedPossible() > 0) {
             return true;
         }
 
@@ -411,11 +421,6 @@ public class PointThreeEstimator {
             // Head hitters return the vector to 0, and then apply gravity to it.
             // Not much room for abuse for this, so keep it lenient
             return -Math.max(0, vector.vectorY) - 0.1 - fluidAddition;
-        } else if (player.uncertaintyHandler.wasAffectedByStuckSpeed()) {
-            wasAlwaysCertain = false;
-            // This shouldn't be needed but stuck speed can desync very easily with 0.03...
-            // Especially now that both sweet berries and cobwebs are affected by stuck speed and overwrite each other
-            return -0.1 - fluidAddition;
         }
 
         // The player couldn't have skipped their Y tick here... no point to simulate (and stop a bypass)
@@ -465,13 +470,13 @@ public class PointThreeEstimator {
         final OptionalInt levitation = player.compensatedEntities.getPotionLevelForPlayer(PotionTypes.LEVITATION);
         if (levitation.isPresent()) {
             // This supports both positive and negative levitation
-            y += (0.05 * (levitation.getAsInt() + 1) - y * 0.2);
+            y += (0.05 * (levitation.getAsInt() + 1) - y) * 0.2;
         } else if (player.hasGravity) {
             // Simulate gravity
             y -= player.gravity;
         }
 
         // Simulate end of tick friction
-        return y * 0.98;
+        return y * BlockProperties.getModifiedAirDrag(0.98F, player);
     }
 }

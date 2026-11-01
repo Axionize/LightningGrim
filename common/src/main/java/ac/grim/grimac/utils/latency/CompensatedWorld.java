@@ -1,8 +1,10 @@
 package ac.grim.grimac.utils.latency;
 
 import ac.grim.grimac.GrimAPI;
+import ac.grim.grimac.api.PacketWorld;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.change.BlockModification;
+import ac.grim.grimac.utils.chunks.ChunkSectionCache;
 import ac.grim.grimac.utils.chunks.Column;
 import ac.grim.grimac.utils.collisions.CollisionData;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
@@ -24,6 +26,7 @@ import com.github.retrooper.packetevents.protocol.player.DiggingAction;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.protocol.world.chunk.BaseChunk;
+import com.github.retrooper.packetevents.protocol.world.chunk.TileEntity;
 import com.github.retrooper.packetevents.protocol.world.chunk.impl.v1_16.Chunk_v1_9;
 import com.github.retrooper.packetevents.protocol.world.chunk.impl.v_1_18.Chunk_v1_18;
 import com.github.retrooper.packetevents.protocol.world.chunk.palette.DataPalette;
@@ -63,7 +66,7 @@ import java.util.Map;
 import java.util.Set;
 
 // Inspired by https://github.com/GeyserMC/Geyser/blob/master/connector/src/main/java/org/geysermc/connector/network/session/cache/ChunkCache.java
-public class CompensatedWorld {
+public class CompensatedWorld implements PacketWorld {
     public static final ClientVersion blockVersion = PacketEvents.getAPI().getServerManager().getVersion().toClientVersion();
     private static final WrappedBlockState airData = WrappedBlockState.getByGlobalId(blockVersion, 0);
     public final GrimPlayer player;
@@ -110,8 +113,6 @@ public class CompensatedWorld {
             if (iter.getKey() <= prediction) {
                 applyBlockChanges(iter.getValue());
                 it.remove();
-            } else {
-                break;
             }
         }
     }
@@ -204,12 +205,12 @@ public class CompensatedWorld {
         if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19)) {
             // Pull the confirmation ID out of the packet
             int confirmationId = 0;
-            if (wrapper instanceof WrapperPlayClientPlayerBlockPlacement) {
-                confirmationId = ((WrapperPlayClientPlayerBlockPlacement) wrapper).getSequence();
-            } else if (wrapper instanceof WrapperPlayClientUseItem) {
-                confirmationId = ((WrapperPlayClientUseItem) wrapper).getSequence();
-            } else if (wrapper instanceof WrapperPlayClientPlayerDigging) {
-                confirmationId = ((WrapperPlayClientPlayerDigging) wrapper).getSequence();
+            if (wrapper instanceof WrapperPlayClientPlayerBlockPlacement playerBlockPlacement) {
+                confirmationId = playerBlockPlacement.getSequence();
+            } else if (wrapper instanceof WrapperPlayClientUseItem useItem) {
+                confirmationId = useItem.getSequence();
+            } else if (wrapper instanceof WrapperPlayClientPlayerDigging playerDigging) {
+                confirmationId = playerDigging.getSequence();
             }
 
             serverIsCurrentlyProcessingThesePredictions.put(confirmationId, toApplyBlocks);
@@ -225,13 +226,21 @@ public class CompensatedWorld {
         }
     }
 
+    public void clearPredictions() {
+        originalServerBlocks.clear();
+        currentlyChangedBlocks = new ArrayList<>();
+        serverIsCurrentlyProcessingThesePredictions.clear();
+        unackedActions.clear();
+        isCurrentlyPredicting = false;
+    }
+
     public static long chunkPositionToLong(int x, int z) {
         return ((x & 0xFFFFFFFFL) << 32L) | (z & 0xFFFFFFFFL);
     }
 
     public boolean isNearHardEntity(SimpleCollisionBox playerBox) {
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-            if ((entity.isBoat || entity.type == EntityTypes.SHULKER || entity.isHappyGhast) && player.compensatedEntities.self.getRiding() != entity) {
+            if ((entity.isBoat || entity.getType() == EntityTypes.SHULKER || entity.isHappyGhast) && player.compensatedEntities.self.getRiding() != entity) {
                 SimpleCollisionBox box = entity.getPossibleCollisionBoxes();
                 if (box.isIntersected(playerBox)) {
                     return true;
@@ -300,25 +309,38 @@ public class CompensatedWorld {
         if (column != null) {
             if (column.chunks().length <= (offsetY >> 4) || (offsetY >> 4) < 0) return;
 
-            BaseChunk chunk = column.chunks()[offsetY >> 4];
+            int sectionIndex = offsetY >> 4;
+            BaseChunk chunk = column.chunks()[sectionIndex];
 
             if (chunk == null) {
                 chunk = create();
-                column.chunks()[offsetY >> 4] = chunk;
+                column.chunks()[sectionIndex] = chunk;
+                column.sectionKeys()[sectionIndex] = 0L;
 
                 // Sets entire chunk to air
                 // This glitch/feature occurs due to the palette size being 0 when we first create a chunk section
                 // Meaning that all blocks in the chunk will refer to palette #0, which we are setting to air
-                chunk.set(null, 0, 0, 0, 0);
+                chunk.set(0, 0, 0, 0);
             }
 
-            // The method also gets called for the previous state before replacement
-            player.pointThreeEstimator.handleChangeBlock(x, y, z, chunk.get(blockVersion, x & 0xF, offsetY & 0xF, z & 0xF));
+            WrappedBlockState previousState = chunk.get(blockVersion, x & 0xF, offsetY & 0xF, z & 0xF);
+            WrappedBlockState newState = WrappedBlockState.getByGlobalId(blockVersion, combinedID);
 
-            chunk.set(null, x & 0xF, offsetY & 0xF, z & 0xF, combinedID);
+            // A resync that rewrites the same block is not a change.
+            // Treating it as one would hand out the wall-hit exemption, a point-three
+            // recalculation and a geyser update for free, so only process real changes.
+            if (previousState.getGlobalId() != combinedID) {
+                // The method also gets called for the previous state before replacement
+                player.pointThreeEstimator.handleChangeBlock(x, y, z, previousState);
 
-            // Handle stupidity such as fluids changing in idle ticks.
-            player.pointThreeEstimator.handleChangeBlock(x, y, z, WrappedBlockState.getByGlobalId(blockVersion, combinedID));
+                // Copy-on-write: never mutate a shared section in place
+                chunk = ChunkSectionCache.detachSectionForWrite(column, sectionIndex, chunk);
+                chunk.set(x & 0xF, offsetY & 0xF, z & 0xF, combinedID);
+                player.compensatedGeysers.updateBlock(x, y, z, previousState, newState, minHeight);
+
+                // Handle stupidity such as fluids changing in idle ticks.
+                player.pointThreeEstimator.handleChangeBlock(x, y, z, newState);
+            }
         }
     }
 
@@ -407,7 +429,7 @@ public class CompensatedWorld {
             if (direction.getModX() == -1 || direction.getModY() == -1 || direction.getModZ() == -1) {
                 shulkerCollision.expandMin(direction.getModX(), direction.getModY(), direction.getModZ());
             } else {
-                shulkerCollision.expandMax(direction.getModZ(), direction.getModY(), direction.getModZ());
+                shulkerCollision.expandMax(direction.getModX(), direction.getModY(), direction.getModZ());
             }
 
             if (playerBox.isCollided(shulkerCollision)) {
@@ -469,6 +491,25 @@ public class CompensatedWorld {
         }
 
         return airData;
+    }
+
+    @Override
+    public int getBlockStateId(int x, int y, int z) { // Logic copied from getBlock
+        if (noNegativeBlocks && y < 0) return -1;
+
+        try {
+            Column column = getChunk(x >> 4, z >> 4);
+
+            y -= minHeight;
+            if (column == null || y < 0 || (y >> 4) >= column.chunks().length) return -2;
+
+            BaseChunk chunk = column.chunks()[y >> 4];
+            if (chunk != null) {
+                return chunk.getBlockId(x & 0xF, y & 0xF, z & 0xF);
+            }
+        } catch (Exception ignored) {
+        }
+        return -3;
     }
 
     // Not direct power into a block
@@ -554,7 +595,7 @@ public class CompensatedWorld {
         } else if (block.getType() == StateTypes.LEVER || BlockTags.BUTTONS.contains(block.getType())) {
             return block.getFacing().getOppositeFace() == face && block.isPowered() ? 15 : 0;
         } else if (block.getType() == StateTypes.REDSTONE_WALL_TORCH) {
-            return face == BlockFace.DOWN && block.isPowered() ? 15 : 0;
+            return face == BlockFace.DOWN && block.isLit() ? 15 : 0;
         } else if (block.getType() == StateTypes.LECTERN) {
             return face == BlockFace.UP && block.isPowered() ? 15 : 0;
         } else if (block.getType() == StateTypes.OBSERVER) {
@@ -609,14 +650,40 @@ public class CompensatedWorld {
         return chunks.get(chunkPosition);
     }
 
+    @Override
     public boolean isChunkLoaded(int chunkX, int chunkZ) {
         long chunkPosition = chunkPositionToLong(chunkX, chunkZ);
         return chunks.containsKey(chunkPosition);
     }
 
-    public void addToCache(Column chunk, int chunkX, int chunkZ) {
+    public boolean areChunksUnloadedAt(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+        if (maxY < minHeight || minY >= maxHeight) {
+            return true;
+        }
+
+        minX >>= 4;
+        minZ >>= 4;
+        maxX >>= 4;
+        maxZ >>= 4;
+
+        for (int i = minX; i <= maxX; i++) {
+            for (int j = minZ; j <= maxZ; j++) {
+                if (!isChunkLoaded(i, j)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public void addToCache(Column chunk, int chunkX, int chunkZ, TileEntity[] tileEntities) {
         long chunkPosition = chunkPositionToLong(chunkX, chunkZ);
-        player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> chunks.put(chunkPosition, chunk));
+        player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
+            Column previous = chunks.put(chunkPosition, ChunkSectionCache.shareColumnSections(chunk));
+            if (previous != null) ChunkSectionCache.releaseColumnSections(previous);
+            player.compensatedGeysers.addChunkToCache(chunk, tileEntities, minHeight);
+        });
     }
 
     public StateType getBlockType(double x, double y, double z) {
@@ -627,7 +694,7 @@ public class CompensatedWorld {
         return getBlock((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
     }
 
-    public double getFluidLevelAt(int x, int y, int z) {
+    public float getFluidLevelAt(int x, int y, int z) {
         return Math.max(getWaterFluidLevelAt(x, y, z), getLavaFluidLevelAt(x, y, z));
     }
 
@@ -636,16 +703,16 @@ public class CompensatedWorld {
         return Materials.isWaterSource(player.getClientVersion(), bukkitBlock);
     }
 
-    public boolean containsLiquid(SimpleCollisionBox var0) {
-        return Collisions.hasMaterial(player, var0, data -> Materials.isWater(player.getClientVersion(), data) || data.getType() == StateTypes.LAVA);
+    public boolean containsLiquid(SimpleCollisionBox box) {
+        return Collisions.hasMaterial(player, box, (block, x, y, z) -> Materials.isWater(player.getClientVersion(), block) || block.getType() == StateTypes.LAVA);
     }
 
-    public double getLavaFluidLevelAt(int x, int y, int z) {
+    public float getLavaFluidLevelAt(int x, int y, int z) {
         WrappedBlockState magicBlockState = getBlock(x, y, z);
         WrappedBlockState magicBlockStateAbove = getBlock(x, y + 1, z);
 
-        if (magicBlockState.getType() != StateTypes.LAVA) return 0;
-        if (magicBlockStateAbove.getType() == StateTypes.LAVA) return 1;
+        if (magicBlockState.getType() != StateTypes.LAVA) return 0f;
+        if (magicBlockStateAbove.getType() == StateTypes.LAVA) return 1f;
 
         int level = magicBlockState.getLevel();
 
@@ -658,23 +725,23 @@ public class CompensatedWorld {
         return (8 - level) / 9f;
     }
 
-    public boolean containsLava(SimpleCollisionBox var0) {
-        return Collisions.hasMaterial(player, var0, data -> data.getType() == StateTypes.LAVA);
+    public boolean containsLava(SimpleCollisionBox box) {
+        return Collisions.hasMaterial(player, box, (block, x, y, z) -> block.getType() == StateTypes.LAVA);
     }
 
-    public double getWaterFluidLevelAt(double x, double y, double z) {
+    public float getWaterFluidLevelAt(double x, double y, double z) {
         return getWaterFluidLevelAt(GrimMath.floor(x), GrimMath.floor(y), GrimMath.floor(z));
     }
 
-    public double getWaterFluidLevelAt(int x, int y, int z) {
+    public float getWaterFluidLevelAt(int x, int y, int z) {
         WrappedBlockState wrappedBlock = getBlock(x, y, z);
         boolean isWater = Materials.isWater(player.getClientVersion(), wrappedBlock);
 
-        if (!isWater) return 0;
+        if (!isWater) return 0f;
 
         // If water has water above it, it's block height is 1, even if it's waterlogged
         if (Materials.isWater(player.getClientVersion(), getBlock(x, y + 1, z))) {
-            return 1;
+            return 1f;
         }
 
         // If it is water or flowing water
@@ -694,7 +761,13 @@ public class CompensatedWorld {
 
     public void removeChunkLater(int chunkX, int chunkZ) {
         long chunkPosition = chunkPositionToLong(chunkX, chunkZ);
-        player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> chunks.remove(chunkPosition));
+        player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
+            Column column = chunks.remove(chunkPosition);
+            if (column != null) {
+                ChunkSectionCache.releaseColumnSections(column);
+                player.compensatedGeysers.removeChunk(chunkX, chunkZ, column.chunks().length);
+            }
+        });
     }
 
     public void setDimension(DimensionType dimension, User user) {

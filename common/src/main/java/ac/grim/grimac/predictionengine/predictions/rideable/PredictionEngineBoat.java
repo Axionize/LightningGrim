@@ -1,9 +1,11 @@
 package ac.grim.grimac.predictionengine.predictions.rideable;
 
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.predictionengine.blockeffects.PotentSulfurGeyser;
 import ac.grim.grimac.predictionengine.predictions.PredictionEngine;
 import ac.grim.grimac.utils.collisions.CollisionData;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
+import ac.grim.grimac.utils.data.IndexedVector3d;
 import ac.grim.grimac.utils.data.VectorData;
 import ac.grim.grimac.utils.enums.BoatEntityStatus;
 import ac.grim.grimac.utils.math.GrimMath;
@@ -12,6 +14,7 @@ import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.nmsutil.BlockProperties;
 import ac.grim.grimac.utils.nmsutil.Collisions;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
+import ac.grim.grimac.utils.nmsutil.StuckSpeed;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
@@ -149,53 +152,57 @@ public class PredictionEngineBoat extends PredictionEngine {
             // TODO: is this correct?
             data.input = new Vec2d(player.vehicleData.vehicleForward, player.vehicleData.vehicleHorizontal);
 
-            for (int applyStuckSpeed = 1; applyStuckSpeed >= 0; applyStuckSpeed--) {
-                if (applyStuckSpeed == 0 && player.isForceStuckSpeed()) break;
-
-                // Boats ignore forward steering, using raw inputs instead,
-                // so if a player tries to move in both directions, a packet will
-                // show that the player is staying, but the boat will move anyway
-                if (player.vehicleData.vehicleForward == 0) {
-                    float f = 0.035F;
-                    double x = data.vectorX + player.trigHandler.sin(GrimMath.radians(-player.yaw)) * f;
-                    double y = data.vectorY;
-                    double z = data.vectorZ + (double) (player.trigHandler.cos(GrimMath.radians(player.yaw)) * f);
-                    if (applyStuckSpeed != 0) {
-                        x *= player.stuckSpeedMultiplier.getX();
-                        y *= player.stuckSpeedMultiplier.getY();
-                        z *= player.stuckSpeedMultiplier.getZ();
-                    }
-                    vectors.add(data.returnNewModified(x, y, z, VectorData.VectorType.InputResult));
-                }
-
-                float f;
-                if (player.vehicleData.vehicleHorizontal != 0) {
-                    f = 0.005F;
-                    if (player.vehicleData.vehicleForward > 0.1) {
-                        f += 0.04F;
-                    } else if (player.vehicleData.vehicleForward < -0.01) {
-                        f -= 0.005F;
-                    }
-                } else {
-                    f = 0.0F;
-                }
-
-                // TODO (Mutation) (Confirm if Correct)
-                // It seems possible for applyStuckSpeed = 0, and 1 to add the same vector to the set twice
-                // since we're mutating data.vectorX, Y, Z which is very likely incorrect but I don't know enough to say for certain
-                data.vectorX = data.vectorX + player.trigHandler.sin(GrimMath.radians(-player.yaw)) * f;
-                data.vectorZ = data.vectorZ + (double) (player.trigHandler.cos(GrimMath.radians(player.yaw)) * f);
-
-                if (applyStuckSpeed != 0) {
-                    data.vectorX *= player.stuckSpeedMultiplier.getX();
-                    data.vectorY *= player.stuckSpeedMultiplier.getY();
-                    data.vectorZ *= player.stuckSpeedMultiplier.getZ();
-                }
-                vectors.add(data);
+            // Boats ignore forward steering, using raw inputs instead,
+            // so if a player tries to move in both directions, a packet will
+            // show that the player is staying, but the boat will move anyway
+            if (player.vehicleData.vehicleForward == 0) {
+                VectorData result = controlBoat(player, data, true);
+                result.input = data.input;
+                addStuckSpeedResults(player, vectors, result);
             }
+
+            VectorData result = controlBoat(player, data, false);
+            result.input = data.input;
+            addStuckSpeedResults(player, vectors, result);
         }
 
         return vectors;
+    }
+
+    private void addStuckSpeedResults(GrimPlayer player, List<VectorData> vectors, VectorData result) {
+        if (player.uncertaintyHandler.shouldSimulateStuckSpeed) {
+            // only simulate no stuck speed if player is leaving
+            if (player.uncertaintyHandler.stuckSpeedMultiplierMask == 0 || !player.isForceStuckSpeed())
+                addStuckSpeedResult(vectors, result, null);
+            addStuckSpeedResult(vectors, result, player.stuckSpeedMultiplier);
+            addPossibleStuckSpeedResults(player, vectors, result);
+        } else {
+            for (int applyStuckSpeed = 1; applyStuckSpeed >= 0; applyStuckSpeed--) {
+                if (applyStuckSpeed == 0 && player.isForceStuckSpeed()) break;
+
+                addStuckSpeedResult(vectors, result, applyStuckSpeed != 0 ? player.stuckSpeedMultiplier : null);
+            }
+        }
+    }
+
+    private void addPossibleStuckSpeedResults(GrimPlayer player, List<VectorData> vectors, VectorData result) {
+        int possibleStuckSpeedMultipliers = player.uncertaintyHandler.stuckSpeedMultiplierMask;
+        for (IndexedVector3d stuckSpeedMultiplier : StuckSpeed.POSSIBILITIES) {
+            if ((possibleStuckSpeedMultipliers & stuckSpeedMultiplier.getIndex()) != 0 && stuckSpeedMultiplier.getIndex() != player.stuckSpeedMultiplier.getIndex()) {
+                addStuckSpeedResult(vectors, result, stuckSpeedMultiplier);
+            }
+        }
+    }
+
+    private void addStuckSpeedResult(List<VectorData> vectors, VectorData result, IndexedVector3d stuckSpeedMultiplier) {
+        if (stuckSpeedMultiplier != null) {
+            result = result.returnNewModified(result.vectorX * stuckSpeedMultiplier.getX(),
+                    result.vectorY * stuckSpeedMultiplier.getY(),
+                    result.vectorZ * stuckSpeedMultiplier.getZ(),
+                    VectorData.VectorType.StuckMultiplier);
+        }
+        result.stuckSpeedMultiplier = stuckSpeedMultiplier == null ? StuckSpeed.NONE : stuckSpeedMultiplier;
+        vectors.add(result);
     }
 
     @Override
@@ -218,6 +225,7 @@ public class PredictionEngineBoat extends PredictionEngine {
         // yes, this is how mojank does it
         Collisions.applyEffectsFromBlocks(player);
         Collisions.applyEffectsFromBlocks(player);
+        PotentSulfurGeyser.launchEntityTicker(player, player.clientVelocity, true);
     }
 
     @Override
@@ -299,5 +307,26 @@ public class PredictionEngineBoat extends PredictionEngine {
         }
 
         return (float) (l + 1);
+    }
+
+    private VectorData controlBoat(GrimPlayer player, VectorData data, boolean intermediate) {
+        float f = 0.0F;
+        if (player.vehicleData.vehicleHorizontal != 0 && (!intermediate && player.vehicleData.vehicleForward == 0)) {
+            f += 0.005F;
+        }
+
+        //player.boatData.yRot += player.boatData.deltaRotation;
+        if (intermediate || player.vehicleData.vehicleForward > 0.1) {
+            f += 0.04F;
+        }
+
+        if (intermediate || player.vehicleData.vehicleForward < -0.01) {
+            f -= 0.005F;
+        }
+
+        return data.returnNewModified(data.vectorX + player.trigHandler.sin(GrimMath.radians(-player.yaw)) * f,
+                data.vectorY,
+                data.vectorZ + (double) (player.trigHandler.cos(GrimMath.radians(player.yaw)) * f),
+                VectorData.VectorType.InputResult);
     }
 }

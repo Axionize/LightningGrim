@@ -99,7 +99,6 @@ public class WorldRayTrace {
         int floorStartY = GrimMath.floor(startY);
         int floorStartZ = GrimMath.floor(startZ);
 
-
         if (start.equals(end)) return null;
 
         WrappedBlockState state = player.compensatedWorld.getBlock(floorStartX, floorStartY, floorStartZ);

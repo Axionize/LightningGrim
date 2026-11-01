@@ -1,8 +1,8 @@
 package ac.grim.grimac.manager.init.start;
 
 import ac.grim.grimac.GrimAPI;
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.GrimProcessor;
+import ac.grim.grimac.checks.type.PostPredictionListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.UncertaintyHandler;
 import ac.grim.grimac.predictionengine.predictions.PredictionEngine;
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public final class SuperDebug extends Check implements PostPredictionCheck {
+public final class SuperDebug extends GrimProcessor implements PostPredictionListener {
     private static final StringBuilder[] flags = new StringBuilder[256]; //  17 MB of logs in memory
 
     private final Object2IntMap<StringBuilder> continuedDebug = new Object2IntOpenHashMap<>();
@@ -37,6 +37,10 @@ public final class SuperDebug extends Check implements PostPredictionCheck {
     private final List<Vector3dm> startTickClientVel = new EvictingQueue<>(60);
     private final List<Vector3dm> baseTickAddition = new EvictingQueue<>(60);
     private final List<Vector3dm> baseTickWater = new EvictingQueue<>(60);
+    private final List<Vector3dm> firstBreadKB = new EvictingQueue<>(60);
+    private final List<Vector3dm> likelyKB = new EvictingQueue<>(60);
+    private final List<Vector3dm> firstBreadExplosion = new EvictingQueue<>(60);
+    private final List<Vector3dm> likelyExplosions = new EvictingQueue<>(60);
 
     public SuperDebug(GrimPlayer player) {
         super(player);
@@ -61,7 +65,11 @@ public final class SuperDebug extends Check implements PostPredictionCheck {
                     location,
                     player.startTickClientVel.getX(), player.startTickClientVel.getY(), player.startTickClientVel.getZ(),
                     player.baseTickAddition.getX(), player.baseTickAddition.getY(), player.baseTickAddition.getZ(),
-                    player.baseTickWaterPushing.getX(), player.baseTickWaterPushing.getY(), player.baseTickWaterPushing.getZ());
+                    player.baseTickWaterPushing.getX(), player.baseTickWaterPushing.getY(), player.baseTickWaterPushing.getZ(),
+                    player.firstBreadKB == null ? null : player.firstBreadKB.vector.clone(),
+                    player.likelyKB == null ? null : player.likelyKB.vector.clone(),
+                    player.firstBreadExplosion == null ? null : player.firstBreadExplosion.vector.clone(),
+                    player.likelyExplosions == null ? null : player.likelyExplosions.vector.clone());
             debug.setValue(debug.getValue() - 1);
             if (debug.getValue() <= 0) it.remove();
         }
@@ -70,8 +78,12 @@ public final class SuperDebug extends Check implements PostPredictionCheck {
         actually.add(player.actualMovement);
         locations.add(location);
         startTickClientVel.add(player.startTickClientVel);
-        baseTickAddition.add(player.baseTickAddition);
-        baseTickWater.add(player.baseTickWaterPushing);
+        baseTickAddition.add(player.baseTickAddition.clone());
+        baseTickWater.add(player.baseTickWaterPushing.clone());
+        firstBreadKB.add(player.firstBreadKB == null ? null : player.firstBreadKB.vector.clone());
+        likelyKB.add(player.likelyKB == null ? null : player.likelyKB.vector.clone());
+        firstBreadExplosion.add(player.firstBreadExplosion == null ? null : player.firstBreadExplosion.vector.clone());
+        likelyExplosions.add(player.likelyExplosions == null ? null : player.likelyExplosions.vector.clone());
 
         if (predictionComplete.getIdentifier() == 0) return; // 1 - 256 are valid possible values
 
@@ -103,7 +115,8 @@ public final class SuperDebug extends Check implements PostPredictionCheck {
                     loc,
                     startTickVel.getX(), startTickVel.getY(), startTickVel.getZ(),
                     addition.getX(), addition.getY(), addition.getZ(),
-                    water.getX(), water.getY(), water.getZ()
+                    water.getX(), water.getY(), water.getZ(),
+                    firstBreadKB.get(i), likelyKB.get(i), firstBreadExplosion.get(i), likelyExplosions.get(i)
             );
         }
 
@@ -213,7 +226,9 @@ public final class SuperDebug extends Check implements PostPredictionCheck {
                              final Location location,
                              final double startTickX, final double startTickY, final double startTickZ,
                              final double additionX, final double additionY, final double additionZ,
-                             final double waterX, final double waterY, final double waterZ) {
+                             final double waterX, final double waterY, final double waterZ,
+                             final Vector3dm firstBreadKB, final Vector3dm likelyKB,
+                             final Vector3dm firstBreadExplosion, final Vector3dm likelyExplosions) {
 
         if (predict.isZeroPointZeroThree()) {
             sb.append("Movement threshold/tick skipping\n");
@@ -222,19 +237,19 @@ public final class SuperDebug extends Check implements PostPredictionCheck {
             sb.append("* 0.6 horizontal attack slowdown\n");
         }
         if (predict.isKnockback()) {
-            if (player.firstBreadKB != null) {
-                sb.append("First bread knockback: ").append(player.firstBreadKB.vector).append("\n");
+            if (firstBreadKB != null) {
+                sb.append("First bread knockback: ").append(firstBreadKB).append("\n");
             }
-            if (player.likelyKB != null) {
-                sb.append("Second bread knockback: ").append(player.likelyKB.vector).append("\n");
+            if (likelyKB != null) {
+                sb.append("Second bread knockback: ").append(likelyKB).append("\n");
             }
         }
         if (predict.isExplosion()) {
-            if (player.firstBreadExplosion != null) {
-                sb.append("First bread explosion: ").append(player.firstBreadExplosion.vector).append("\n");
+            if (firstBreadExplosion != null) {
+                sb.append("First bread explosion: ").append(firstBreadExplosion).append("\n");
             }
-            if (player.likelyExplosions != null) {
-                sb.append("Second bread explosion: ").append(player.likelyExplosions.vector).append("\n");
+            if (likelyExplosions != null) {
+                sb.append("Second bread explosion: ").append(likelyExplosions).append("\n");
             }
         }
         if (predict.isTrident()) {

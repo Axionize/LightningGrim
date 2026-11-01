@@ -6,6 +6,7 @@
 # [alert] - special command to alert
 # [webhook] - special command to alert to discord webhook
 # [proxy] - special command to alert to other servers connected to your proxy (BungeeCord/Velocity)
+
 Punishments:
   Simulation:
     # After how many seconds should a violation be removed?
@@ -21,16 +22,19 @@ Punishments:
       - "NoFall"
     # Threshold:Interval Command
     #
-    # Example, to kick the player with the message "incorrect movement!" after 100 violations, with no interval
-    # commands:
-    # - "100:0 kick %player% incorrect movement!"
-    # 0 means execute exactly once
-    # - "100:50 say %player% is cheating"
-    # Execute when the user hits flag 100, and after that, every 50th flag after 100
+    # N is the active violation count required to run the command.
+    # Active violations are counted inside the remove-violations-after window.
+    # M > 0 runs at N, then N+M, N+2M, ...
+    # M = 0 runs once when N is reached.
+    #
+    # Examples:
+    # - "100:0 kick %player% incorrect movement!"   fires once on flag 100
+    # - "100:50 say %player% is cheating"           fires on flags 100, 150, 200, ...
+    # - "5:3 [alert]"                               fires on flags 5, 8, 11, 14, ...
     #
     commands:
       - "100:40 [alert]"
-      - "100:40 [log]"
+      - "1:1 [log]"
       - "100:100 [webhook]"
       - "100:100 [proxy]"
   Knockback:
@@ -40,7 +44,7 @@ Punishments:
       - "Explosion"
     commands:
       - "5:5 [alert]"
-      - "5:5 [log]"
+      - "1:1 [log]"
       - "20:20 [webhook]"
       - "20:20 [proxy]"
   Post:
@@ -49,7 +53,7 @@ Punishments:
       - "Post"
     commands:
       - "20:20 [alert]"
-      - "20:20 [log]"
+      - "1:1 [log]"
       - "40:40 [webhook]"
       - "40:40 [proxy]"
   BadPackets:
@@ -60,7 +64,7 @@ Punishments:
       - "Crash"
     commands:
       - "20:20 [alert]"
-      - "20:20 [log]"
+      - "1:1 [log]"
       - "40:40 [webhook]"
       - "40:40 [proxy]"
   Reach:
@@ -78,7 +82,7 @@ Punishments:
       - "Hitboxes"
     commands:
       - "5:3 [alert]"
-      - "5:3 [log]"
+      - "1:1 [log]"
       - "5:3 [webhook]"
       - "5:3 [proxy]"
   Misc:
@@ -97,7 +101,7 @@ Punishments:
       - "Exploit"
     commands:
       - "10:5 [alert]"
-      - "10:5 [log]"
+      - "1:1 [log]"
       - "20:10 [webhook]"
       - "20:10 [proxy]"
   Combat:
@@ -107,7 +111,7 @@ Punishments:
       - "Aim"
     commands:
       - "20:40 [alert]"
-      - "20:40 [log]"
+      - "1:1 [log]"
   # As of 2.2.10, there are no AutoClicker checks and this is a placeholder. Grim will include AutoClicker checks in the future.
   Autoclicker:
     remove-violations-after: 300
@@ -115,4 +119,4 @@ Punishments:
       - "Autoclicker"
     commands:
       - "20:40 [alert]"
-      - "20:40 [log]"
+      - "1:1 [log]"
