@@ -68,7 +68,7 @@ public class PredictionEngineNormal extends PredictionEngine {
 
                 JumpPower.jumpFromGround(player, jumpValues);
             } else {
-                jumpValues[1] = player.flySpeed * 3;
+                jumpValues[1] += player.flySpeed * 3;
                 if (!player.wasFlying) {
                     double[] edgeCaseJumpValues = {jumpValues[0], jumpValues[1], jumpValues[2]};
                     JumpPower.jumpFromGround(player, edgeCaseJumpValues);

@@ -215,9 +215,9 @@ public class SetbackTeleportUtil extends GrimProcessor implements PostPrediction
             } else if (player.isGliding) {
                 Vector3dm getLook = ReachUtils.getLook(player, player.yaw, player.pitch);
                 PredictionEngineElytra.applyElytraMovementInPlace(player, vector, getLook.getX(), getLook.getY(), getLook.getZ());
-                vector[0] *= player.stuckSpeedMultiplier.getX() * 0.99F;
-                vector[1] *= player.stuckSpeedMultiplier.getY() * 0.98F;
-                vector[2] *= player.stuckSpeedMultiplier.getZ() * 0.99F;
+                vector[0] = vector[0] * player.stuckSpeedMultiplier.getX() * 0.99F;
+                vector[1] = vector[1] * player.stuckSpeedMultiplier.getY() * 0.98F;
+                vector[2] = vector[2] * player.stuckSpeedMultiplier.getZ() * 0.99F;
 
                 vector[1] -= 0.05; // Make the player fall a bit
             } else { // Gliding doesn't have friction, we handle it differently
@@ -503,7 +503,9 @@ public class SetbackTeleportUtil extends GrimProcessor implements PostPrediction
         private final double posX;
         private final double posY;
         private final double posZ;
+        // AllArgsConstructor follows this order, the callers pass x, y, z
+        private double vectorX;
         private final double vectorY;
-        private double vectorX, vectorZ;
+        private double vectorZ;
     }
 }

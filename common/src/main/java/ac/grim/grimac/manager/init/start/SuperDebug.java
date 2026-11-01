@@ -270,20 +270,17 @@ public final class SuperDebug extends GrimProcessor implements PostPredictionLis
         double trueStartVelY = tempVectorData.vectorY;
         double trueStartVelZ = tempVectorData.vectorZ;
 
-        final double offsetX = actualX - trueStartVelX;
-        final double offsetY = actualY - trueStartVelY;
-        final double offsetZ = actualZ - trueStartVelZ;
+        Vec2 clientMovement = getPlayerMathMovement(player, actualX - trueStartVelX, actualZ - trueStartVelZ, location.xRot);
+        Vec2 simulatedMovement = getPlayerMathMovement(player, predict.vectorX - trueStartVelX, predict.vectorZ - trueStartVelZ, location.xRot);
+
+        final double offsetX = actualX - predict.vectorX;
+        final double offsetY = actualY - predict.vectorY;
+        final double offsetZ = actualZ - predict.vectorZ;
 
         double offsetLength = Math.sqrt(offsetX*offsetX + offsetY*offsetY + offsetZ*offsetZ);
 
-        Vec2 clientMovement = getPlayerMathMovement(player, offsetX, offsetZ, location.xRot);
-        Vec2 simulatedMovement = getPlayerMathMovement(player, predict.vectorX - trueStartVelX, predict.vectorZ - trueStartVelZ, location.xRot);
-        trueStartVelX += additionX + waterX;
-        trueStartVelY += additionY + waterY;
-        trueStartVelZ += additionZ + waterZ;
-
         sb.append("Simulated: ");
-        sb.append(MessageUtil.toUnlabeledString(trueStartVelX, trueStartVelY, trueStartVelZ));
+        sb.append(MessageUtil.toUnlabeledString(predict.vectorX, predict.vectorY, predict.vectorZ));
         sb.append("\nActually:  ");
         sb.append(MessageUtil.toUnlabeledString(actualX, actualY, actualZ));
         sb.append("\nOffset Vector: ");

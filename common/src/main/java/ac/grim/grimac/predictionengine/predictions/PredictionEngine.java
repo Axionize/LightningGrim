@@ -453,12 +453,9 @@ public class PredictionEngine {
             }
 
             if (player.firstBreadExplosion != null) {
-                // Previously we called Vector3dm.add(player.likelyExplosions.vector) after checking (player.firstBreadExplosion != null)
-                // which would've thrown an NPE if player.likelyExplosions could be null here, we can ignore this
-                // empirically this means when firstBreadExplosion != null then likelyExplosions is also != null
-                final double newX = player.likelyExplosions.vector.getX() + vector.vectorX;
-                final double newY = player.likelyExplosions.vector.getY() + vector.vectorY;
-                final double newZ = player.likelyExplosions.vector.getZ() + vector.vectorZ;
+                final double newX = player.firstBreadExplosion.vector.getX() + vector.vectorX;
+                final double newY = player.firstBreadExplosion.vector.getY() + vector.vectorY;
+                final double newZ = player.firstBreadExplosion.vector.getZ() + vector.vectorZ;
                 VectorData intermediateData = new VectorData(newX, newY, newZ, vector, VectorData.VectorType.Explosion);
                 VectorData finalData = new VectorData(newX, newY, newZ, intermediateData, VectorData.VectorType.FirstBreadExplosion);
                 existingVelocities.add(finalData);

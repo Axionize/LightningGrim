@@ -40,11 +40,14 @@ public class JumpPower {
 
         if (player.isSprinting) {
             float radRotation = GrimMath.radians(player.yaw);
-            double sprintFactor = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5) ? 0.2 : 0.2F;
-
-            // Add to the X and Z values in the array.
-            vectorArr[0] += -player.trigHandler.sin(radRotation) * sprintFactor;
-            vectorArr[2] += player.trigHandler.cos(radRotation) * sprintFactor;
+            // Below 1.20.5 this is float * float, so the 0.2F can't be widened to a double first
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)) {
+                vectorArr[0] += -player.trigHandler.sin(radRotation) * 0.2;
+                vectorArr[2] += player.trigHandler.cos(radRotation) * 0.2;
+            } else {
+                vectorArr[0] += -player.trigHandler.sin(radRotation) * 0.2F;
+                vectorArr[2] += player.trigHandler.cos(radRotation) * 0.2F;
+            }
         }
     }
 

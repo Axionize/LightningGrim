@@ -618,8 +618,8 @@ public class MovementCheckRunner extends GrimProcessor {
         // Patch sprint jumping with elytra exploit
         if (player.platformPlayer != null && player.isGliding && player.predictedVelocity.isJump() && player.isSprinting && !allowSprintJumpingWithElytra) {
             SetbackTeleportUtil.SetbackPosWithVector lastKnownGoodPosition = player.getSetbackTeleportUtil().lastKnownGoodPosition;
-            lastKnownGoodPosition.setVectorX(lastKnownGoodPosition.getVectorX() * 0.6 * 0.91);
-            lastKnownGoodPosition.setVectorZ(lastKnownGoodPosition.getVectorZ() * 0.6 * 0.91);
+            lastKnownGoodPosition.setVectorX(lastKnownGoodPosition.getVectorX() * (0.6 * 0.91));
+            lastKnownGoodPosition.setVectorZ(lastKnownGoodPosition.getVectorZ() * (0.6 * 0.91));
 
             player.getSetbackTeleportUtil().executeNonSimulatingSetback();
         }
