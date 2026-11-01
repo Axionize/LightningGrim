@@ -346,13 +346,13 @@ public class PredictionEngine {
         addAttackSlowToPossibilities(player, velocities);
         copyBackToClientVelocity(player, clientVelocityData);
         // Non-effective AI for vehicles is done AFTER fluid pushing but BEFORE 0.003
-        addNonEffectiveAI(player, velocities);
+        boolean detached = addNonEffectiveAI(player, velocities);
         // Attack slowing is done BEFORE 0.003! Moving this before 0.003 will cause falses!
         applyMovementThreshold(player, velocities);
         // Jumps are done after 0.003, for sure.
         addJumpsToPossibilities(player, velocities);
         // Non-effective AI used to replace the vector with a new one, so after it clientVelocity stopped following
-        if (!player.inVehicle() || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)) {
+        if (!detached) {
             copyBackToClientVelocity(player, clientVelocityData);
         }
 
@@ -367,16 +367,18 @@ public class PredictionEngine {
         }
     }
 
-    private void addNonEffectiveAI(GrimPlayer player, Set<VectorData> data) {
+    // Returns whether it ran
+    private boolean addNonEffectiveAI(GrimPlayer player, Set<VectorData> data) {
         // For some reason on 1.21.5+ this no longer applies
         if (!player.inVehicle() || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5))
-            return;
+            return false;
 
         for (VectorData vectorData : data) {
             vectorData.vectorX = vectorData.vectorX * 0.98;
             vectorData.vectorY = vectorData.vectorY * 0.98;
             vectorData.vectorZ = vectorData.vectorZ * 0.98;
         }
+        return true;
     }
 
     private void addAttackSlowToPossibilities(GrimPlayer player, Set<VectorData> velocities) {
