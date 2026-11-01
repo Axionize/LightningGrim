@@ -328,8 +328,8 @@ public class Reach extends Check implements PacketReceiveListener {
     private SimpleCollisionBox getTargetBox(PacketEntity reachEntity) {
         if (reachEntity.getType() == EntityTypes.END_CRYSTAL) { // Hardcode end crystal box
             final double x = reachEntity.trackedServerPosition.getX();
-            final double y = reachEntity.trackedServerPosition.getX();
-            final double z = reachEntity.trackedServerPosition.getX();
+            final double y = reachEntity.trackedServerPosition.getY();
+            final double z = reachEntity.trackedServerPosition.getZ();
             return new SimpleCollisionBox(x - 1, y, z - 1, x + 1, y + 2, z + 1);
         }
         return reachEntity.getPossibleCollisionBoxes();

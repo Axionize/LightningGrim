@@ -579,8 +579,8 @@ public class BlockPlace {
                     // On 1.8 clients this should practically never happen
                     if (interpWidth - width > 0.05 || interpHeight - height > 0.05) {
                         final double x = entity.trackedServerPosition.getX();
-                        final double y = entity.trackedServerPosition.getX();
-                        final double z = entity.trackedServerPosition.getX();
+                        final double y = entity.trackedServerPosition.getY();
+                        final double z = entity.trackedServerPosition.getZ();
                         interpBox = GetBoundingBox.getPacketEntityBoundingBox(player, x, y, z, entity);
                     }
 
