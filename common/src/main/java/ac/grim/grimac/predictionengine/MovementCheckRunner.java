@@ -244,7 +244,7 @@ public class MovementCheckRunner extends GrimProcessor {
                 handleTeleport(update);
 
                 if (player.isClimbing) {
-                    player.lastWasClimbing = PredictionEngineNormal.staticVectorEndOfTickY(player, 0.2);
+                    player.lastWasClimbing = PredictionEngineNormal.staticVectorEndOfTickY(player, 0.2, player.clientVelocity.getY());
                 }
                 return;
             }

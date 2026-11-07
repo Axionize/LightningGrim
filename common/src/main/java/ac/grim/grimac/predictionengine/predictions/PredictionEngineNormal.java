@@ -22,6 +22,11 @@ import java.util.Set;
 public class PredictionEngineNormal extends PredictionEngine {
 
     public static double staticVectorEndOfTickY(GrimPlayer player, double y) {
+        return staticVectorEndOfTickY(player, y, y);
+    }
+
+    // Vanilla checks slow falling against the Y from before climbing sets it to 0.2
+    public static double staticVectorEndOfTickY(GrimPlayer player, double y, double fallingY) {
         double adjustedY = y;
         final OptionalInt levitation = player.compensatedEntities.getPotionLevelForPlayer(PotionTypes.LEVITATION);
         if (levitation.isPresent()) {
@@ -30,7 +35,7 @@ public class PredictionEngineNormal extends PredictionEngine {
             player.fallDistance = 0;
         } else if (player.hasGravity) {
             double gravity = player.compensatedEntities.self.getAttributeValue(Attributes.GRAVITY);
-            if (y <= 0 && player.compensatedEntities.getSlowFallingAmplifier().isPresent()) {
+            if (fallingY <= 0 && player.compensatedEntities.getSlowFallingAmplifier().isPresent()) {
                 gravity = player.getClientVersion().isOlderThan(ClientVersion.V_1_20_5) ? 0.01 : Math.min(gravity, 0.01);
             }
 
@@ -98,7 +103,7 @@ public class PredictionEngineNormal extends PredictionEngine {
         if (player.lastWasClimbing == 0 && (player.pointThreeEstimator.isNearClimbable() || player.isClimbing) && (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14)
                 || !Collisions.isEmpty(player, player.boundingBox.copy().expand(
                 player.clientVelocity.getX(), 0, player.clientVelocity.getZ()).expand(0.5, -SimpleCollisionBox.COLLISION_EPSILON, 0.5))) || walkingOnPowderSnow) {
-            player.lastWasClimbing = staticVectorEndOfTickY(player, 0.2);
+            player.lastWasClimbing = staticVectorEndOfTickY(player, 0.2, player.clientVelocity.getY());
         }
 
         for (VectorData vector : player.getPossibleVelocitiesMinusKnockback()) {
