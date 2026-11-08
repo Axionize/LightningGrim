@@ -145,9 +145,7 @@ public class PacketServerTeleport extends PacketListenerAbstract {
                     hasDeltaMovement,
                     lastTransactionSent, teleport.getRelativeFlags(), true, teleport.getTeleportId()
             );
-        }
-
-        if (event.getPacketType() == PacketType.Play.Server.VEHICLE_MOVE) {
+        } else if (event.getPacketType() == PacketType.Play.Server.VEHICLE_MOVE) {
             GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
             if (player == null) return;
 
