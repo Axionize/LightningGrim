@@ -12,15 +12,15 @@ import org.jetbrains.annotations.Nullable;
 
 @UtilityClass
 public class MainSupportingBlockPosFinder {
-    public MainSupportingBlockData findMainSupportingBlockPos(GrimPlayer player, MainSupportingBlockData lastSupportingBlock, Vector3d lastMovement, SimpleCollisionBox maxPose, boolean isOnGround) {
+    public @NotNull MainSupportingBlockData findMainSupportingBlockPos(GrimPlayer player, MainSupportingBlockData lastSupportingBlock, Vector3d lastMovement, SimpleCollisionBox maxPose, boolean isOnGround) {
         if (!isOnGround) {
-            return new MainSupportingBlockData(null, false);
+            return MainSupportingBlockData.AIR_OFF_GROUND;
         }
 
         SimpleCollisionBox slightlyBelowPlayer = new SimpleCollisionBox(maxPose.minX, maxPose.minY - 1.0E-6D, maxPose.minZ, maxPose.maxX, maxPose.minY, maxPose.maxZ);
 
         Vector3i supportingBlock = findSupportingBlock(player, slightlyBelowPlayer);
-        if (supportingBlock == null && (!lastSupportingBlock.lastOnGroundAndNoBlock())) {
+        if (supportingBlock == null && !lastSupportingBlock.lastOnGroundAndNoBlock()) {
             if (lastMovement != null) {
                 SimpleCollisionBox aabb2 = slightlyBelowPlayer.offset(-lastMovement.x, 0.0D, -lastMovement.z);
                 return new MainSupportingBlockData(findSupportingBlock(player, aabb2), true);
@@ -29,7 +29,7 @@ public class MainSupportingBlockPosFinder {
             return new MainSupportingBlockData(supportingBlock, true);
         }
 
-        return new MainSupportingBlockData(null, true);
+        return MainSupportingBlockData.AIR_ON_GROUND;
     }
 
     private static class BestBlockHolder {
@@ -46,7 +46,7 @@ public class MainSupportingBlockPosFinder {
 
         final BestBlockHolder bestBlock = new BestBlockHolder();
 
-        Collisions.forEachCollisionBox(player, searchBox, (blockPosX, blockPosY, blockPosZ) -> {
+        Collisions.forEachCollisionBox(player, searchBox, (block, blockPosX, blockPosY, blockPosZ) -> {
             double distanceSquared = GrimMath.distanceSquared(playerX, playerY, playerZ, blockPosX + 0.5, blockPosY + 0.5, blockPosZ + 0.5);
 
             if (distanceSquared < bestBlock.distanceSquared || distanceSquared == bestBlock.distanceSquared && (bestBlock.pos == null || firstHasPriorityOverSecond(blockPosX, blockPosY, blockPosZ, bestBlock.pos))) {

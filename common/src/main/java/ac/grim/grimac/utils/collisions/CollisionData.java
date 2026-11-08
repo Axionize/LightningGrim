@@ -22,7 +22,7 @@ import ac.grim.grimac.utils.collisions.datatypes.NoCollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.packetentity.PacketEntityStrider;
 import ac.grim.grimac.utils.nmsutil.Materials;
-import ac.grim.grimac.utils.reflection.ViaVersionUtil;
+import ac.grim.grimac.utils.viaversion.ViaVersionUtil;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.item.ItemStack;
@@ -35,6 +35,7 @@ import com.github.retrooper.packetevents.protocol.world.states.enums.Attachment;
 import com.github.retrooper.packetevents.protocol.world.states.enums.Axis;
 import com.github.retrooper.packetevents.protocol.world.states.enums.Face;
 import com.github.retrooper.packetevents.protocol.world.states.enums.Half;
+import com.github.retrooper.packetevents.protocol.world.states.enums.Part;
 import com.github.retrooper.packetevents.protocol.world.states.enums.Thickness;
 import com.github.retrooper.packetevents.protocol.world.states.enums.Tilt;
 import com.github.retrooper.packetevents.protocol.world.states.enums.Type;
@@ -272,7 +273,7 @@ public enum CollisionData implements CollisionFactory {
             StateTypes.SMALL_DRIPLEAF, StateTypes.END_PORTAL, StateTypes.LEVER, StateTypes.PUMPKIN_STEM, StateTypes.MELON_STEM,
             StateTypes.ATTACHED_MELON_STEM, StateTypes.ATTACHED_PUMPKIN_STEM, StateTypes.BEETROOTS, StateTypes.POTATOES,
             StateTypes.WHEAT, StateTypes.CARROTS, StateTypes.NETHER_WART, StateTypes.MOVING_PISTON, StateTypes.AIR, StateTypes.CAVE_AIR,
-            StateTypes.VOID_AIR, StateTypes.LIGHT, StateTypes.WATER, StateTypes.FIRE, StateTypes.SOUL_FIRE),
+            StateTypes.VOID_AIR, StateTypes.LIGHT, StateTypes.WATER, StateTypes.BUBBLE_COLUMN, StateTypes.FIRE, StateTypes.SOUL_FIRE),
 
     KELP(new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 9.0D, 16.0D), StateTypes.KELP),
     // Kelp block is a full block, so it by default is correct
@@ -643,7 +644,9 @@ public enum CollisionData implements CollisionFactory {
 
         ComplexCollisionBox baseBox = new ComplexCollisionBox(3, new HexCollisionBox(0.0D, 3.0D, 0.0D, 16.0D, 9.0D, 16.0D));
 
-        switch (data.getFacing()) {
+        BlockFace facing = data.getPart() == Part.HEAD ? data.getFacing() : data.getFacing().getOppositeFace();
+
+        switch (facing) {
             case NORTH:
                 baseBox.add(new HexCollisionBox(0.0D, 0.0D, 0.0D, 3.0D, 3.0D, 3.0D));
                 baseBox.add(new HexCollisionBox(13.0D, 0.0D, 0.0D, 16.0D, 3.0D, 3.0D));
@@ -664,6 +667,86 @@ public enum CollisionData implements CollisionFactory {
 
         return baseBox;
     }, BlockTags.BEDS.getStates().toArray(new StateType[0])),
+
+    STRAW_BED((player, version, data, x, y, z) -> {
+        // viabackwards replacement block - bed
+        if (version.isOlderThan(ClientVersion.V_26_3)) {
+            return BED.fetch(player, version, data, x, y, z);
+        }
+
+        SimpleCollisionBox base = new HexCollisionBox(0, 0, 0, 16, 4, 16);
+        if (data.getPart() == Part.FOOT) {
+            return base;
+        }
+
+        ComplexCollisionBox baseBox = new ComplexCollisionBox(2, base);
+        switch (data.getFacing()) {
+            case NORTH:
+                baseBox.add(new HexCollisionBox(0, 4, 0, 16, 5, 8));
+                break;
+            case SOUTH:
+                baseBox.add(new HexCollisionBox(0, 4, 8, 16, 5, 16));
+                break;
+            case WEST:
+                baseBox.add(new HexCollisionBox(0, 4, 0, 8, 5, 16));
+                break;
+            case EAST:
+                baseBox.add(new HexCollisionBox(8, 4, 0, 16, 5, 16));
+                break;
+        }
+
+        return baseBox;
+    }, StateTypes.STRAW_BED),
+
+    SHELF_MUSHROOM((player, version, data, x, y, z) -> {
+        // viabackwards replacement block - cocoa
+        if (version.isOlderThan(ClientVersion.V_26_3)) {
+            return getCocoa(version, data.getAge(), data.getFacing().getOppositeFace());
+        }
+
+        ComplexCollisionBox baseBox = new ComplexCollisionBox(2);
+        if (data.getAge() == 0) {
+            switch (data.getFacing()) {
+                case NORTH:
+                    baseBox.add(new HexCollisionBox(3, 9, 9, 13, 11, 16));
+                    baseBox.add(new HexCollisionBox(5, 8, 12, 11, 9, 16));
+                    break;
+                case SOUTH:
+                    baseBox.add(new HexCollisionBox(3, 9, 0, 13, 11, 7));
+                    baseBox.add(new HexCollisionBox(5, 8, 0, 11, 9, 4));
+                    break;
+                case WEST:
+                    baseBox.add(new HexCollisionBox(9, 9, 3, 16, 11, 13));
+                    baseBox.add(new HexCollisionBox(12, 8, 5, 16, 9, 11));
+                    break;
+                case EAST:
+                    baseBox.add(new HexCollisionBox(0, 9, 3, 7, 11, 13));
+                    baseBox.add(new HexCollisionBox(0, 8, 5, 4, 9, 11));
+                    break;
+            }
+        } else {
+            switch (data.getFacing()) {
+                case NORTH:
+                    baseBox.add(new HexCollisionBox(1, 8, 6, 15, 11, 16));
+                    baseBox.add(new HexCollisionBox(4, 6, 10, 12, 8, 16));
+                    break;
+                case SOUTH:
+                    baseBox.add(new HexCollisionBox(1, 8, 0, 15, 11, 10));
+                    baseBox.add(new HexCollisionBox(4, 6, 0, 12, 8, 6));
+                    break;
+                case WEST:
+                    baseBox.add(new HexCollisionBox(6, 8, 1, 16, 11, 15));
+                    baseBox.add(new HexCollisionBox(10, 6, 4, 16, 8, 12));
+                    break;
+                case EAST:
+                    baseBox.add(new HexCollisionBox(0, 8, 1, 10, 11, 15));
+                    baseBox.add(new HexCollisionBox(0, 6, 4, 6, 8, 12));
+                    break;
+            }
+        }
+
+        return baseBox;
+    }, StateTypes.SHELF_MUSHROOM),
 
     TRAPDOOR(new TrapDoorHandler(), BlockTags.TRAPDOORS.getStates().toArray(new StateType[0])),
 
@@ -813,7 +896,7 @@ public enum CollisionData implements CollisionFactory {
     }, StateTypes.TRIPWIRE_HOOK),
 
     TORCH(new HexCollisionBox(6.0D, 0.0D, 6.0D, 10.0D, 10.0D, 10.0D),
-            StateTypes.TORCH, StateTypes.REDSTONE_TORCH, StateTypes.COPPER_TORCH),
+            StateTypes.TORCH, StateTypes.REDSTONE_TORCH, StateTypes.COPPER_TORCH, StateTypes.SOUL_TORCH),
 
     WALL_TORCH((player, version, data, x, y, z) -> switch (data.getFacing()) {
         case NORTH -> new HexCollisionBox(5.5D, 3.0D, 11.0D, 10.5D, 13.0D, 16.0D);
@@ -822,7 +905,7 @@ public enum CollisionData implements CollisionFactory {
         case EAST -> new HexCollisionBox(0.0D, 3.0D, 5.5D, 5.0D, 13.0D, 10.5D);
         // 1.13 separates wall and normal torches, 1.12 does not
         default -> new HexCollisionBox(6.0D, 0.0D, 6.0D, 10.0D, 10.0D, 10.0D);
-    }, StateTypes.WALL_TORCH, StateTypes.REDSTONE_WALL_TORCH, StateTypes.COPPER_WALL_TORCH),
+    }, StateTypes.WALL_TORCH, StateTypes.REDSTONE_WALL_TORCH, StateTypes.COPPER_WALL_TORCH, StateTypes.SOUL_WALL_TORCH),
 
     // 1.17 blocks
     CANDLE((player, version, data, x, y, z) -> {
@@ -901,7 +984,7 @@ public enum CollisionData implements CollisionFactory {
         }
 
         return box;
-    }, StateTypes.POINTED_DRIPSTONE),
+    }, StateTypes.POINTED_DRIPSTONE, StateTypes.SULFUR_SPIKE),
 
     POWDER_SNOW((player, version, data, x, y, z) -> {
         if (version.isOlderThanOrEquals(ClientVersion.V_1_16_4))
@@ -1171,7 +1254,7 @@ public enum CollisionData implements CollisionFactory {
     public static CollisionData getData(StateType state) { // TODO: Find a better hack for lava and scaffolding
         // What the fuck mojang, why put noCollision() and then give PITCHER_CROP collision?
         return state.isSolid() || state == StateTypes.LAVA || state == StateTypes.SCAFFOLDING
-                || state == StateTypes.PITCHER_CROP || state == StateTypes.HEAVY_CORE
+                || state == StateTypes.PITCHER_CROP || state == StateTypes.HEAVY_CORE || state == StateTypes.POTTED_GOLDEN_DANDELION
                 || state == StateTypes.PALE_MOSS_CARPET || BlockTags.WALL_HANGING_SIGNS.contains(state)
                 || BlockTags.COPPER_GOLEM_STATUES.contains(state)
                 ? rawLookupMap.getOrDefault(state, DEFAULT) : NO_COLLISION;

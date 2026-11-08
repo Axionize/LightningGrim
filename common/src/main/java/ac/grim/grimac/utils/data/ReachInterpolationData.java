@@ -26,10 +26,20 @@ import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.util.Vector3d;
+import org.jetbrains.annotations.Nullable;
 
 // You may not copy the check unless you are licensed under GPL
 public class ReachInterpolationData {
     private final SimpleCollisionBox targetLocation;
+    /**
+     * The exact position this interpolation is heading towards. Only meaningful when
+     * {@link #hasTargetPosition} is true; it is false when this interpolation targets a
+     * box rather than a tracked position (the riding and MC-255263 freeze constructor).
+     * Kept separate from {@link #targetLocation} because that box is expanded for
+     * < 1.9 packet precision loss.
+     */
+    private final double targetX, targetY, targetZ;
+    private final boolean hasTargetPosition;
     private final GrimPlayer player;
     private final PacketEntity entity;
     public SimpleCollisionBox startingLocation;
@@ -37,13 +47,16 @@ public class ReachInterpolationData {
     private int interpolationStepsHighBound = 0;
     private int interpolationSteps = 1;
     private boolean expandNonRelative = false;
-    private int cancelledLerpInterpolationStepsLowBound = Integer.MAX_VALUE;
 
     public ReachInterpolationData(GrimPlayer player, SimpleCollisionBox startingLocation, final double x, final double y, final double z, PacketEntity entity) {
         final boolean unreliableTicking = !player.inVehicle() && player.canSkipTicks();
 
         this.startingLocation = startingLocation;
         this.targetLocation = new SimpleCollisionBox(x, y, z, x, y, z, false);
+        this.targetX = x;
+        this.targetY = y;
+        this.targetZ = z;
+        this.hasTargetPosition = true;
         this.player = player;
         this.entity = entity;
 
@@ -57,7 +70,7 @@ public class ReachInterpolationData {
             interpolationSteps = 10;
         } else if (entity.isMinecart) {
             interpolationSteps = 5;
-        } else if (entity.type == EntityTypes.SHULKER) {
+        } else if (entity.getType() == EntityTypes.SHULKER) {
             interpolationSteps = 1;
         } else if (entity.isLivingEntity) {
             interpolationSteps = 3;
@@ -73,6 +86,10 @@ public class ReachInterpolationData {
     public ReachInterpolationData(GrimPlayer player, SimpleCollisionBox finishedLoc, PacketEntity entity) {
         this.startingLocation = finishedLoc;
         this.targetLocation = finishedLoc;
+        this.targetX = 0;
+        this.targetY = 0;
+        this.targetZ = 0;
+        this.hasTargetPosition = false;
         this.entity = entity;
         this.player = player;
     }
@@ -120,6 +137,48 @@ public class ReachInterpolationData {
     }
 
     /**
+     * Equivalent of vanilla's {@code InterpolationHandler#hasActiveInterpolation}.
+     * <p>
+     * Uses the low bound so this is only true while every position the client could
+     * be at is still short of the target. Once the low bound has reached the step
+     * count the entity has converged, and restarting the interpolation is a no-op
+     * anyway because the new starting location would equal the target.
+     */
+    public boolean hasActiveInterpolation() {
+        return interpolationStepsLowBound < getInterpolationSteps();
+    }
+
+    /**
+     * Whether an incoming position/rotation update restates the target this
+     * interpolation is already heading towards.
+     * <p>
+     * Mirrors the guard in vanilla {@code InterpolationHandler#interpolateTo}: a
+     * component the packet did not carry is compared against the current target
+     * (vanilla defaults it through {@code Entity#moveOrInterpolateTo}'s
+     * {@code Optional#orElse}), so it can never force a restart on its own.
+     *
+     * @param x          x of the position the update targets
+     * @param y          y of the position the update targets
+     * @param z          z of the position the update targets
+     * @param xRot       packet yaw, or null when the packet carried no rotation
+     * @param yRot       packet pitch, or null when the packet carried no rotation
+     * @param targetXRot yaw this interpolation is heading towards
+     * @param targetYRot pitch this interpolation is heading towards
+     */
+    public boolean restatesTarget(final double x, final double y, final double z, @Nullable Float xRot, @Nullable Float yRot,
+                                  float targetXRot, float targetYRot) {
+        if (!hasTargetPosition || !hasActiveInterpolation()) return false;
+        if (targetX != x
+                || targetY != y
+                || targetZ != z) {
+            return false;
+        }
+
+        // Vanilla compares boxed Floats here, so exact equality is the correct test.
+        return xRot == null || yRot == null || (targetXRot == xRot && targetYRot == yRot);
+    }
+
+    /**
      * Calculates a bounding box that contains all possible positions where the entity could be located
      * during interpolation. This takes into account:<p>
      * • The starting position<br>
@@ -140,9 +199,6 @@ public class ReachInterpolationData {
     public SimpleCollisionBox getPossibleLocationCombined() {
         int interpSteps = getInterpolationSteps();
 
-        int interpolationStepsLowBound = Math.min(this.interpolationStepsLowBound, this.cancelledLerpInterpolationStepsLowBound);
-
-
         double stepMinX = (targetLocation.minX - startingLocation.minX) / (double) interpSteps;
         double stepMaxX = (targetLocation.maxX - startingLocation.maxX) / (double) interpSteps;
         double stepMinY = (targetLocation.minY - startingLocation.minY) / (double) interpSteps;
@@ -150,25 +206,32 @@ public class ReachInterpolationData {
         double stepMinZ = (targetLocation.minZ - startingLocation.minZ) / (double) interpSteps;
         double stepMaxZ = (targetLocation.maxZ - startingLocation.maxZ) / (double) interpSteps;
 
-        SimpleCollisionBox minimumInterpLocation = new SimpleCollisionBox(
-                startingLocation.minX + (interpolationStepsLowBound * stepMinX),
-                startingLocation.minY + (interpolationStepsLowBound * stepMinY),
-                startingLocation.minZ + (interpolationStepsLowBound * stepMinZ),
-                startingLocation.maxX + (interpolationStepsLowBound * stepMaxX),
-                startingLocation.maxY + (interpolationStepsLowBound * stepMaxY),
-                startingLocation.maxZ + (interpolationStepsLowBound * stepMaxZ));
+        // Each corner of B(s) is linear in s: c + s * stepDelta. Over the closed integer range
+        // [interpolationStepsLowBound, interpolationStepsHighBound], a linear function attains
+        // its extremes at the endpoints. So the axis-wise union of B(s) for all s in that range
+        // equals the axis-wise union of just B(low) and B(high).
 
-        for (int step = interpolationStepsLowBound + 1; step <= interpolationStepsHighBound; step++) {
-            minimumInterpLocation = combineCollisionBox(minimumInterpLocation, new SimpleCollisionBox(
-                    startingLocation.minX + (step * stepMinX),
-                    startingLocation.minY + (step * stepMinY),
-                    startingLocation.minZ + (step * stepMinZ),
-                    startingLocation.maxX + (step * stepMaxX),
-                    startingLocation.maxY + (step * stepMaxY),
-                    startingLocation.maxZ + (step * stepMaxZ)));
-        }
+        double loMinX = startingLocation.minX + interpolationStepsLowBound * stepMinX;
+        double loMinY = startingLocation.minY + interpolationStepsLowBound * stepMinY;
+        double loMinZ = startingLocation.minZ + interpolationStepsLowBound * stepMinZ;
+        double loMaxX = startingLocation.maxX + interpolationStepsLowBound * stepMaxX;
+        double loMaxY = startingLocation.maxY + interpolationStepsLowBound * stepMaxY;
+        double loMaxZ = startingLocation.maxZ + interpolationStepsLowBound * stepMaxZ;
 
-        return minimumInterpLocation;
+        double hiMinX = startingLocation.minX + interpolationStepsHighBound * stepMinX;
+        double hiMinY = startingLocation.minY + interpolationStepsHighBound * stepMinY;
+        double hiMinZ = startingLocation.minZ + interpolationStepsHighBound * stepMinZ;
+        double hiMaxX = startingLocation.maxX + interpolationStepsHighBound * stepMaxX;
+        double hiMaxY = startingLocation.maxY + interpolationStepsHighBound * stepMaxY;
+        double hiMaxZ = startingLocation.maxZ + interpolationStepsHighBound * stepMaxZ;
+
+        return new SimpleCollisionBox(
+                Math.min(loMinX, hiMinX),
+                Math.min(loMinY, hiMinY),
+                Math.min(loMinZ, hiMinZ),
+                Math.max(loMaxX, hiMaxX),
+                Math.max(loMaxY, hiMaxY),
+                Math.max(loMaxZ, hiMaxZ));
     }
 
     /**
@@ -225,9 +288,5 @@ public class ReachInterpolationData {
 
     public void expandNonRelative() {
         expandNonRelative = true;
-    }
-
-    public void cancelLerp() {
-        cancelledLerpInterpolationStepsLowBound = interpolationStepsLowBound;
     }
 }

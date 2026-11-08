@@ -1,8 +1,11 @@
 package ac.grim.grimac.utils.data;
 
+import ac.grim.grimac.utils.data.packetentity.JumpableEntity;
 import ac.grim.grimac.utils.enums.BoatEntityStatus;
 import com.github.retrooper.packetevents.util.Vector3d;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class VehicleData {
@@ -20,11 +23,11 @@ public class VehicleData {
     public float vehicleForward = 0f;
     public boolean lastDummy = false;
     public boolean wasVehicleSwitch = false;
+    public float playerPitch = 0f;
+    public float playerYaw = 0f;
+    public final Deque<IntToObjectPair<JumpableEntity>> pendingJumps = new ArrayDeque<>();
     public final ConcurrentLinkedQueue<VehicleTeleport> vehicleTeleports = new ConcurrentLinkedQueue<>();
-    public float nextHorseJump = 0;
-    public float horseJump = 0;
-    public boolean horseJumping = false;
-    public int camelDashCooldown;
+    public SprintingState camelSprintingState = SprintingState.STOPPED;
 
     public record VehicleTeleport(int teleportId, double x, double y, double z) {}
 }

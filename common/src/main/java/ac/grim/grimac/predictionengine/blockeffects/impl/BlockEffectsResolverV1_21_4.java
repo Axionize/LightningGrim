@@ -4,6 +4,7 @@ import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.blockeffects.BlockEffectsResolver;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.math.GrimMath;
+import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.nmsutil.Collisions;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
@@ -13,6 +14,7 @@ import com.github.retrooper.packetevents.util.Vector3i;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 
+import java.util.List;
 import java.util.Set;
 
 // 1.21.4
@@ -21,10 +23,10 @@ public class BlockEffectsResolverV1_21_4 implements BlockEffectsResolver {
     public static final BlockEffectsResolver INSTANCE = new BlockEffectsResolverV1_21_4();
 
     @Override
-    public void applyEffectsFromBlocks(GrimPlayer player) {
+    public void applyEffectsFromBlocks(GrimPlayer player, Vector3dm clientVelocity, boolean onlyApplyVelocity, List<GrimPlayer.Movement> movements) {
         LongSet visitedBlocks = player.visitedBlocks;
 
-        for (GrimPlayer.Movement movement : player.finalMovementsThisTick) {
+        for (GrimPlayer.Movement movement : movements) {
             Vector3d from = movement.from();
             Vector3d to = movement.to();
 
@@ -38,7 +40,7 @@ public class BlockEffectsResolverV1_21_4 implements BlockEffectsResolver {
                 }
 
                 if (visitedBlocks.add(GrimMath.asLong(blockPos))) {
-                    Collisions.onInsideBlock(player, blockType, blockState, blockPos.x, blockPos.y, blockPos.z, true);
+                    Collisions.onInsideBlock(player, clientVelocity, onlyApplyVelocity, blockType, blockState, blockPos.x, blockPos.y, blockPos.z, true);
                 }
             }
         }

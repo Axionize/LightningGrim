@@ -18,6 +18,16 @@ public class LogUtil {
         getLogger().warning(warn);
     }
 
+    @SuppressWarnings("CallToPrintStackTrace")
+    public void warn(final String description, final Throwable throwable) {
+        Logger logger = getLogger();
+        if (logger != null) {
+            logger.warning(description + ": " + getStackTrace(throwable));
+        } else {
+            throwable.printStackTrace();
+        }
+    }
+
     public void error(final String error) {
         getLogger().severe(error);
     }

@@ -2,14 +2,18 @@ package ac.grim.grimac.checks.impl.badpackets;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.type.PacketReceiveListener;
+import ac.grim.grimac.api.storage.verbose.Verbose;
 import ac.grim.grimac.player.GrimPlayer;
+import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
-import com.github.retrooper.packetevents.protocol.player.GameMode;
 
-@CheckData(name = "BadPacketsR", decay = 0.25, experimental = true)
-public class BadPacketsR extends Check implements PacketCheck {
+@CheckData(name = "BadPacketsR", stableKey = "grim.badpackets.position_starvation", description = "Stopped sending position updates while still responding to transactions", decay = 0.25, experimental = true)
+public class BadPacketsR extends Check implements PacketReceiveListener {
+    private static final Verbose V = Verbose.of("time={ulong}ms, lst={ulong}ms, positions={uint}");
+
     private int positions = 0;
     private long clock = 0;
     private long lastTransTime;
@@ -25,8 +29,8 @@ public class BadPacketsR extends Check implements PacketCheck {
             long ms = (player.getPlayerClockAtLeast() - clock) / 1000000L;
             long diff = (System.currentTimeMillis() - lastTransTime);
             if (diff > 2000 && ms > 2000) {
-                if (positions == 0 && clock != 0 && player.gamemode != GameMode.SPECTATOR && !player.compensatedEntities.self.isDead) {
-                    flag("time=" + ms + "ms, " + "lst=" + diff + "ms, positions=" + positions);
+                if (positions == 0 && clock != 0 && player.cameraEntity.isSelf() && !player.compensatedEntities.self.isDead) {
+                    flag(V.write(verbose()).ulong(ms).ulong(diff).uint(positions));
                 } else {
                     reward();
                 }
@@ -44,6 +48,11 @@ public class BadPacketsR extends Check implements PacketCheck {
             positions++;
         } else if ((event.getPacketType() == PacketType.Play.Client.STEER_VEHICLE || event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE)
                 && player.inVehicle()) {
+            positions++;
+        } else if (event.getPacketType() == PacketType.Play.Client.PLAYER_ROTATION && player.inVehicle()
+                && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_2)) {
+            // 1.21.2 replaced steer vehicle with player input, which is only sent when the input changes
+            // The rotation is the only packet a passenger still sends every tick
             positions++;
         }
     }

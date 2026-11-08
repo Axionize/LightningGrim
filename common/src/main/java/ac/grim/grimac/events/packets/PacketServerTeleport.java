@@ -1,10 +1,9 @@
 package ac.grim.grimac.events.packets;
 
 import ac.grim.grimac.GrimAPI;
+import ac.grim.grimac.manager.SetbackTeleportUtil;
 import ac.grim.grimac.player.GrimPlayer;
-import ac.grim.grimac.utils.data.RotationData;
 import ac.grim.grimac.utils.data.VehicleData;
-import ac.grim.grimac.utils.math.GrimMath;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
@@ -15,7 +14,6 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.teleport.RelativeFlag;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerPositionAndLook;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerRotation;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerVehicleMove;
 
 public class PacketServerTeleport extends PacketListenerAbstract {
@@ -116,6 +114,14 @@ public class PacketServerTeleport extends PacketListenerAbstract {
                 }
             }
 
+            // 1.21.2+ client ignore teleports if player is inside vehicle, ABSOLUTE CINEMA MOJANG
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2) && player.compensatedEntities.serverPlayerVehicle != null) {
+                final SetbackTeleportUtil.SetbackPosWithVector lastKnownGoodPosition = player.getSetbackTeleportUtil().lastKnownGoodPosition;
+                posX = lastKnownGoodPosition.getPosX();
+                posY = lastKnownGoodPosition.getPosY();
+                posZ = lastKnownGoodPosition.getPosZ();
+            }
+
             player.sendTransaction();
             final int lastTransactionSent = player.lastTransactionSent.get();
             event.getTasksAfterSend().add(player::sendTransaction);
@@ -125,39 +131,21 @@ public class PacketServerTeleport extends PacketListenerAbstract {
                 event.getTasksAfterSend().add(() -> player.compensatedEntities.self.eject());
             }
 
-            // For some reason teleports on 1.7 servers are offset by 1.62?
-            if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_8))
+            // For some reason, teleports on 1.7 are offset by 1.62?
+            if (event.getServerVersion().isOlderThan(ServerVersion.V_1_8))
                 posY -= 1.62;
 
+            // A null delta movement means no velocity, addSentTeleport also drops it for clients below 1.21.2
             final Vector3d deltaMovement = teleport.getDeltaMovement();
-            player.getSetbackTeleportUtil().addSentTeleport(posX, posY, posZ,
-                    deltaMovement.getX(), deltaMovement.getY(), deltaMovement.getZ(),
+            final boolean hasDeltaMovement = deltaMovement != null;
+            player.getSetbackTeleportUtil().addSentTeleport(posX, posY, posZ, yaw, pitch,
+                    hasDeltaMovement ? deltaMovement.getX() : 0,
+                    hasDeltaMovement ? deltaMovement.getY() : 0,
+                    hasDeltaMovement ? deltaMovement.getZ() : 0,
+                    hasDeltaMovement,
                     lastTransactionSent, teleport.getRelativeFlags(), true, teleport.getTeleportId()
             );
-        }
-
-        if (event.getPacketType() == PacketType.Play.Server.PLAYER_ROTATION) {
-            GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
-            if (player == null) return;
-
-            WrapperPlayServerPlayerRotation packet = new WrapperPlayServerPlayerRotation(event);
-
-            // I don't want to deal with this, so we'll prevent it
-            if (!Float.isFinite(packet.getPitch())) {
-                packet.setPitch(0);
-                event.markForReEncode(true);
-            }
-            if (!Float.isFinite(packet.getYaw())) {
-                packet.setYaw(0);
-                event.markForReEncode(true);
-            }
-
-            player.sendTransaction();
-            player.pendingRotations.add(new RotationData(packet.getYaw(), GrimMath.clamp(packet.getPitch() % 360F, -90F, 90F), player.getLastTransactionSent()));
-            event.getTasksAfterSend().add(player::sendTransaction);
-        }
-
-        if (event.getPacketType() == PacketType.Play.Server.VEHICLE_MOVE) {
+        } else if (event.getPacketType() == PacketType.Play.Server.VEHICLE_MOVE) {
             GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
             if (player == null) return;
 

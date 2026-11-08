@@ -1,8 +1,9 @@
 package ac.grim.grimac.checks.impl.breaking;
 
+import ac.grim.grimac.api.storage.verbose.Verbose;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.BlockBreakCheck;
+import ac.grim.grimac.checks.type.BlockBreakListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockBreak;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
@@ -10,17 +11,18 @@ import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.math.VectorUtils;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
-import com.github.retrooper.packetevents.protocol.player.GameMode;
 
-@CheckData(name = "FarBreak", description = "Breaking blocks too far away", experimental = true)
-public class FarBreak extends Check implements BlockBreakCheck {
+@CheckData(name = "FarBreak", stableKey = "grim.breaking.far_break", description = "Breaking blocks too far away", experimental = true)
+public class FarBreak extends Check implements BlockBreakListener {
+    private static final Verbose V = Verbose.of("distance={f64:%.2f}");
+
     public FarBreak(GrimPlayer player) {
         super(player);
     }
 
     @Override
     public void onBlockBreak(BlockBreak blockBreak) {
-        if (player.gamemode == GameMode.SPECTATOR || player.inVehicle() || blockBreak.action == DiggingAction.CANCELLED_DIGGING)
+        if (!player.cameraEntity.isSelf() || player.inVehicle() || blockBreak.action == DiggingAction.CANCELLED_DIGGING)
             return; // falses
 
         double min = Double.MAX_VALUE;
@@ -38,8 +40,11 @@ public class FarBreak extends Check implements BlockBreakCheck {
             maxReach += Math.hypot(threshold, threshold);
         }
 
-        if (min > maxReach * maxReach && flagAndAlert(String.format("distance=%.2f", Math.sqrt(min))) && shouldModifyPackets()) {
-            blockBreak.cancel();
+        if (min > maxReach * maxReach) {
+            double distance = Math.sqrt(min);
+            if (flag(V.write(verbose()).f64(distance)) && shouldModifyPackets()) {
+                blockBreak.cancel();
+            }
         }
     }
 }

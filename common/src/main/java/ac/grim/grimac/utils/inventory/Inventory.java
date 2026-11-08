@@ -10,6 +10,7 @@ import com.github.retrooper.packetevents.protocol.item.ItemStack;
 import com.github.retrooper.packetevents.protocol.item.type.ItemType;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import lombok.Getter;
+import org.jetbrains.annotations.Range;
 
 public class Inventory extends AbstractContainerMenu {
     public static final int SLOT_OFFHAND = 45;
@@ -21,7 +22,8 @@ public class Inventory extends AbstractContainerMenu {
     public static final int SLOT_LEGGINGS = 6;
     public static final int SLOT_BOOTS = 7;
     private static final int TOTAL_SIZE = 46;
-    public int selected = 0;
+    @Getter
+    private int selected;
     @Getter
     private final CorrectingPlayerInventoryStorage inventoryStorage;
 
@@ -68,12 +70,18 @@ public class Inventory extends AbstractContainerMenu {
     }
 
     public boolean hasItemType(ItemType item) {
-        for (int i = 0; i < inventoryStorage.items.length; ++i) {
+        for (int i = 0; i < inventoryStorage.getSize(); ++i) {
             if (inventoryStorage.getItem(i).getType() == item) {
                 return true;
             }
         }
         return false;
+    }
+
+    public ItemStack getHotbar(@Range(from = 0, to = 8) int slot) {
+        //noinspection ConstantValue
+        if (slot > 8 || slot < 0) throw new IllegalArgumentException("slot must be from 0 to 8, got " + slot);
+        return inventoryStorage.getItem(slot + HOTBAR_OFFSET);
     }
 
     public ItemStack getHeldItem() {
@@ -84,16 +92,12 @@ public class Inventory extends AbstractContainerMenu {
         inventoryStorage.setItem(selected + HOTBAR_OFFSET, item);
     }
 
-    public ItemStack getOffhandItem() {
-        return inventoryStorage.getItem(SLOT_OFFHAND);
-    }
-
     public boolean add(ItemStack p_36055_) {
         return this.add(-1, p_36055_);
     }
 
     public int getFreeSlot() {
-        for (int i = 0; i < inventoryStorage.items.length; ++i) {
+        for (int i = 0; i < inventoryStorage.getSize(); ++i) {
             if (inventoryStorage.getItem(i).isEmpty()) {
                 return i;
             }
@@ -105,7 +109,7 @@ public class Inventory extends AbstractContainerMenu {
     public int getSlotWithRemainingSpace(ItemStack toAdd) {
         if (this.hasRemainingSpaceForItem(getHeldItem(), toAdd)) {
             return this.selected;
-        } else if (this.hasRemainingSpaceForItem(getOffhandItem(), toAdd)) {
+        } else if (this.hasRemainingSpaceForItem(getOffhand(), toAdd)) {
             return 40;
         } else {
             for (int i = ITEMS_START; i <= ITEMS_END; ++i) {
@@ -251,5 +255,10 @@ public class Inventory extends AbstractContainerMenu {
     @Override
     public boolean canTakeItemForPickAll(ItemStack p_38908_, Slot p_38909_) {
         return p_38909_.inventoryStorageSlot != 0; // Result slot
+    }
+
+    public void setSelected(int selected) {
+        this.selected = selected;
+        this.player.attackCooldown.updateHeldItem(false);
     }
 }

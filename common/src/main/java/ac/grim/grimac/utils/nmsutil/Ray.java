@@ -1,9 +1,10 @@
 package ac.grim.grimac.utils.nmsutil;
 
 import ac.grim.grimac.player.GrimPlayer;
-import ac.grim.grimac.utils.data.Pair;
 import ac.grim.grimac.utils.math.Vector3dm;
 import lombok.Getter;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 // Copied directly from Hawk
 @Getter
@@ -26,7 +27,7 @@ public class Ray implements Cloneable {
         this.dirZ = dirZ;
     }
 
-    public Ray(GrimPlayer player, double x, double y, double z, float xRot, float yRot) {
+    public Ray(@NotNull GrimPlayer player, double x, double y, double z, float xRot, float yRot) {
         this.originX = x;
         this.originY = y;
         this.originZ = z;
@@ -41,17 +42,19 @@ public class Ray implements Cloneable {
         dirZ = xz * player.trigHandler.cos(rotX);
     }
 
+    // All fields are final, so like 2.0's immutable record a clone can be this instance
+    @Contract(" -> this")
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @Override
-    public Ray clone() {
-        return new Ray(this.originX, this.originY, this.originZ, this.dirX, this.dirY, this.dirZ);
+    public @NotNull Ray clone() {
+        return this;
     }
 
     public String toString() {
         return "origin: " + this.originX + "," + this.originY + "," + this.originZ + " direction: " + this.dirX + "," + this.dirY + "," + this.dirZ;
     }
 
-    public Vector3dm getPointAtDistance(double distance) {
+    public @NotNull Vector3dm getPointAtDistance(double distance) {
         return new Vector3dm(
                 this.originX + this.dirX * distance,
                 this.originY + this.dirY * distance,

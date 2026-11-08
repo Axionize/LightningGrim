@@ -1,0 +1,50 @@
+# ===========================================================================
+#  Postgres 后端设置
+#
+#  Postgres 支持多服务器部署（多个 Grim 实例写入同一个中央数据库）。
+#  运行时需要 Postgres JDBC 驱动；若驱动缺失，后端会在启动时自我禁用，
+#  指向此后端的路由会回退到其他已配置的后端。
+# ===========================================================================
+
+# 所有键都在 `postgres:` 下，使本文件的 keyspace 不会在 Configuralize 把
+# 所有 yml 合并到同一个全局命名空间时与其他后端文件冲突。
+postgres:
+  host: "localhost"
+  port: 5432
+  database: "grim"
+  user: "postgres"
+  password: ""
+
+  # HikariCP connection pool settings. These only apply to SQL backends
+  # that use Hikari internally.
+  pool-settings:
+    # Maximum physical database connections this Grim instance can keep open.
+    maximum-pool-size: 5
+    # Minimum idle connections kept warm. Keep equal to maximum-pool-size
+    # for a fixed-size pool, or lower it if your database has tight limits.
+    minimum-idle: 5
+    # Retire connections after this many milliseconds. 1800000 is Hikari's
+    # default 30 minutes; use 0 only if your database/proxy handles lifetime.
+    maximum-lifetime-ms: 1800000
+    # Periodically ping idle connections. 0 disables keepalive.
+    keepalive-time-ms: 0
+    # Maximum time to wait for a connection from the pool before failing.
+    connection-timeout-ms: 5000
+
+  # 在 `?` 之后追加的额外 URL 参数。除非确有特殊需要，否则保持为空。
+  extra-jdbc-params: ""
+
+  batch-flush-cap: 256
+
+  # 表名覆盖。默认值见下方。
+  tables:
+    meta: grim_meta
+    checks: grim_checks
+    players: grim_players
+    sessions: grim_sessions
+    violations: grim_violations
+    settings: grim_settings
+
+# 模式标记 — 参见 config.yml 顶部的注释。
+config-flavor: V2
+config-version: 2

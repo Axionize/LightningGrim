@@ -3,11 +3,12 @@ package ac.grim.grimac.command.commands;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.command.BuildableCommand;
 import ac.grim.grimac.platform.api.PlatformPlugin;
+import ac.grim.grimac.platform.api.manager.cloud.CloudPlatformCommandArguments;
 import ac.grim.grimac.platform.api.sender.Sender;
 import ac.grim.grimac.utils.anticheat.MessageUtil;
 import ac.grim.grimac.utils.common.PropertiesUtil;
 import ac.grim.grimac.utils.reflection.ReflectionUtils;
-import ac.grim.grimac.utils.reflection.ViaVersionUtil;
+import ac.grim.grimac.utils.viaversion.ViaVersionUtil;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,7 +30,7 @@ public class GrimDump implements BuildableCommand {
     private String link = null; // these links should not expire for a while
 
     @Override
-    public void register(CommandManager<Sender> commandManager) {
+    public void register(CommandManager<Sender> commandManager, CloudPlatformCommandArguments arguments) {
         commandManager.command(
                 commandManager.commandBuilder("grim", "grimac")
                         .literal("dump", Description.of("Generate a debug dump"))
@@ -51,9 +52,9 @@ public class GrimDump implements BuildableCommand {
         GrimLog.sendLogAsync(sender, generateDump(), string -> link = string, "text/yaml");
     }
 
-    public static JsonObject getBasicInfo(String type) {
+    public static JsonObject getDumpInfo() {
         JsonObject base = new JsonObject();
-        base.addProperty("type", type);
+        base.addProperty("type", "dump");
         base.addProperty("timestamp", System.currentTimeMillis());
         // versions
         JsonObject versions = new JsonObject();
@@ -68,6 +69,11 @@ public class GrimDump implements BuildableCommand {
         if (GrimAPI.INSTANCE.isInitialized()) states.addProperty("platform", GrimAPI.INSTANCE.getPlatform().toString());
         if (ViaVersionUtil.isAvailable) states.addProperty("has_viaversion", true);
         if (PAPER) states.addProperty("has_paper", true);
+        // include some relevant settings if not default
+        JsonObject settings = new JsonObject();
+        if (GrimAPI.INSTANCE.getAlertManager().hasConsoleVerboseEnabled()) settings.addProperty("console_verbose", true);
+        if (!GrimAPI.INSTANCE.getAlertManager().hasConsoleAlertsEnabled()) settings.addProperty("console_alerts", false);
+        if (settings.size() > 0) states.add("settings", settings);
         // system
         JsonObject system = new JsonObject();
         base.add("system", system);
@@ -75,8 +81,17 @@ public class GrimDump implements BuildableCommand {
         system.addProperty("java_version", System.getProperty("java.version"));
         system.addProperty("user_language", System.getProperty("user.language"));
         // build
-        JsonObject build = new JsonObject();
         base.add("build", getBuildInfo());
+        // plugins
+        JsonArray plugins = new JsonArray();
+        base.add("plugins", plugins);
+        for (PlatformPlugin plugin : GrimAPI.INSTANCE.getPluginManager().getPlugins()) {
+            JsonObject pluginJson = new JsonObject();
+            pluginJson.addProperty("enabled", plugin.isEnabled());
+            pluginJson.addProperty("name", plugin.getName());
+            pluginJson.addProperty("version", plugin.getVersion());
+            plugins.add(pluginJson);
+        }
         return base;
     }
 
@@ -98,17 +113,7 @@ public class GrimDump implements BuildableCommand {
      * @return A JSON-formatted string containing the diagnostic dump.
      */
     private String generateDump() {
-        JsonObject base = getBasicInfo("dump");
-        // plugins
-        JsonArray plugins = new JsonArray();
-        base.add("plugins", plugins);
-        for (PlatformPlugin plugin : GrimAPI.INSTANCE.getPluginManager().getPlugins()) {
-            JsonObject pluginJson = new JsonObject();
-            pluginJson.addProperty("enabled", plugin.isEnabled());
-            pluginJson.addProperty("name", plugin.getName());
-            pluginJson.addProperty("version", plugin.getVersion());
-            plugins.add(pluginJson);
-        }
+        JsonObject base = getDumpInfo();
         return gson.toJson(base);
     }
 }

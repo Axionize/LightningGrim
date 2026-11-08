@@ -2,6 +2,7 @@ package ac.grim.grimac.predictionengine.predictions;
 
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.data.VectorData;
+import ac.grim.grimac.utils.enums.FluidTag;
 import ac.grim.grimac.utils.math.GrimMath;
 import ac.grim.grimac.utils.math.Vector3dm;
 
@@ -24,7 +25,7 @@ public class PredictionEngineLava extends PredictionEngine {
                 existingVelocities.add(new VectorData(startX, startY + 0.04f, startZ, vector, VectorData.VectorType.Jump));
             }
 
-            if (player.slightlyTouchingLava && player.lastOnGround && !player.onGround) {
+            if (player.getFluidHeight(FluidTag.LAVA) <= 0.4D && player.lastOnGround && !player.onGround) {
                 double[] jumpValues = {startX, startY, startZ};
                 super.doJump(player, jumpValues);
                 existingVelocities.add(new VectorData(jumpValues[0], jumpValues[1], jumpValues[2], vector, VectorData.VectorType.Jump));

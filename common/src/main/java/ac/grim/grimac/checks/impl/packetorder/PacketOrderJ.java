@@ -2,14 +2,15 @@ package ac.grim.grimac.checks.impl.packetorder;
 
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.PostPredictionCheck;
+import ac.grim.grimac.checks.type.PacketReceiveListener;
+import ac.grim.grimac.checks.type.PostPredictionListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 
-@CheckData(name = "PacketOrderJ", experimental = true)
-public class PacketOrderJ extends Check implements PostPredictionCheck {
+@CheckData(name = "PacketOrderJ", stableKey = "grim.packetorder.attack_interact_use_order", description = "Sent use item after attacking without the expected interaction packet", experimental = true)
+public class PacketOrderJ extends Check implements PacketReceiveListener, PostPredictionListener {
     public PacketOrderJ(final GrimPlayer player) {
         super(player);
     }
@@ -19,9 +20,10 @@ public class PacketOrderJ extends Check implements PostPredictionCheck {
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
         if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT || event.getPacketType() == PacketType.Play.Client.USE_ITEM) {
+            // we don't check stabbing here because you don't need to target an entity to stab
             if (player.packetOrderProcessor.isAttacking() && !player.packetOrderProcessor.isInteracting()) {
                 if (!player.canSkipTicks()) {
-                    if (flagAndAlert() && shouldModifyPackets()) {
+                    if (flag() && shouldModifyPackets()) {
                         event.setCancelled(true);
                         player.onPacketCancel();
                     }
@@ -38,7 +40,7 @@ public class PacketOrderJ extends Check implements PostPredictionCheck {
 
         if (player.isTickingReliablyFor(3)) {
             for (; invalid >= 1; invalid--) {
-                flagAndAlert();
+                flag();
             }
         }
 

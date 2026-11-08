@@ -1,16 +1,19 @@
 package ac.grim.grimac.checks.impl.breaking;
 
+import ac.grim.grimac.api.config.ConfigManager;
+import ac.grim.grimac.api.storage.verbose.Verbose;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
-import ac.grim.grimac.checks.type.BlockBreakCheck;
+import ac.grim.grimac.checks.impl.verbose.VerboseCodecs;
+import ac.grim.grimac.checks.type.BlockBreakListener;
+import ac.grim.grimac.checks.type.PreViaPacketReceiveListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockBreak;
 import ac.grim.grimac.utils.math.GrimMath;
 import ac.grim.grimac.utils.nmsutil.BlockBreakSpeed;
-import ac.grim.grimac.utils.reflection.ViaVersionUtil;
+import ac.grim.grimac.utils.viaversion.ViaVersionUtil;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
-import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
@@ -18,22 +21,25 @@ import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 import com.github.retrooper.packetevents.util.Vector3i;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
 // Based loosely off of Hawk BlockBreakSpeedSurvival
 // Also based loosely off of NoCheatPlus FastBreak
 // Also based off minecraft wiki: https://minecraft.wiki/w/Breaking#Instant_breaking
-@CheckData(name = "FastBreak", description = "Breaking blocks too quickly")
-public class FastBreak extends Check implements BlockBreakCheck {
+@CheckData(name = "FastBreak", stableKey = "grim.breaking.fast_break", description = "Breaking blocks too quickly")
+public class FastBreak extends Check implements BlockBreakListener, PreViaPacketReceiveListener {
+    private static final Verbose V =
+            Verbose.of("[delay={ulong}ms|diff={f64:%.1f}ms, balance={f64:%.1f}ms], type={block}");
 
     // For some reason these states flag and I don't know why.
     // Better to just exempt to not annoy legit players.
     private static final Set<StateType> EXEMPT_STATES = Set.of();
     private final boolean clientOlderThanServer = PacketEvents.getAPI().getServerManager().getVersion().getProtocolVersion() > player.getClientVersion().getProtocolVersion();
 
-    public FastBreak(GrimPlayer playerData) {
-        super(playerData);
+    public FastBreak(GrimPlayer player) {
+        super(player);
     }
 
     // The block the player is currently breaking, represented by primitives for performance.
@@ -52,6 +58,9 @@ public class FastBreak extends Check implements BlockBreakCheck {
     // The buffer to this check
     double blockBreakBalance = 0;
     double blockDelayBalance = 0;
+
+    private double breakThreshold;
+    private double delayThreshold;
 
     @Override
     public void onBlockBreak(BlockBreak blockBreak) {
@@ -76,6 +85,7 @@ public class FastBreak extends Check implements BlockBreakCheck {
             targetBlockY = blockBreak.y;
             targetBlockZ = blockBreak.z;
 
+            // FIXME: getBlockDamage might not return the correct value if the player switched slots before this
             maximumBlockDamage = BlockBreakSpeed.getBlockDamage(player, block);
 
             double breakDelay = System.currentTimeMillis() - lastFinishBreak;
@@ -86,8 +96,9 @@ public class FastBreak extends Check implements BlockBreakCheck {
                 blockDelayBalance += 300 - breakDelay;
             }
 
-            if (blockDelayBalance > 1000) { // If more than a second of advantage
-                if (flagAndAlert("delay=" + breakDelay + "ms, type=" + blockBreak.block.getType()) && shouldModifyPackets()) {
+            if (blockDelayBalance > delayThreshold) {
+                int type = VerboseCodecs.block(blockBreak.block.getType(), player.getClientVersion());
+                if (flag(V.write(verbose()).bool(true).ulong((long) breakDelay).f64(0).f64(0).sint(type)) && shouldModifyPackets()) {
                     blockBreak.cancel();
                 }
             }
@@ -106,8 +117,9 @@ public class FastBreak extends Check implements BlockBreakCheck {
                 blockBreakBalance += diff;
             }
 
-            if (blockBreakBalance > 1000) { // If more than a second of advantage
-                if (flagAndAlert("diff=" + diff + "ms, balance=" + blockBreakBalance + "ms, type=" + blockBreak.block.getType()) && shouldModifyPackets()) {
+            if (blockBreakBalance > breakThreshold) {
+                int type = VerboseCodecs.block(blockBreak.block.getType(), player.getClientVersion());
+                if (flag(V.write(verbose()).bool(false).ulong(0).f64(diff).f64(blockBreakBalance).sint(type)) && shouldModifyPackets()) {
                     blockBreak.cancel();
                 }
             }
@@ -118,17 +130,27 @@ public class FastBreak extends Check implements BlockBreakCheck {
     }
 
     @Override
-    public void onPacketReceive(PacketReceiveEvent event) {
+    public void onPreViaPacketReceive(PacketReceiveEvent event) {
         // Find the most optimal block damage using the animation packet, which is sent at least once a tick when breaking blocks
         // On 1.8 clients, via screws with this packet meaning we must fall back to the 1.8 idle flying packet
-        if ((player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) ? event.getPacketType() == PacketType.Play.Client.ANIMATION : WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) && targetBlockIsSet) {
+        //
+        // listen for flying packets because some block breaks can happen before the next animation (somehow???), causing onGround desync
+        boolean flying = WrapperPlayClientPlayerFlying.isFlying(event.getPacketType());
+        if ((flying || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) && isAnimation(event.getPacketType())) && targetBlockIsSet) {
             maximumBlockDamage = Math.max(maximumBlockDamage, BlockBreakSpeed.getBlockDamage(player, player.compensatedWorld.getBlock(targetBlockX, targetBlockY, targetBlockZ)));
         }
     }
 
     private void clampBalance() {
-        double balance = Math.max(1000, (player.getTransactionPing()));
-        blockBreakBalance = GrimMath.clamp(blockBreakBalance, -balance, balance); // Clamp not Math.max in case other logic changes
-        blockDelayBalance = GrimMath.clamp(blockDelayBalance, -balance, balance);
+        double breakBalance = Math.max(breakThreshold, player.getTransactionPing());
+        double delayBalance = Math.max(delayThreshold, player.getTransactionPing());
+        blockBreakBalance = GrimMath.clamp(blockBreakBalance, -breakBalance, breakBalance); // Clamp not Math.max in case other logic changes
+        blockDelayBalance = GrimMath.clamp(blockDelayBalance, -delayBalance, delayBalance);
+    }
+
+    @Override
+    public void onReload(@NotNull ConfigManager config) {
+        breakThreshold = config.getDoubleElse(getConfigName() + ".break-threshold", 1000);
+        delayThreshold = config.getDoubleElse(getConfigName() + ".delay-threshold", 1000);
     }
 }

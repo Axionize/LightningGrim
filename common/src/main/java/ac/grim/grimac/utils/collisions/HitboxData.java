@@ -37,6 +37,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static ac.grim.grimac.utils.lists.ArrayUtils.combine;
+
 // Expansion to the CollisionData class, which is different than regular ray tracing hitboxes
 public enum HitboxData implements HitBoxFactory {
     VINE((player, item, version, data, isTargetBlock, x, y, z) -> {
@@ -249,6 +251,12 @@ public enum HitboxData implements HitBoxFactory {
         default -> NoCollisionBox.INSTANCE;
     }, BlockTags.WALL_SIGNS.getStates().toArray(new StateType[0])),
 
+    CEILING_HANGING_SIGNS((player, item, version, data, isTargetBlock, x, y, z) -> switch (data.getRotation()) {
+        case 0, 8 -> new HexCollisionBox(1.0, 0.0, 7.0, 15.0, 10.0, 9.0);
+        case 4, 12 -> new HexCollisionBox(7.0, 0.0, 1.0, 9.0, 10.0, 15.0);
+        default -> new HexCollisionBox(3.0, 0.0, 3.0, 13.0, 16.0, 13.0);
+    }, BlockTags.CEILING_HANGING_SIGNS.getStates().toArray(new StateType[0])),
+
     WALL_HANGING_SIGN((player, item, version, data, isTargetBlock, x, y, z) -> switch (data.getFacing()) {
         case NORTH, SOUTH -> new ComplexCollisionBox(2,
                 new HexCollisionBox(0.0D, 14.0D, 6.0D, 16.0D, 16.0D, 10.0D),
@@ -263,7 +271,9 @@ public enum HitboxData implements HitBoxFactory {
             BlockTags.STANDING_SIGNS.getStates().toArray(new StateType[0])),
 
     SAPLING(new HexCollisionBox(2.0D, 0.0D, 2.0D, 14.0D, 12.0D, 14.0D),
-            BlockTags.SAPLINGS.getStates().toArray(new StateType[0])),
+            BlockTags.SAPLINGS.getStates().stream()
+                    .filter(s -> s != StateTypes.AZALEA && s != StateTypes.FLOWERING_AZALEA)
+                    .toArray(StateType[]::new)),
 
     ROOTS(new HexCollisionBox(2.0D, 0.0D, 2.0D, 14.0D, 13.0D, 14.0D),
             StateTypes.WARPED_ROOTS, StateTypes.CRIMSON_ROOTS),
@@ -477,7 +487,25 @@ public enum HitboxData implements HitBoxFactory {
         return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
     }, StateTypes.SWEET_BERRY_BUSH),
 
-    CORAL_FAN(new HexCollisionBox(2.0D, 0.0D, 2.0D, 14.0D, 4.0D, 14.0D), BlockTags.CORALS.getStates().toArray(new StateType[0])),
+    CORAL_PLANTS(new HexCollisionBox(2.0D, 0.0D, 2.0D, 14.0D, 15.0D, 14.0D),
+            combine(BlockTags.CORAL_PLANTS.getStates(),
+                    StateTypes.DEAD_TUBE_CORAL, StateTypes.DEAD_BRAIN_CORAL, StateTypes.DEAD_BUBBLE_CORAL, StateTypes.DEAD_FIRE_CORAL, StateTypes.DEAD_HORN_CORAL
+            )
+    ),
+
+    CORAL_FAN(new HexCollisionBox(2.0D, 0.0D, 2.0D, 14.0D, 4.0D, 14.0D),
+            StateTypes.TUBE_CORAL_FAN, StateTypes.BRAIN_CORAL_FAN, StateTypes.BUBBLE_CORAL_FAN, StateTypes.FIRE_CORAL_FAN, StateTypes.HORN_CORAL_FAN,
+            StateTypes.DEAD_TUBE_CORAL_FAN, StateTypes.DEAD_BRAIN_CORAL_FAN, StateTypes.DEAD_BUBBLE_CORAL_FAN, StateTypes.DEAD_FIRE_CORAL_FAN, StateTypes.DEAD_HORN_CORAL_FAN),
+
+    CORAL_WALL_FAN((player, item, version, data, isTargetBlock, x, y, z) -> switch (data.getFacing()) {
+        case NORTH -> new HexCollisionBox(0.0D, 4.0D, 5.0D, 16.0D, 12.0D, 16.0D);
+        case SOUTH -> new HexCollisionBox(0.0D, 4.0D, 0.0D, 16.0D, 12.0D, 11.0D);
+        case WEST -> new HexCollisionBox(5.0D, 4.0D, 0.0D, 16.0D, 12.0D, 16.0D);
+        case EAST -> new HexCollisionBox(0.0D, 4.0D, 0.0D, 11.0D, 12.0D, 16.0D);
+        default -> throw new UnsupportedOperationException();
+    }, combine(BlockTags.WALL_CORALS.getStates(),
+            StateTypes.DEAD_TUBE_CORAL_WALL_FAN, StateTypes.DEAD_BRAIN_CORAL_WALL_FAN, StateTypes.DEAD_BUBBLE_CORAL_WALL_FAN, StateTypes.DEAD_FIRE_CORAL_WALL_FAN, StateTypes.DEAD_HORN_CORAL_WALL_FAN)
+    ),
 
     TORCHFLOWER_CROP((player, item, version, data, isTargetBlock, x, y, z) -> {
         if (data.getAge() == 0) {
@@ -488,6 +516,8 @@ public enum HitboxData implements HitBoxFactory {
     }, StateTypes.TORCHFLOWER_CROP),
 
     DEAD_BUSH(new HexCollisionBox(2.0D, 0.0D, 2.0D, 14.0D, 13.0D, 14.0D), StateTypes.DEAD_BUSH),
+
+    RED_SHRUB(new HexCollisionBox(0, 0, 0, 16, 13, 16), StateTypes.RED_SHRUB),
 
     SUGARCANE(new HexCollisionBox(2.0D, 0.0D, 2.0D, 14.0D, 16.0D, 14.0D), StateTypes.SUGAR_CANE),
 
@@ -518,6 +548,10 @@ public enum HitboxData implements HitBoxFactory {
     SMALL_DRIPLEAF(new HexCollisionBox(2.0, 0.0, 2.0, 14.0, 13.0, 14.0), StateTypes.SMALL_DRIPLEAF),
 
     CAVE_VINES(new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 16.0D, 15.0D), StateTypes.CAVE_VINES, StateTypes.CAVE_VINES_PLANT),
+
+    MUSHROOM(new HexCollisionBox(5, 0, 5, 11, 6, 11), StateTypes.BROWN_MUSHROOM, StateTypes.RED_MUSHROOM),
+
+    FUNGUS(new HexCollisionBox(4, 0, 4, 12, 9, 12), StateTypes.CRIMSON_FUNGUS, StateTypes.WARPED_FUNGUS),
 
     // Then your enum entries become:
     TWISTING_VINES_BLOCK((player, item, version, data, isTargetBlock, x, y, z) ->
@@ -555,7 +589,7 @@ public enum HitboxData implements HitBoxFactory {
                 new HexCollisionBox(0.0D, 0.0D, 14.0D, 2.0D, 16.0D, 16.0D),
                 new HexCollisionBox(14.0D, 0.0D, 14.0D, 16.0D, 16.0D, 16.0D));
 
-        if (data.getHalf() == Half.LOWER) { // Add the unstable shape to the collision boxes
+        if (data.isBottom()) { // Add the unstable shape to the collision boxes
             box.add(new HexCollisionBox(0.0D, 0.0D, 0.0D, 2.0D, 2.0D, 16.0D));
             box.add(new HexCollisionBox(14.0D, 0.0D, 0.0D, 16.0D, 2.0D, 16.0D));
             box.add(new HexCollisionBox(0.0D, 0.0D, 14.0D, 16.0D, 2.0D, 16.0D));

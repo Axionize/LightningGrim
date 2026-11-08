@@ -18,29 +18,44 @@ public class JumpPower {
         float jumpPower = getJumpPower(player);
 
         final OptionalInt jumpBoost = player.compensatedEntities.getPotionLevelForPlayer(PotionTypes.JUMP_BOOST);
-        if (jumpBoost.isPresent()) {
-            jumpPower += 0.1f * (jumpBoost.getAsInt() + 1);
-        }
+        if (player.getClientVersion().isOlderThan(ClientVersion.V_1_14)) {
+            double jumpVelocity = jumpPower;
+            if (jumpBoost.isPresent()) {
+                jumpVelocity += (jumpBoost.getAsInt() + 1) * 0.1F;
+            }
+            // Directly set the Y-value in the array.
+            vectorArr[1] = jumpVelocity;
+        } else {
+            if (jumpBoost.isPresent()) {
+                jumpPower += 0.1f * (jumpBoost.getAsInt() + 1);
+            }
 
-        if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5) && jumpPower <= 1.0E-5f) {
-            return;
-        }
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5) && jumpPower <= 1.0E-5f) {
+                return;
+            }
 
-        // Directly set the Y-value in the array.
-        vectorArr[1] = player.getClientVersion().isOlderThan(ClientVersion.V_1_21_2) ? jumpPower : Math.max(jumpPower, vectorArr[1]);
+            // Directly set the Y-value in the array.
+            vectorArr[1] = player.getClientVersion().isOlderThan(ClientVersion.V_1_21_2) ? jumpPower : Math.max(jumpPower, vectorArr[1]);
+        }
 
         if (player.isSprinting) {
             float radRotation = GrimMath.radians(player.yaw);
-            double sprintFactor = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5) ? 0.2 : 0.2F;
-
-            // Add to the X and Z values in the array.
-            vectorArr[0] += -player.trigHandler.sin(radRotation) * sprintFactor;
-            vectorArr[2] += player.trigHandler.cos(radRotation) * sprintFactor;
+            // Below 1.20.5 this is float * float, so the 0.2F can't be widened to a double first
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)) {
+                vectorArr[0] += -player.trigHandler.sin(radRotation) * 0.2;
+                vectorArr[2] += player.trigHandler.cos(radRotation) * 0.2;
+            } else {
+                vectorArr[0] += -player.trigHandler.sin(radRotation) * 0.2F;
+                vectorArr[2] += player.trigHandler.cos(radRotation) * 0.2F;
+            }
         }
     }
 
     public static float getJumpPower(@NotNull GrimPlayer player) {
-        return (float) player.compensatedEntities.self.getAttributeValue(Attributes.JUMP_STRENGTH) * getPlayerJumpFactor(player);
+        float jumpStrength = player.getClientVersion().isOlderThan(ClientVersion.V_1_20_5)
+                ? 0.42F
+                : (float) player.compensatedEntities.self.getAttributeValue(Attributes.JUMP_STRENGTH);
+        return jumpStrength * getPlayerJumpFactor(player);
     }
 
     public static float getPlayerJumpFactor(@NotNull GrimPlayer player) {

@@ -1,7 +1,8 @@
 package ac.grim.grimac.utils.latency;
 
-import ac.grim.grimac.checks.Check;
-import ac.grim.grimac.checks.type.PacketCheck;
+import ac.grim.grimac.checks.GrimProcessor;
+import ac.grim.grimac.checks.type.PacketReceiveListener;
+import ac.grim.grimac.checks.type.PacketSendListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.BlockPlace;
 import ac.grim.grimac.utils.inventory.EquipmentType;
@@ -32,6 +33,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerOp
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetPlayerInventory;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerWindowItems;
+import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 // Updated to support modern 1.17 protocol
-public class CompensatedInventory extends Check implements PacketCheck {
+public class CompensatedInventory extends GrimProcessor implements PacketReceiveListener, PacketSendListener {
     private static final int PLAYER_INVENTORY_CASE = -1;
     private static final int UNSUPPORTED_INVENTORY_CASE = -2;
     // "Temporarily" public for debugging
@@ -56,40 +58,19 @@ public class CompensatedInventory extends Check implements PacketCheck {
     // Unsupported inventory is -2
     private int packetSendingInventorySize = PLAYER_INVENTORY_CASE;
 
-    public CompensatedInventory(GrimPlayer playerData) {
-        super(playerData);
+    // The item held at the start of the current client tick (processed at the end of the previous tick)
+    // also updated before slot changes to account for the delay when using hotbar keybinds
+    // Currently only used by 1.21.11+ players to handle attribute swapping items with the ATTACK_RANGE Component
+    @Getter
+    private ItemStack startOfTickStack = ItemStack.EMPTY;
+
+    public CompensatedInventory(GrimPlayer player) {
+        super(player);
 
         CorrectingPlayerInventoryStorage storage = new CorrectingPlayerInventoryStorage(player, 46);
-        inventory = new Inventory(playerData, storage);
+        inventory = new Inventory(player, storage);
 
         menu = inventory;
-    }
-
-    // Taken from https://www.spigotmc.org/threads/mapping-protocol-to-bukkit-slots.577724/
-    public int getBukkitSlot(int packetSlot) {
-        // 0 -> 5 are crafting slots, don't exist in bukkit
-        if (packetSlot <= 4) {
-            return -1;
-        }
-        // 5 -> 8 are armor slots in protocol, ordered helmets to boots
-        if (packetSlot <= 8) {
-            // 36 -> 39 are armor slots in bukkit, ordered boots to helmet. tbh I got this from trial and error.
-            return (7 - packetSlot) + 36;
-        }
-        // By a coincidence, non-hotbar inventory slots match.
-        if (packetSlot <= 35) {
-            return packetSlot;
-        }
-        // 36 -> 44 are hotbar slots in protocol
-        if (packetSlot <= 44) {
-            // 0 -> 9 are hotbar slots in bukkit
-            return packetSlot - 36;
-        }
-        // 45 is offhand is packet, it is 40 in bukkit
-        if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9) && packetSlot == 45) {
-            return 40;
-        }
-        return -1;
     }
 
     // Meant for 1.17+ clients who send changed slots, making the server not send the entire inventory
@@ -223,7 +204,7 @@ public class CompensatedInventory extends Check implements PacketCheck {
                     return;
 
                 // 1.19.4+ clients support swapping with non-empty items
-                int swapItemSlot = item.getHand() == InteractionHand.MAIN_HAND ? inventory.selected + Inventory.HOTBAR_OFFSET : Inventory.SLOT_OFFHAND;
+                int swapItemSlot = item.getHand() == InteractionHand.MAIN_HAND ? inventory.getSelected() + Inventory.HOTBAR_OFFSET : Inventory.SLOT_OFFHAND;
 
                 // Mojang implemented this stupidly, I rewrote their item swap code to make it somewhat cleaner.
                 // Slot in hotbar
@@ -234,9 +215,7 @@ public class CompensatedInventory extends Check implements PacketCheck {
                 inventory.getInventoryStorage().handleClientClaimedSlotSet(slot);
                 inventory.getInventoryStorage().setItem(slot, use);
             }
-        }
-
-        if (event.getPacketType() == PacketType.Play.Client.PLAYER_DIGGING) {
+        } else if (event.getPacketType() == PacketType.Play.Client.PLAYER_DIGGING) {
             WrapperPlayClientPlayerDigging dig = new WrapperPlayClientPlayerDigging(event);
 
             // 1.8 clients don't predict dropping items
@@ -258,18 +237,16 @@ public class CompensatedInventory extends Check implements PacketCheck {
                 inventory.setHeldItem(null);
                 inventory.getInventoryStorage().handleClientClaimedSlotSet(Inventory.HOTBAR_OFFSET + player.packetStateData.lastSlotSelected);
             }
-        }
-
-        if (event.getPacketType() == PacketType.Play.Client.HELD_ITEM_CHANGE) {
+        } else if (event.getPacketType() == PacketType.Play.Client.HELD_ITEM_CHANGE) {
             final int slot = new WrapperPlayClientHeldItemChange(event).getSlot();
 
             // Stop people from spamming the server with an out-of-bounds exception
             if (slot > 8 || slot < 0) return;
 
-            inventory.selected = slot;
-        }
-
-        if (event.getPacketType() == PacketType.Play.Client.CREATIVE_INVENTORY_ACTION) {
+            // set this before we change the selected slot so we get the previous item held
+            this.startOfTickStack = getHeldItem();
+            inventory.setSelected(slot);
+        } else if (event.getPacketType() == PacketType.Play.Client.CREATIVE_INVENTORY_ACTION) {
             WrapperPlayClientCreativeInventoryAction action = new WrapperPlayClientCreativeInventoryAction(event);
             if (player.gamemode != GameMode.CREATIVE) return;
 
@@ -281,9 +258,7 @@ public class CompensatedInventory extends Check implements PacketCheck {
                 inventory.getSlot(action.getSlot()).set(action.getItemStack());
                 inventory.getInventoryStorage().handleClientClaimedSlotSet(action.getSlot());
             }
-        }
-
-        if (event.getPacketType() == PacketType.Play.Client.CLICK_WINDOW && !event.isCancelled()) {
+        } else if (event.getPacketType() == PacketType.Play.Client.CLICK_WINDOW && !event.isCancelled()) {
             WrapperPlayClientClickWindow click = new WrapperPlayClientClickWindow(event);
 
             // How is this possible? Maybe transaction splitting.
@@ -312,10 +287,10 @@ public class CompensatedInventory extends Check implements PacketCheck {
             if (slot == -1 || slot == -999 || slot < menu.getSlots().size()) {
                 menu.doClick(button, slot, clickType);
             }
-        }
-
-        if (event.getPacketType() == PacketType.Play.Client.CLOSE_WINDOW) {
+        } else if (event.getPacketType() == PacketType.Play.Client.CLOSE_WINDOW) {
             this.closeActiveInventory();
+        } else if (isTickPacket(event.getPacketType())) {
+            this.startOfTickStack = getHeldItem();
         }
     }
 
@@ -402,8 +377,9 @@ public class CompensatedInventory extends Check implements PacketCheck {
                 // Vanilla ALWAYS sends the entire inventory to resync, this is a valid thing to check
                 // 01/07/2025: Somehow, the server sends a window id 0 update when the player is not in their inventory?
                 // I guess just revert isPacketInventoryActive if the player has a NotImplementedMenu open?
-                // Regardless, the client does accept this packet and update its inventory, so we must do the same.
-                if (slots.size() == cachedPacketInvSize || items.getWindowId() == 0) {
+                // Regardless, the client does accept this packet and updates its inventory, so we must do the same.
+                boolean forceUpdate = slots.size() == cachedPacketInvSize || items.getWindowId() == 0;
+                if (!isPacketInventoryActive && forceUpdate) {
                     isPacketInventoryActive = true;
                     updatedValue.set(true);
                 }
@@ -501,6 +477,7 @@ public class CompensatedInventory extends Check implements PacketCheck {
      * Closes the player's currently open inventory on the client by resetting to the player's inventory.
      */
     private void closeActiveInventory() {
+        isPacketInventoryActive = true;
         openWindowID = 0;
         menu = inventory;
         menu.setCarried(ItemStack.EMPTY); // Reset carried item

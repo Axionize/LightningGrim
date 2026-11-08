@@ -20,11 +20,16 @@ public class PacketManager implements StartableInitable {
         PacketEvents.getAPI().getEventManager().registerListener(new PacketEntityAction());
         PacketEvents.getAPI().getEventManager().registerListener(new PacketBlockAction());
         PacketEvents.getAPI().getEventManager().registerListener(new PacketSelfMetadataListener());
+        PacketEvents.getAPI().getEventManager().registerListener(new BedStateTracker());
+        PacketEvents.getAPI().getEventManager().registerListener(new PacketServerPlayerRotation());
         PacketEvents.getAPI().getEventManager().registerListener(new PacketServerTeleport());
         PacketEvents.getAPI().getEventManager().registerListener(new PacketPlayerCooldown());
         PacketEvents.getAPI().getEventManager().registerListener(new PacketPlayerRespawn());
+        PacketEvents.getAPI().getEventManager().registerListener(new PacketPlayerTick());
+        PacketEvents.getAPI().getEventManager().registerListener(new PreViaCheckManagerListener());
         PacketEvents.getAPI().getEventManager().registerListener(new CheckManagerListener());
         PacketEvents.getAPI().getEventManager().registerListener(new PacketPlayerSteer());
+        PacketEvents.getAPI().getEventManager().registerListener(new PacketPluginMessage());
 
         if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) {
             PacketEvents.getAPI().getEventManager().registerListener(new PacketServerTags());

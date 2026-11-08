@@ -2,8 +2,10 @@ package ac.grim.grimac.command.commands;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.command.BuildableCommand;
+import ac.grim.grimac.command.CloudCommandService;
 import ac.grim.grimac.command.requirements.PlayerSenderRequirement;
-import ac.grim.grimac.manager.init.start.CommandRegister;
+import ac.grim.grimac.platform.api.manager.cloud.CloudPlatformCommandArguments;
+import ac.grim.grimac.platform.api.player.PlatformPlayer;
 import ac.grim.grimac.platform.api.sender.Sender;
 import ac.grim.grimac.utils.anticheat.MessageUtil;
 import org.incendo.cloud.CommandManager;
@@ -18,7 +20,7 @@ import java.util.Objects;
 public class GrimStopSpectating implements BuildableCommand {
 
     @Override
-    public void register(CommandManager<Sender> commandManager) {
+    public void register(CommandManager<Sender> commandManager, CloudPlatformCommandArguments arguments) {
         commandManager.command(
                 commandManager.commandBuilder("grim", "grimac")
                         .literal("stopspectating")
@@ -30,7 +32,7 @@ public class GrimStopSpectating implements BuildableCommand {
                             return List.of(); // No suggestions if no permission
                         }))
                         .handler(this::onStopSpectate)
-                        .apply(CommandRegister.REQUIREMENT_FACTORY.create(PlayerSenderRequirement.PLAYER_SENDER_REQUIREMENT))
+                        .apply(CloudCommandService.REQUIREMENT_FACTORY.create(PlayerSenderRequirement.INSTANCE))
         );
     }
 
@@ -39,7 +41,8 @@ public class GrimStopSpectating implements BuildableCommand {
         String string = commandContext.getOrDefault("here", null);
         if (GrimAPI.INSTANCE.getSpectateManager().isSpectating(sender.getUniqueId())) {
             boolean teleportBack = string == null || !string.equalsIgnoreCase("here") || !sender.hasPermission("grim.spectate.stophere");
-            GrimAPI.INSTANCE.getSpectateManager().disable(Objects.requireNonNull(sender.getPlatformPlayer()), teleportBack);
+            PlatformPlayer player = Objects.requireNonNull(sender.getPlatformPlayer(), "player");
+            GrimAPI.INSTANCE.getSpectateManager().disable(player, teleportBack);
         } else {
             sender.sendMessage(MessageUtil.getParsedComponent(sender, "cannot-spectate-return", "%prefix% &cYou can only do this after spectating a player."));
         }

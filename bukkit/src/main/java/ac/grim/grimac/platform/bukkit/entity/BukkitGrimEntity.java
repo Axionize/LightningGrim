@@ -17,13 +17,13 @@ import java.util.concurrent.CompletableFuture;
 
 public class BukkitGrimEntity implements GrimEntity {
 
-    protected static final boolean CAN_USE_DIRECT_GETTERS = PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_20_1) && PaperUtils.PAPER;
+    protected static final boolean CAN_USE_DIRECT_GETTERS = PacketEvents.getAPI().getServerManager().getVersion().isNewerThan(ServerVersion.V_1_20_1) && PaperUtils.PAPER;
 
     private final Entity entity;
     private BukkitPlatformWorld bukkitPlatformWorld;
 
     public BukkitGrimEntity(Entity entity) {
-        this.entity = Objects.requireNonNull(entity);
+        this.entity = Objects.requireNonNull(entity, "entity");
     }
 
     public Entity getBukkitEntity() {
@@ -60,7 +60,7 @@ public class BukkitGrimEntity implements GrimEntity {
     // TODO replace with PlayerWorldChangeEvent listener instead of checking for equality for better performance
     @Override
     public PlatformWorld getWorld() {
-        if (bukkitPlatformWorld == null || !bukkitPlatformWorld.getBukkitWorld().equals(entity.getWorld())) {
+        if (bukkitPlatformWorld == null || !bukkitPlatformWorld.bukkitWorld().equals(entity.getWorld())) {
             bukkitPlatformWorld = new BukkitPlatformWorld(entity.getWorld());
         }
 

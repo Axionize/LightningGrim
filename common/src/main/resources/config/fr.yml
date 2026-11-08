@@ -25,7 +25,8 @@ client-brand:
     ignored-clients:
         - "^vanilla$"
         - "^fabric$"
-        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4}$"
+        - "^quilt$"
+        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4},(?:fabric|forge)$"
         - "^Feather Fabric$"
         - "^labymod$"
     # Grim will blacklist specific Forge versions which include built-in Reach hacks (Forge 1.18.2 to 1.19.3).
@@ -46,6 +47,13 @@ max-transaction-time: 60
 # This may improve compatibility with other anticheats. It may cause issues with packet limiters.
 # Do not enable this if you are not sure what you are doing.
 disable-pong-cancelling: false
+
+# Le gestionnaire de resynchronisation des blocs par défaut doit-il être désactivé ?
+# Par défaut, Grim lit les blocs du monde serveur et les envoie au client pour corriger la désynchronisation.
+# Si vous utilisez des plugins créant de faux blocs via paquets (qui n'existent pas dans le monde serveur),
+# vous devez régler ceci sur true pour empêcher Grim de les écraser avec de l'air ou des blocs réels.
+# Cela force l'utilisation d'un gestionnaire "NoOp" (Aucune Opération) sauf si un personnalisé est fourni via l'API.
+disable-default-resync-handler: false
 
 # Should the duplicate movement packet be cancelled?
 # Mojang has fixed this issue in 1.21. This was their attempt to fix the "bucket desync". https://bugs.mojang.com/browse/MC-12363
@@ -153,6 +161,12 @@ VehicleTimer:
     # Cibler un chronomètre de 1,005.
     setbackvl: 10
 
+FastBreak:
+    # Combien de millisecondes d'avantage en cassant des blocs trop vite avant de signaler
+    break-threshold: 1000
+    # Combien de millisecondes d'avantage en commençant à casser un bloc trop tôt après le précédent avant de signaler
+    delay-threshold: 1000
+
 PacketOrderI:
     # Activer si les joueurs sont signalés pour l'utilisation de mods d'animation 1.7
     exempt-placing-while-digging: false
@@ -187,6 +201,9 @@ debug-pipeline-on-join: false
 # Active les vérifications expérimentales
 experimental-checks: false
 
+# Partage les sections de chunks identiques entre les joueurs pour économiser la mémoire (copie à l'écriture).
+experimental-chunk-sharing: false
+
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true
 reset-item-usage-on-slot-change: true
@@ -208,20 +225,25 @@ max-ping-out-of-flying: 1000
 # Cela empêche les joueurs à forte latence d’utiliser indéfiniment un seul boost de feu d’artifice avec une élytra.
 max-ping-firework-boost: 1000
 
-history:
-    enabled: true
-    # Combien d’entrées doivent être affichées par page avec /grim history <player>
-    entries-per-page: 15
-    # Quel nom de serveur doit être inséré pour la commande history ? Utile si vous utilisez la même base de données pour plusieurs serveurs
-    server-name: Prison
-    database:
-        # Utilisez SQLITE pour un stockage local, MYSQL si vous disposez d’une base MySQL externe. Mis à jour seulement au redémarrage du serveur
-        type: SQLITE
-        # Détails de connexion MySQL
-        host: localhost
-        port: 3306
-        database: grim
-        username: root
-        password: ""
+# Marqueurs de schéma — ne modifier qu'en sachant ce que l'on fait.
+#   config-flavor:  V2 = build Grim 2.x, V3 = Grim 3.x. Le plugin refuse de
+#                   charger une config dont le flavor ne correspond pas à son
+#                   propre build : une config V3 ouverte par un jar V2 échoue
+#                   immédiatement au lieu de fusionner silencieusement dans
+#                   les mauvaises clés.
+#   config-version: incrémenté à chaque changement de forme incompatible. Les
+#                   anciennes configs sont migrées automatiquement par
+#                   l'updater intégré au prochain démarrage.
+# Grim actualise toujours les permissions mises en cache quand un joueur rejoint
+# le serveur et quand Grim est rechargé, que LuckPerms soit installé ou non.
+# Les hooks d'événements LuckPerms actualisent aussi immédiatement les permissions
+# Grim mises en cache dans les configurations normales.
+# Ce repli périodique n'est nécessaire que pour les changements de permissions en
+# ligne non couverts par ces événements, comme un contexte LuckPerms personnalisé
+# qui n'appelle pas signalContextUpdate, des lacunes de contexte sur Fabric ou un
+# fournisseur de permissions autre que LuckPerms qui change les permissions en direct.
+# Mettez -1 pour désactiver le sondage. Mettez une valeur positive pour actualiser tous les X ticks.
+update-permission-ticks: -1
 
-config-version: 9
+config-flavor: V2
+config-version: 11

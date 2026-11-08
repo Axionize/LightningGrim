@@ -46,7 +46,7 @@ public class PredictionEngineWater extends PredictionEngine {
         // This stops players from abusing this mechanic while on top of water, which could theoretically allow
         // some form of a new Jesus hack.
         // Anyways, Jesus doesn't make too much sense on 1.13+ clients when swimming is faster
-        if ((player.wasEyeInWater || player.fluidOnEyes == FluidTag.WATER || player.isSwimming || player.wasSwimming) && !player.inVehicle()) {
+        if ((player.wasEyeInWater || player.isEyeInFluid(FluidTag.WATER) || player.isSwimming || player.wasSwimming) && !player.inVehicle()) {
             for (VectorData vector : base) {
                 double lookYAmount = ReachUtils.getLook(player, player.yaw, player.pitch).getY();
                 double scalar = lookYAmount < -0.2 ? 0.085 : 0.06;
@@ -62,7 +62,6 @@ public class PredictionEngineWater extends PredictionEngine {
 
                 //if (d > 0.0 && player.world.getFluidLevelAt(player.lastX, player.lastY + 1.0 - 0.1, player.lastZ) == 0) {
                 swimmingVelocities.add(vector.returnNewModified(vector.vectorX, vector.vectorY, vector.vectorZ, VectorData.VectorType.SurfaceSwimming));
-
             }
             return swimmingVelocities;
         }
@@ -78,6 +77,10 @@ public class PredictionEngineWater extends PredictionEngine {
 
     @Override
     public void addJumpsToPossibilities(GrimPlayer player, Set<VectorData> existingVelocities) {
+        if (player.supportsEndTickPreVia() && !player.packetStateData.knownInput.jump()) {
+            return;
+        }
+
         for (VectorData vector : new HashSet<>(existingVelocities)) {
             final double startX = vector.vectorX;
             final double startY = vector.vectorY;
@@ -90,7 +93,7 @@ public class PredictionEngineWater extends PredictionEngine {
                 existingVelocities.add(new VectorData(startX, startY + 0.04f, startZ, vector, VectorData.VectorType.Jump));
             }
 
-            if (player.slightlyTouchingWater && player.lastOnGround && !player.onGround) {
+            if (player.getFluidHeight(FluidTag.WATER) <= 0.4D && player.lastOnGround && !player.onGround) {
                 double[] jumpValues = {startX, startY, startZ};
                 super.doJump(player, jumpValues);
                 existingVelocities.add(new VectorData(jumpValues[0], jumpValues[1], jumpValues[2], vector, VectorData.VectorType.Jump));
@@ -104,6 +107,7 @@ public class PredictionEngineWater extends PredictionEngine {
 
         for (VectorData vector : player.getPossibleVelocitiesMinusKnockback()) {
             staticVectorEndOfTick(player, vector, swimmingFriction, playerGravity, isFalling);
+            copyBackToClientVelocity(player, vector);
         }
     }
 

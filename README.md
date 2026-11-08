@@ -19,7 +19,7 @@
 </div>
 
 GrimAC is an open source Minecraft anticheat designed to support the latest versions of Minecraft.
-It currently supports minecraft versions 1.8–1.21. Geyser players are fully exempt from the anticheat to prevent false positives.
+It currently supports Minecraft versions 1.8–26.3. Geyser players are fully exempt from the anticheat to prevent false positives.
 This project is considered feature-complete for the 2.0 (open-source) branch. If you would like a bug fix or enhancement and cannot sponsor the work, pull requests are welcome.
 A premium version is planned, which will offer additional subscription-based paid checks, such as heuristics.
 
@@ -33,29 +33,26 @@ A premium version is planned, which will offer additional subscription-based pai
   - ~~[Hangar](https://hangar.papermc.io/GrimAnticheat/GrimAnticheat)~~
   - ~~[SpigotMC](https://www.spigotmc.org/resources/grim-anticheat.99923/)~~
 
+## Requirements & Installation
+
+- Java 17 or higher. *For more details, see [Updating-to-Java-17](https://github.com/GrimAnticheat/Grim/wiki/Updating-to-Java-17).*
+- A Spigot, Paper, Folia, or Fabric server environment. *For more details, see [Supported-environments](https://github.com/GrimAnticheat/Grim/wiki/Supported-environments).*
+
+If you use a proxy such as Velocity or BungeeCord:
+- If you use Geyser, Floodgate must be installed on the backend server (where Grim is) so Grim can access the Floodgate API.
+- If you use ViaVersion, it must be installed on the backend server (where Grim is) ONLY.
+  Grim does not support having ViaVersion installed on the proxy, even if it is also installed on the backend.
+
 ## Resources
 
 - For documentation and examples visit the [Wiki](https://github.com/GrimAnticheat/Grim/wiki).
 - For answers to commonly asked questions visit the [FAQ](https://github.com/GrimAnticheat/Grim/wiki/FAQ).
 - For community support and project discussion join our [Discord](https://discord.grim.ac).
 
-
 ## Pull Requests
 
 See [Contributing](CONTRIBUTING.md) for more information about contributing and what our guidelines
 are.
-
-
-## Requirements & Installation
-
-- Java 17 or higher. *For more details
-  see [Updating-to-Java-17](https://github.com/GrimAnticheat/Grim/wiki/Updating-to-Java-17).*
-- A Spigot, Paper, Folia, or Fabric server environment. *For more details
-  see [Supported-environments](https://github.com/GrimAnticheat/Grim/wiki/Supported-environments).*
-- If you use Geyser, place Floodgate on the backend server so grim can exempt bedrock players. Grim
-  cannot access the Floodgate API if it is on the proxy.
-- If you use ViaVersion, it should be on the backend server as movement is highly dependent on
-  client version.
 
 ## Developer Plugin API
 
@@ -95,7 +92,7 @@ What makes Grim stand out against other anticheats?
 
 ### Fully asynchronous and multithreaded design
 
-* All movement checks and the overwhelming majority of listeners run on the netty thread
+* All movement checks and the overwhelming majority of listeners run on the Netty thread
 * The anticheat can scale to many hundreds of players, if not more
 * Thread safety is carefully thought out
 * The next core allows for this design
