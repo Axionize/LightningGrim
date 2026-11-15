@@ -2,7 +2,6 @@ package ac.grim.grimac.utils.data;
 
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.math.Vector3dm;
-import ac.grim.grimac.utils.data.IndexedVector3d;
 import ac.grim.grimac.utils.nmsutil.StuckSpeed;
 import lombok.Getter;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;

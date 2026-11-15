@@ -4,10 +4,14 @@ import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.PacketWorld;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.change.BlockModification;
+import ac.grim.grimac.utils.chunks.ChunkSectionCache;
 import ac.grim.grimac.utils.chunks.Column;
 import ac.grim.grimac.utils.collisions.CollisionData;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
-import ac.grim.grimac.utils.data.*;
+import ac.grim.grimac.utils.data.BlockPrediction;
+import ac.grim.grimac.utils.data.Pair;
+import ac.grim.grimac.utils.data.PistonData;
+import ac.grim.grimac.utils.data.ShulkerData;
 import ac.grim.grimac.utils.data.packetentity.PacketEntity;
 import ac.grim.grimac.utils.data.packetentity.PacketEntityShulker;
 import ac.grim.grimac.utils.math.GrimMath;
@@ -68,7 +72,7 @@ public class CompensatedWorld implements PacketWorld {
     public final GrimPlayer player;
     public final Long2ObjectMap<Column> chunks;
     // Packet locations for blocks
-    public final Set<PlayerPistonData> activePistons = new HashSet<>();
+    public final Set<PistonData> activePistons = new HashSet<>();
     public final Set<ShulkerData> openShulkerBoxes = new HashSet<>();
     // 1.17 with datapacks, and 1.18, have negative world offset values
     @Getter
@@ -155,11 +159,11 @@ public class CompensatedWorld implements PacketWorld {
                             BlockModification.Cause.HANDLE_NETTY_SYNC_TRANSACTION
                     )
             );
-            updateBlock(vector3i.getX(), vector3i.getY(), vector3i.getZ(), originalBlockId);
+            updateBlock(vector3i, originalBlockId);
             WrappedBlockState state = WrappedBlockState.getByGlobalId(blockVersion, originalBlockId);
 
             // The player will teleport themselves if they get stuck in the reverted block
-            if (playerPosition != null && CollisionData.getData(state.getType()).getMovementCollisionBox(player, player.getClientVersion(), state, vector3i.getX(), vector3i.getY(), vector3i.getZ()).isIntersected(player.boundingBox)) {
+            if (playerPosition != null && isStuckInRevertedBlock(vector3i, state)) {
                 player.lastX = player.x;
                 player.lastY = player.y;
                 player.lastZ = player.z;
@@ -168,6 +172,21 @@ public class CompensatedWorld implements PacketWorld {
                 player.z = playerPosition.getZ();
                 player.boundingBox = GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z);
             }
+        }
+    }
+
+    // 1.16.2+ only goes back if the reverted block would leave it stuck, checked from where it is when the block comes back
+    // (Player.isColliding). Older clients always go back
+    private boolean isStuckInRevertedBlock(Vector3i pos, WrappedBlockState state) {
+        if (player.getClientVersion().isOlderThan(ClientVersion.V_1_16_2)) return true;
+
+        // Shapes like scaffolding pick their box from lastY, which is still where the player broke the block from
+        final double lastY = player.lastY;
+        player.lastY = player.y;
+        try {
+            return CollisionData.getData(state.getType()).getMovementCollisionBox(player, player.getClientVersion(), state, pos.getX(), pos.getY(), pos.getZ()).isIntersected(player.boundingBox);
+        } finally {
+            player.lastY = lastY;
         }
     }
 
@@ -243,8 +262,8 @@ public class CompensatedWorld implements PacketWorld {
         }
 
         // Pistons are a block entity.
-        for (PlayerPistonData data : activePistons) {
-            for (SimpleCollisionBox box : data.pistonTemplate.boxes()) {
+        for (PistonData data : activePistons) {
+            for (SimpleCollisionBox box : data.boxes) {
                 if (playerBox.isCollided(box)) {
                     return true;
                 }
@@ -264,20 +283,23 @@ public class CompensatedWorld implements PacketWorld {
     }
 
     public void updateBlock(Vector3i pos, WrappedBlockState state) {
-        updateBlock(pos.getX(), pos.getY(), pos.getZ(), state.getGlobalId());
+        updateBlock(pos, state.getGlobalId());
     }
 
     public void updateBlock(int x, int y, int z, int combinedID) {
-        Vector3i asVector = new Vector3i(x, y, z);
-        BlockPrediction prediction = originalServerBlocks.get(asVector.getSerializedPosition());
+        updateBlock(new Vector3i(x, y, z), combinedID);
+    }
+
+    public void updateBlock(Vector3i pos, int combinedID) {
+        BlockPrediction prediction = originalServerBlocks.get(pos.getSerializedPosition());
 
         if (isCurrentlyPredicting) {
             if (prediction == null) {
-                originalServerBlocks.put(asVector.getSerializedPosition(), new BlockPrediction(currentlyChangedBlocks, asVector, getBlock(asVector).getGlobalId(), new Vector3d(player.x, player.y, player.z))); // Remember server controlled block type
+                originalServerBlocks.put(pos.getSerializedPosition(), new BlockPrediction(currentlyChangedBlocks, pos, getBlock(pos).getGlobalId(), new Vector3d(player.x, player.y, player.z))); // Remember server controlled block type
             } else {
                 prediction.setForBlockUpdate(currentlyChangedBlocks); // Block existing there was placed by client, mark block to have a new prediction
             }
-            currentlyChangedBlocks.add(asVector);
+            currentlyChangedBlocks.add(pos);
         }
 
         if (!isCurrentlyPredicting && prediction != null) {
@@ -285,6 +307,10 @@ public class CompensatedWorld implements PacketWorld {
             prediction.setOriginalBlockId(combinedID);
             return;
         }
+
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
 
         Column column = getChunk(x >> 4, z >> 4);
 
@@ -294,11 +320,13 @@ public class CompensatedWorld implements PacketWorld {
         if (column != null) {
             if (column.chunks().length <= (offsetY >> 4) || (offsetY >> 4) < 0) return;
 
-            BaseChunk chunk = column.chunks()[offsetY >> 4];
+            int sectionIndex = offsetY >> 4;
+            BaseChunk chunk = column.chunks()[sectionIndex];
 
             if (chunk == null) {
                 chunk = create();
-                column.chunks()[offsetY >> 4] = chunk;
+                column.chunks()[sectionIndex] = chunk;
+                column.sectionKeys()[sectionIndex] = 0L;
 
                 // Sets entire chunk to air
                 // This glitch/feature occurs due to the palette size being 0 when we first create a chunk section
@@ -309,14 +337,21 @@ public class CompensatedWorld implements PacketWorld {
             WrappedBlockState previousState = chunk.get(blockVersion, x & 0xF, offsetY & 0xF, z & 0xF);
             WrappedBlockState newState = WrappedBlockState.getByGlobalId(blockVersion, combinedID);
 
-            // The method also gets called for the previous state before replacement
-            player.pointThreeEstimator.handleChangeBlock(x, y, z, previousState);
+            // A resync that rewrites the same block is not a change.
+            // Treating it as one would hand out the wall-hit exemption, a point-three
+            // recalculation and a geyser update for free, so only process real changes.
+            if (previousState.getGlobalId() != combinedID) {
+                // The method also gets called for the previous state before replacement
+                player.pointThreeEstimator.handleChangeBlock(x, y, z, previousState);
 
-            chunk.set(x & 0xF, offsetY & 0xF, z & 0xF, combinedID);
-            player.compensatedGeysers.updateBlock(x, y, z, previousState, newState, minHeight);
+                // Copy-on-write: never mutate a shared section in place
+                chunk = ChunkSectionCache.detachSectionForWrite(column, sectionIndex, chunk);
+                chunk.set(x & 0xF, offsetY & 0xF, z & 0xF, combinedID);
+                player.compensatedGeysers.updateBlock(x, y, z, previousState, newState, minHeight);
 
-            // Handle stupidity such as fluids changing in idle ticks.
-            player.pointThreeEstimator.handleChangeBlock(x, y, z, newState);
+                // Handle stupidity such as fluids changing in idle ticks.
+                player.pointThreeEstimator.handleChangeBlock(x, y, z, newState);
+            }
         }
     }
 
@@ -367,18 +402,18 @@ public class CompensatedWorld implements PacketWorld {
         double modY = 0;
         double modZ = 0;
 
-        for (PlayerPistonData data : activePistons) {
-            for (SimpleCollisionBox box : data.pistonTemplate.boxes()) {
+        for (PistonData data : activePistons) {
+            for (SimpleCollisionBox box : data.boxes) {
                 if (playerBox.isCollided(box)) {
-                    modX = Math.max(modX, Math.abs(data.pistonTemplate.dir().getModX() * 0.51D));
-                    modY = Math.max(modY, Math.abs(data.pistonTemplate.dir().getModY() * 0.51D));
-                    modZ = Math.max(modZ, Math.abs(data.pistonTemplate.dir().getModZ() * 0.51D));
+                    modX = Math.max(modX, Math.abs(data.direction.getModX() * 0.51D));
+                    modY = Math.max(modY, Math.abs(data.direction.getModY() * 0.51D));
+                    modZ = Math.max(modZ, Math.abs(data.direction.getModZ() * 0.51D));
 
                     playerBox.expandMax(modX, modY, modZ);
                     playerBox.expandMin(modX * -1, modY * -1, modZ * -1);
 
-                    if (data.pistonTemplate.slime() || (data.pistonTemplate.honey() && player.getClientVersion().isOlderThan(ClientVersion.V_1_15_2))) {
-                        player.uncertaintyHandler.slimePistonBounces.add(data.pistonTemplate.dir());
+                    if (data.hasSlimeBlock || (data.hasHoneyBlock && player.getClientVersion().isOlderThan(ClientVersion.V_1_15_2))) {
+                        player.uncertaintyHandler.slimePistonBounces.add(data.direction);
                     }
 
                     break;
@@ -433,7 +468,7 @@ public class CompensatedWorld implements PacketWorld {
             activePistons.removeIf(data -> data.lastTransactionSent < transactionId);
             openShulkerBoxes.removeIf(data -> data.isClosing && data.lastTransactionSent < transactionId);
         } else {
-            activePistons.removeIf(PlayerPistonData::tickIfGuaranteedFinished);
+            activePistons.removeIf(PistonData::tickIfGuaranteedFinished);
             openShulkerBoxes.removeIf(ShulkerData::tickIfGuaranteedFinished);
         }
         // Remove if a shulker is not in this block position anymore
@@ -656,7 +691,8 @@ public class CompensatedWorld implements PacketWorld {
     public void addToCache(Column chunk, int chunkX, int chunkZ, TileEntity[] tileEntities) {
         long chunkPosition = chunkPositionToLong(chunkX, chunkZ);
         player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
-            chunks.put(chunkPosition, chunk);
+            Column previous = chunks.put(chunkPosition, ChunkSectionCache.shareColumnSections(chunk));
+            if (previous != null) ChunkSectionCache.releaseColumnSections(previous);
             player.compensatedGeysers.addChunkToCache(chunk, tileEntities, minHeight);
         });
     }
@@ -739,6 +775,7 @@ public class CompensatedWorld implements PacketWorld {
         player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
             Column column = chunks.remove(chunkPosition);
             if (column != null) {
+                ChunkSectionCache.releaseColumnSections(column);
                 player.compensatedGeysers.removeChunk(chunkX, chunkZ, column.chunks().length);
             }
         });
@@ -754,9 +791,5 @@ public class CompensatedWorld implements PacketWorld {
 
     public WrappedBlockState getBlock(Vector3dm aboveCCWPos) {
         return getBlock(aboveCCWPos.getX(), aboveCCWPos.getY(), aboveCCWPos.getZ());
-    }
-
-    public void addPiston(PistonTemplate pistonTemplate, int transactionID) {
-        activePistons.add(new PlayerPistonData(pistonTemplate, transactionID));
     }
 }
